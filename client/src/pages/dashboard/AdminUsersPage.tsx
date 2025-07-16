@@ -38,7 +38,7 @@ const AdminUsersPage: React.FC = () => {
           Authorization: `Bearer ${userInfo.token}`,
         },
       };
-      const { data } = await axios.get('http://localhost:5000/api/users', config);
+      const { data } = await axios.get('https://studyhabitcollege.onrender.com/api/users', config);
       setUsers(data);
       setError(null);
     } catch (err: any) {
@@ -75,7 +75,7 @@ const AdminUsersPage: React.FC = () => {
         },
       };
 
-      await axios.put(`http://localhost:5000/api/users/${userId}`, updatedData, config);
+      await axios.put(`https://studyhabitcollege.onrender.com/api/users/${userId}`, updatedData, config);
       await fetchUsers();
 
       if (userInfo._id === userId && updatedData.role) {
@@ -102,7 +102,7 @@ const AdminUsersPage: React.FC = () => {
             Authorization: `Bearer ${userInfo.token}`,
           },
         };
-        await axios.delete(`http://localhost:5000/api/users/${userId}`, config);
+        await axios.delete(`https://studyhabitcollege.onrender.com/api/users/${userId}`, config);
         await fetchUsers();
       } catch (err: any) {
         setError(err.response?.data?.message || 'Failed to delete user.');

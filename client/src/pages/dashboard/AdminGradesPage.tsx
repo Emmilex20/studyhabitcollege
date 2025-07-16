@@ -44,7 +44,7 @@ const AdminGradesPage: React.FC = () => {
           Authorization: `Bearer ${userInfo.token}`,
         },
       };
-      const { data } = await axios.get('http://localhost:5000/api/grades', config);
+      const { data } = await axios.get('https://studyhabitcollege.onrender.com/api/grades', config);
       setGrades(data);
       setError(null);
     } catch (err: any) {
@@ -86,7 +86,7 @@ const AdminGradesPage: React.FC = () => {
             Authorization: `Bearer ${userInfo.token}`,
           },
         };
-        await axios.delete(`http://localhost:5000/api/grades/${gradeId}`, config);
+        await axios.delete(`https://studyhabitcollege.onrender.com/api/grades/${gradeId}`, config);
         await fetchGrades();
       } catch (err: any) {
         setError(err.response?.data?.message || 'Failed to delete grade.');

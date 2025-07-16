@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api', // ✅ Points to your backend server
+  baseURL: 'https://studyhabitcollege.onrender.com/api', // ✅ Points to your backend server
   withCredentials: true, // Optional, only if using cookies/sessions
 });
 

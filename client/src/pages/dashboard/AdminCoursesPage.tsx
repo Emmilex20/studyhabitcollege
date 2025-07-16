@@ -43,7 +43,7 @@ const AdminCoursesPage: React.FC = () => {
           Authorization: `Bearer ${userInfo.token}`,
         },
       };
-      const { data } = await axios.get('http://localhost:5000/api/courses', config);
+      const { data } = await axios.get('https://studyhabitcollege.onrender.com/api/courses', config);
       setCourses(data);
       setError(null);
     } catch (err: any) {
@@ -87,7 +87,7 @@ const AdminCoursesPage: React.FC = () => {
             Authorization: `Bearer ${userInfo.token}`,
           },
         };
-        await axios.delete(`http://localhost:5000/api/courses/${courseId}`, config);
+        await axios.delete(`https://studyhabitcollege.onrender.com/api/courses/${courseId}`, config);
         await fetchCourses();
       } catch (err: any) {
         setError(err.response?.data?.message || 'Failed to delete course.');

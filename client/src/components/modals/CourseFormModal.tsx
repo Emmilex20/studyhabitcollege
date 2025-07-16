@@ -80,7 +80,7 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
             Authorization: `Bearer ${userInfo.token}`,
           },
         };
-        const { data } = await axios.get('http://localhost:5000/api/users?role=teacher', config);
+        const { data } = await axios.get('https://studyhabitcollege.onrender.com/api/users?role=teacher', config);
         setTeachers(data);
       } catch (err) {
         console.error('Failed to fetch teachers:', err);
@@ -128,12 +128,12 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
       let response;
       if (courseToEdit) {
         response = await axios.put(
-          `http://localhost:5000/api/courses/${courseToEdit._id}`,
+          `https://studyhabitcollege.onrender.com/api/courses/${courseToEdit._id}`,
           payload,
           config
         );
       } else {
-        response = await axios.post('http://localhost:5000/api/courses', payload, config);
+        response = await axios.post('https://studyhabitcollege.onrender.com/api/courses', payload, config);
       }
 
       onSave(response.data);

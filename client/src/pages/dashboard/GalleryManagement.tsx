@@ -22,7 +22,7 @@ interface GalleryItem {
   updatedAt: string;
 }
 
-const API_BASE_URL = 'http://localhost:5000/api/gallery'; // Adjust if your backend runs on a different port/domain
+const API_BASE_URL = 'https://studyhabitcollege.onrender.com/api/gallery'; // Adjust if your backend runs on a different port/domain
 
 const GalleryManagement: React.FC = () => {
   const { userInfo } = useAuth(); // <--- GET USER INFO FROM AUTH CONTEXT

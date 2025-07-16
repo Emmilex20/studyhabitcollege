@@ -40,7 +40,7 @@ const ChildGradesPage: React.FC = () => {
           },
         };
 
-        const response = await axios.get(`http://localhost:5000/api/parents/child/${studentId}/grades`, config);
+        const response = await axios.get(`https://studyhabitcollege.onrender.com/api/parents/child/${studentId}/grades`, config);
         
         const flatGrades: Grade[] = response.data.map((g: any) => ({
   _id: g._id,

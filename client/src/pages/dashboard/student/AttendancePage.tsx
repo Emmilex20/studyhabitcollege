@@ -33,7 +33,7 @@ const AttendancePage: React.FC = () => {
                     },
                     withCredentials: true, // 🔐 important if using secure cookies
                 };
-                const response = await axios.get('http://localhost:5000/api/students/me/attendance', config);
+                const response = await axios.get('https://studyhabitcollege.onrender.com/api/students/me/attendance', config);
                 setAttendanceRecords(response.data);
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } catch (err: any) {

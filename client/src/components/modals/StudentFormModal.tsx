@@ -98,14 +98,14 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
       try {
         setLoadingDependencies(true);
         const { data: usersData } = await axios.get(
-          'http://localhost:5000/api/users',
+          'https://studyhabitcollege.onrender.com/api/users',
           config
         );
         setStudentUsers(usersData.filter((u: UserOption) => u.role === 'student'));
         setParentUsers(usersData.filter((u: UserOption) => u.role === 'parent'));
 
         const { data: coursesData } = await axios.get(
-          'http://localhost:5000/api/courses',
+          'https://studyhabitcollege.onrender.com/api/courses',
           config
         );
         setAllCourses(coursesData);
@@ -165,13 +165,13 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
 
       if (studentToEdit) {
         response = await axios.put(
-          `http://localhost:5000/api/students/${studentToEdit._id}`,
+          `https://studyhabitcollege.onrender.com/api/students/${studentToEdit._id}`,
           payload,
           config
         );
       } else {
         response = await axios.post(
-          'http://localhost:5000/api/students',
+          'https://studyhabitcollege.onrender.com/api/students',
           payload,
           config
         );

@@ -104,9 +104,9 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, eventT
             };
 
             if (eventToEdit) {
-                response = await axios.put(`http://localhost:5000/api/events/${eventToEdit._id}`, payload, config);
+                response = await axios.put(`https://studyhabitcollege.onrender.com/api/events/${eventToEdit._id}`, payload, config);
             } else {
-                response = await axios.post('http://localhost:5000/api/events', payload, config);
+                response = await axios.post('https://studyhabitcollege.onrender.com/api/events', payload, config);
             }
             onSave(response.data);
             onClose();

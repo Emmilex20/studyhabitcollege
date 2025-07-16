@@ -42,7 +42,7 @@ const ChildAttendancePage: React.FC = () => {
                     withCredentials: true,
                 };
                 const response = await axios.get(
-                    `http://localhost:5000/api/parents/child/${studentId}/attendance`,
+                    `https://studyhabitcollege.onrender.com/api/parents/child/${studentId}/attendance`,
                     config
                 );
                 setAttendanceRecords(response.data);

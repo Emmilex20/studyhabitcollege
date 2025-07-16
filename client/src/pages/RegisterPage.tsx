@@ -36,7 +36,7 @@ const RegisterPage: React.FC = () => {
       };
 
       const { data } = await axios.post(
-        'http://localhost:5000/api/auth/register',
+        'https://studyhabitcollege.onrender.com/api/auth/register',
         { firstName, lastName, email, password, role },
         config
       );

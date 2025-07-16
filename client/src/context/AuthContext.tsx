@@ -56,7 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         },
       };
       const { data } = await axios.get(
-        'http://localhost:5000/api/users/profile',
+        'https://studyhabitcollege.onrender.com/api/users/profile',
         config
       );
       const updatedUserInfo = { ...localUserInfo, ...data };

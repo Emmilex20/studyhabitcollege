@@ -51,7 +51,7 @@ const TeacherCoursesPage: React.FC = () => {
           },
         };
 
-        const { data } = await axios.get('http://localhost:5000/api/courses', config);
+        const { data } = await axios.get('https://studyhabitcollege.onrender.com/api/courses', config);
         setCourses(data);
         setError(null);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

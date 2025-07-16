@@ -41,7 +41,7 @@ const TeacherAttendancePage: React.FC = () => {
         },
       };
       // Backend should filter attendance records to only those for courses taught by this teacher
-      const { data } = await axios.get('http://localhost:5000/api/attendance', config);
+      const { data } = await axios.get('https://studyhabitcollege.onrender.com/api/attendance', config);
       setAttendanceRecords(data);
       setError(null);
     } catch (err: any) {
@@ -88,7 +88,7 @@ const TeacherAttendancePage: React.FC = () => {
             Authorization: `Bearer ${userInfo.token}`,
           },
         };
-        await axios.delete(`http://localhost:5000/api/attendance/${recordId}`, config);
+        await axios.delete(`https://studyhabitcollege.onrender.com/api/attendance/${recordId}`, config);
         await fetchAttendance();
       } catch (err: any) {
         setError(err.response?.data?.message || 'Failed to delete attendance record.');

@@ -90,9 +90,9 @@ const AnnouncementFormModal: React.FC<AnnouncementFormModalProps> = ({ isOpen, o
             };
 
             if (announcementToEdit) {
-                response = await axios.put(`http://localhost:5000/api/announcements/${announcementToEdit._id}`, payload, config);
+                response = await axios.put(`https://studyhabitcollege.onrender.com/api/announcements/${announcementToEdit._id}`, payload, config);
             } else {
-                response = await axios.post('http://localhost:5000/api/announcements', payload, config);
+                response = await axios.post('https://studyhabitcollege.onrender.com/api/announcements', payload, config);
             }
             onSave(response.data);
             onClose();

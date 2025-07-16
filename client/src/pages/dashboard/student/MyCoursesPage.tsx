@@ -37,7 +37,7 @@ const MyCoursesPage: React.FC = () => {
 
       try {
         setLoading(true);
-        const response = await axios.get('http://localhost:5000/api/students/me/courses', { 
+        const response = await axios.get('https://studyhabitcollege.onrender.com/api/students/me/courses', { 
           headers: {
             Authorization: `Bearer ${userInfo.token}`,
           },

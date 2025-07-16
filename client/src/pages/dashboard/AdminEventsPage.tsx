@@ -41,7 +41,7 @@ const AdminEventsPage: React.FC = () => {
           Authorization: `Bearer ${userInfo.token}`,
         },
       };
-      const { data } = await axios.get('http://localhost:5000/api/events', config);
+      const { data } = await axios.get('https://studyhabitcollege.onrender.com/api/events', config);
       setEvents(data);
       setError(null);
     } catch (err: any) {
@@ -84,7 +84,7 @@ const AdminEventsPage: React.FC = () => {
             Authorization: `Bearer ${userInfo.token}`,
           },
         };
-        await axios.delete(`http://localhost:5000/api/events/${eventId}`, config);
+        await axios.delete(`https://studyhabitcollege.onrender.com/api/events/${eventId}`, config);
         await fetchEvents();
       } catch (err: any) {
         setError(err.response?.data?.message || 'Failed to delete event.');

@@ -85,10 +85,10 @@ const AttendanceFormModal: React.FC<AttendanceFormModalProps> = ({ isOpen, onClo
             try {
                 setLoadingDependencies(true);
                 // These API calls will automatically be filtered by the backend based on `userInfo.role`
-                const { data: coursesData } = await axios.get('http://localhost:5000/api/courses', config);
+                const { data: coursesData } = await axios.get('https://studyhabitcollege.onrender.com/api/courses', config);
                 setCourses(coursesData);
 
-                const { data: studentsData } = await axios.get('http://localhost:5000/api/students', config);
+                const { data: studentsData } = await axios.get('https://studyhabitcollege.onrender.com/api/students', config);
                 setStudents(studentsData);
 
                 setError(null);
@@ -137,9 +137,9 @@ const AttendanceFormModal: React.FC<AttendanceFormModalProps> = ({ isOpen, onClo
             };
 
             if (attendanceToEdit) {
-                response = await axios.put(`http://localhost:5000/api/attendance/${attendanceToEdit._id}`, payload, config);
+                response = await axios.put(`https://studyhabitcollege.onrender.com/api/attendance/${attendanceToEdit._id}`, payload, config);
             } else {
-                response = await axios.post('http://localhost:5000/api/attendance', payload, config);
+                response = await axios.post('https://studyhabitcollege.onrender.com/api/attendance', payload, config);
             }
             onSave(response.data);
             onClose();

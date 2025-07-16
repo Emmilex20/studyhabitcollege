@@ -57,12 +57,12 @@ const TeacherStudentsPage: React.FC = () => {
         };
 
         // Fetch courses taught by this teacher first (backend already filters for teacher role)
-        const { data: coursesData } = await axios.get('http://localhost:5000/api/courses', config);
+        const { data: coursesData } = await axios.get('https://studyhabitcollege.onrender.com/api/courses', config);
         setTeacherCourses(coursesData);
         const teacherCourseIds = new Set(coursesData.map((c: CourseOption) => c._id));
 
         // Fetch students (backend already filters students in teacher's courses)
-        const { data: studentsData } = await axios.get('http://localhost:5000/api/students', config);
+        const { data: studentsData } = await axios.get('https://studyhabitcollege.onrender.com/api/students', config);
 
         // Client-side filter to ensure we only display students associated with *any* of the teacher's courses
         // This is a safety measure; the backend should handle most of this.

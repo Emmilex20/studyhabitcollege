@@ -40,7 +40,7 @@ const AdminAnnouncementsPage: React.FC = () => {
       const config = {
         headers: { Authorization: `Bearer ${userInfo.token}` },
       };
-      const { data } = await axios.get('http://localhost:5000/api/announcements', config);
+      const { data } = await axios.get('https://studyhabitcollege.onrender.com/api/announcements', config);
       setAnnouncements(data);
       setError(null);
     } catch (err: any) {
@@ -83,7 +83,7 @@ const AdminAnnouncementsPage: React.FC = () => {
         const config = {
           headers: { Authorization: `Bearer ${userInfo.token}` },
         };
-        await axios.delete(`http://localhost:5000/api/announcements/${announcementId}`, config);
+        await axios.delete(`https://studyhabitcollege.onrender.com/api/announcements/${announcementId}`, config);
         await fetchAnnouncements();
       } catch (err: any) {
         setError(err.response?.data?.message || 'Failed to delete announcement.');

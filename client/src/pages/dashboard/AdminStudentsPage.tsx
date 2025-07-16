@@ -41,7 +41,7 @@ const AdminStudentsPage: React.FC = () => {
           Authorization: `Bearer ${userInfo.token}`,
         },
       };
-      const { data } = await axios.get('http://localhost:5000/api/students', config);
+      const { data } = await axios.get('https://studyhabitcollege.onrender.com/api/students', config);
       setStudents(data);
       setError(null);
     } catch (err: any) {
@@ -88,7 +88,7 @@ const AdminStudentsPage: React.FC = () => {
             Authorization: `Bearer ${userInfo.token}`,
           },
         };
-        await axios.delete(`http://localhost:5000/api/students/${studentId}`, config);
+        await axios.delete(`https://studyhabitcollege.onrender.com/api/students/${studentId}`, config);
         await fetchStudents();
       } catch (err: any) {
         setError(err.response?.data?.message || 'Failed to delete student record.');

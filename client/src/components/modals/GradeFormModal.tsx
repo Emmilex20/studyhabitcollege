@@ -103,10 +103,10 @@ const GradeFormModal: React.FC<GradeFormModalProps> = ({ isOpen, onClose, gradeT
             try {
                 setLoadingDependencies(true);
                 // These API calls will automatically be filtered by the backend based on `userInfo.role`
-                const { data: coursesData } = await axios.get('http://localhost:5000/api/courses', config);
+                const { data: coursesData } = await axios.get('https://studyhabitcollege.onrender.com/api/courses', config);
                 setCourses(coursesData);
 
-                const { data: studentsData } = await axios.get('http://localhost:5000/api/students', config);
+                const { data: studentsData } = await axios.get('https://studyhabitcollege.onrender.com/api/students', config);
                 setStudents(studentsData);
 
                 setError(null);
@@ -155,9 +155,9 @@ const GradeFormModal: React.FC<GradeFormModalProps> = ({ isOpen, onClose, gradeT
             };
 
             if (gradeToEdit) {
-                response = await axios.put(`http://localhost:5000/api/grades/${gradeToEdit._id}`, payload, config);
+                response = await axios.put(`https://studyhabitcollege.onrender.com/api/grades/${gradeToEdit._id}`, payload, config);
             } else {
-                response = await axios.post('http://localhost:5000/api/grades', payload, config);
+                response = await axios.post('https://studyhabitcollege.onrender.com/api/grades', payload, config);
             }
             onSave(response.data);
             onClose();
