@@ -20,7 +20,7 @@ interface GalleryItem {
 }
 
 // --- 2. Define your API Base URL ---
-const API_BASE_URL = 'http://localhost:5000/api/gallery'; // Adjust if your backend is on a different port/domain
+const API_BASE_URL = 'https://studyhabitcollege.onrender.com/api/gallery'; // Adjust if your backend is on a different port/domain
 
 // Animation Variants (easeOut is correctly used here)
 const itemVariants = {
