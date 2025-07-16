@@ -28,5 +28,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src", "src/**/*.d.ts"] // Changed this line
+  "include": ["src", "src/**/*.d.ts", "src/custom.d.ts"] // Changed this line
 }
