@@ -15,6 +15,11 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
+    // Add "swiper" to the types array
+    "types": ["swiper"], // Add this line if not present, or merge with existing types
+    // If you already have other types like "node", it would be:
+    // "types": ["node", "swiper"],
+
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,
