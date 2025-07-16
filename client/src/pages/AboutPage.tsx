@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 // IMPORTANT: These are placeholders for YOUR image files.
 // Ensure you have these images in your 'src/assets' folder (or adjust the paths).
 import campusImage from '../assets/campus-view.jpeg'; // e.g., an aerial shot or wide view of the campus
-import valuesIllustration from '../assets/values-illustration.png'; // e.g., an abstract or symbolic illustration of core values
+import valuesIllustration from '../assets/values-illustration.jpg'; // e.g., an abstract or symbolic illustration of core values
 import founderPortrait from '../assets/founder-portrait.png'; // e.g., a dignified portrait of the college founder(s)
 import earlyDaysPhoto from '../assets/early-days-photo.jpeg'; // e.g., a sepia-toned photo of early students or buildings
 
