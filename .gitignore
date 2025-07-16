@@ -1,0 +1,21 @@
+# Node modules
+node_modules/
+server/node_modules/
+client/node_modules/
+
+# Environment variables
+.env
+
+# Build artifacts
+client/dist/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS generated files
+.DS_Store
+.vscode/
