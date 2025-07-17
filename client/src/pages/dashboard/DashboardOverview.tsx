@@ -147,9 +147,9 @@ const DashboardOverview: React.FC = () => {
 
       // Adjusted these to include '/me/' as per backend routes
       const [coursesRes, gpaRes, deadlinesRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/student/me/courses/count`, config),
-        axios.get(`${API_BASE_URL}/student/me/gpa`, config),
-        axios.get(`${API_BASE_URL}/student/me/deadlines`, config),
+        axios.get(`${API_BASE_URL}/students/me/courses/count`, config),
+        axios.get(`${API_BASE_URL}/students/me/gpa`, config),
+        axios.get(`${API_BASE_URL}/students/me/deadlines`, config),
       ]);
 
       setStudentData({
