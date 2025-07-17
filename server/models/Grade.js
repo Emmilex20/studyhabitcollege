@@ -56,11 +56,11 @@ const gradeSchema = mongoose.Schema({
         type: String,
         required: true,
     },
-    dateGraded: { // Renamed from dateRecorded, reflecting the date the grade was given
+    dateGraded: { 
         type: Date,
         default: Date.now,
     },
-    // REMOVED: dateRecorded - it was a duplicate of dateGraded
+    
     remarks: {
         type: String,
         trim: true,

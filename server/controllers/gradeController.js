@@ -59,7 +59,7 @@ const getGrades = async (req, res) => {
             })
             .populate('course', 'name code')
             .populate('teacher', 'firstName lastName email')
-            .sort({ dateRecorded: -1 }); // Sort by most recent grades
+            .sort({ dateGraded: -1 }); // Sort by most recent grades
         res.status(200).json(grades);
     } catch (error) {
         console.error(error);
@@ -266,7 +266,7 @@ const getMyGrades = async (req, res) => {
 
     const grades = await Grade.find({ student: student._id })
       .populate('course', 'name code')
-      .sort({ dateRecorded: -1 });
+      .sort({ dateGraded: -1 });
 
     const formattedGrades = grades.map((grade) => ({
       _id: grade._id,
