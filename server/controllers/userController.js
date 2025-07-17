@@ -3,6 +3,8 @@
 import User from '../models/User.js';
 import asyncHandler from 'express-async-handler';
 import bcrypt from 'bcryptjs';
+import Course from '../models/Course.js';
+import Student from '../models/Student.js';
 
 // @desc    Get all users
 // @route   GET /api/users
