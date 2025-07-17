@@ -522,7 +522,7 @@ const DashboardOverview: React.FC = () => {
               <div className="flex items-center mb-4">
                 <img
                   // 💡 MODIFIED LINE HERE
-                  src={child.avatarUrl || `https://via.placeholder.com/60/9CA3AF/FFFFFF?text=${(child.firstName?.[0] || '') + (child.lastName?.[0] || '')}`}
+                  src={child.avatarUrl || `https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRISxBTQ88B9PvlreCwRY0_wqZK7y4XoG4zIQ&s${(child.firstName?.[0] || '') + (child.lastName?.[0] || '')}`}
                   alt={`${child.firstName || ''} ${child.lastName || ''} Avatar`} // Also defensive for alt text
                   className="w-16 h-16 rounded-full object-cover mr-4"
                 />
