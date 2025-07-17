@@ -59,6 +59,7 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/parents', parentRoutes);
+console.log('Parent routes initialized.');
 app.use('/api/gallery', galleryRoutes);
 app.use('/api/enrollments', enrollmentRoutes); // ⬅️ NEW: Mount enrollment routes
 
