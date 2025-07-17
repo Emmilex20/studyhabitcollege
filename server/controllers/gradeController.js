@@ -276,7 +276,7 @@ const getMyGrades = async (req, res) => {
       score: grade.score,
       maxScore: 100, // or replace if using a custom max
       percentage: `${((grade.score / 100) * 100).toFixed(2)}%`,
-      dateGraded: grade.dateRecorded,
+      dateGraded: grade.dateGraded.toISOString(),
       feedback: grade.remarks || '',
     }));
 
