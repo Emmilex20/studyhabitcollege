@@ -3,11 +3,12 @@ import express from 'express';
 import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
 import {
     getUserProfile,
-    updateUserProfile, // <--- Import the new function for user's own profile update
-    changePassword,    // <--- Import the new function for user's own password change
+    updateUserProfile,
+    changePassword,
     getAllUsers,
     updateUser,
-    deleteUser
+    deleteUser,
+    getUserCount // <--- Make sure you import getUserCount here
 } from '../controllers/userController.js';
 
 const router = express.Router();
@@ -21,18 +22,23 @@ const router = express.Router();
 // @access  Private
 router.route('/profile')
     .get(protect, getUserProfile)
-    .put(protect, updateUserProfile); // <--- Add PUT for user's own profile update
+    .put(protect, updateUserProfile);
 
 // @desc    Change user's password
 // @route   PUT /api/users/change-password
 // @access  Private
-router.put('/change-password', protect, changePassword); // <--- Add route for password change
+router.put('/change-password', protect, changePassword);
 
 // Admin-only routes
 // @desc    Get all users
 // @route   GET /api/users
 // @access  Private/Admin
 router.get('/', protect, authorizeRoles('admin'), getAllUsers);
+
+// @desc    Get total user count
+// @route   GET /api/users/count
+// @access  Private/Admin
+router.route('/count').get(protect, authorizeRoles('admin'), getUserCount); // <-- Corrected line
 
 // @desc    Update user by ID (Admin only)
 // @route   PUT /api/users/:id

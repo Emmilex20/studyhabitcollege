@@ -201,6 +201,16 @@ const deleteUser = asyncHandler(async (req, res) => {
     }
 });
 
+const getUserCount = async (req, res) => {
+  try {
+    const count = await User.countDocuments(); // Counts all documents in the User collection
+    res.status(200).json({ count });
+  } catch (error) {
+    console.error(`Error fetching user count: ${error.message}`);
+    res.status(500).json({ message: 'Server Error: Could not retrieve user count.' });
+  }
+};
+
 
 export {
     getAllUsers,
@@ -209,4 +219,5 @@ export {
     changePassword,
     updateUser,
     deleteUser,
+    getUserCount,
 };
