@@ -241,7 +241,7 @@ const DashboardOverview: React.FC = () => {
 
       const [childrenRes, announcementsRes] = await Promise.all([
         axios.get(`${API_BASE_URL}/parents/me/children`, config),
-        axios.get(`${API_BASE_URL}/parents/me/announcements`, config),
+        axios.get(`${API_BASE_URL}/announcements`, config),
       ]);
 
       setParentData({
