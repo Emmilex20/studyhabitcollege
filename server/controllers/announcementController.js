@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // server/controllers/announcementController.js
 import Announcement from '../models/Announcement.js';
-import User from '../models/User.js';
+import User from '../models/User.js'; // Assuming User model is needed for context but not directly used in the provided snippets.
 
 // @desc    Get all announcements
 // @route   GET /api/announcements
@@ -17,7 +18,7 @@ const getAnnouncements = async (req, res) => {
 
         // Future enhancement: Filter announcements by targetAudience based on user role
         // if (req.user.role === 'student') {
-        //     query.targetAudience = { $in: ['all', 'students'] };
+        //    query.targetAudience = { $in: ['all', 'students'] };
         // }
 
         const announcements = await Announcement.find(query)
@@ -65,7 +66,8 @@ const createAnnouncement = async (req, res) => {
             title,
             content,
             author: req.user._id, // The logged-in user is the author
-            targetAudience: targetAudience || ['all'],
+            // Ensure targetAudience defaults to ['all'] if explicitly empty or not provided
+            targetAudience: targetAudience && targetAudience.length > 0 ? targetAudience : ['all'],
             expiryDate: expiryDate || null,
         });
 
@@ -93,7 +95,13 @@ const updateAnnouncement = async (req, res) => {
 
         announcement.title = title || announcement.title;
         announcement.content = content || announcement.content;
-        announcement.targetAudience = targetAudience !== undefined ? targetAudience : announcement.targetAudience;
+
+        // Handle targetAudience update: if provided and empty, default to ['all'].
+        // If not provided in the request, keep existing value.
+        if (targetAudience !== undefined) {
+            announcement.targetAudience = targetAudience.length > 0 ? targetAudience : ['all'];
+        }
+
         announcement.expiryDate = expiryDate !== undefined ? expiryDate : announcement.expiryDate;
 
         const updatedAnnouncement = await announcement.save();
