@@ -12,7 +12,8 @@ import {
     getChildAttendance,
     getParentAnnouncements,
     getParentEvents,
-    getStudentGPA, // <-- Add this import
+    getStudentGPA,
+    getMyCoursesCount, // <--- Add this import
 } from '../controllers/studentController.js';
 import { getMyGrades } from '../controllers/gradeController.js';
 import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
@@ -21,13 +22,14 @@ import { getMyAttendance } from '../controllers/attendanceController.js';
 const router = express.Router();
 
 router.route('/')
-    .get(protect, authorizeRoles('admin', 'teacher', 'parent', 'student'), getStudents) // Admin, Teacher, Parent can view
-    .post(protect, authorizeRoles('admin'), createStudent); // Only admin can create
+    .get(protect, authorizeRoles('admin', 'teacher', 'parent', 'student'), getStudents)
+    .post(protect, authorizeRoles('admin'), createStudent);
 
 router.get('/me/courses', protect, authorizeRoles('student'), getMyCourses);
 router.get('/me/grades', protect, authorizeRoles('student'), getMyGrades);
 router.get('/me/attendance', protect, authorizeRoles('student'), getMyAttendance);
-router.get('/me/gpa', protect, authorizeRoles('student'), getStudentGPA); // <-- Add this new route
+router.get('/me/gpa', protect, authorizeRoles('student'), getStudentGPA);
+router.get('/me/courses/count', protect, authorizeRoles('student'), getMyCoursesCount); // <--- Add this new route
 
 router.route('/:id')
     .get(protect, authorizeRoles('admin', 'teacher', 'parent'))

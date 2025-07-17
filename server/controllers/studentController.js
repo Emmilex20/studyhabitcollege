@@ -419,7 +419,29 @@ const getStudentGPA = async (req, res) => {
     }
 };
 
+// @desc    Get count of courses for the logged-in student
+// @route   GET /api/student/me/courses/count
+// @access  Private/Student
+const getMyCoursesCount = async (req, res) => {
+    try {
+        // Find the student record linked to the current logged-in user
+        const student = await Student.findOne({ user: req.user._id });
 
+        if (!student) {
+            // If student profile is not found, they have 0 enrolled courses from a student perspective
+            return res.status(200).json({ count: 0, message: 'Student profile not found, so no courses linked.' });
+        }
+
+        // The 'enrolledCourses' field in the Student model should contain an array of Course ObjectIDs
+        const courseCount = student.enrolledCourses.length;
+
+        res.status(200).json({ count: courseCount });
+
+    } catch (error) {
+        console.error('Error fetching student course count:', error);
+        res.status(500).json({ message: 'Server error retrieving student course count.' });
+    }
+};
 
 export {
     getStudents,
@@ -434,4 +456,5 @@ export {
     getParentAnnouncements,
     getParentEvents,
     getStudentGPA,
+    getMyCoursesCount,
 };
