@@ -515,21 +515,22 @@ const DashboardOverview: React.FC = () => {
           </p>
 
           <h3 className="text-2xl font-bold text-blue-900 mb-4">My Children 👧👦</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            {parentData.children.length > 0 ? (
-              parentData.children.map((child) => (
-                <motion.div variants={itemVariants} key={child._id} className="bg-white p-6 rounded-lg shadow-md border border-blue-200 hover:shadow-xl transition-shadow duration-300">
-                  <div className="flex items-center mb-4">
-                    <img
-                      src={child.avatarUrl || `https://via.placeholder.com/60/9CA3AF/FFFFFF?text=${child.firstName.charAt(0)}${child.lastName.charAt(0)}`}
-                      alt={`${child.firstName} ${child.lastName} Avatar`}
-                      className="w-16 h-16 rounded-full object-cover mr-4"
-                    />
-                    <div>
-                      <h4 className="text-xl font-semibold text-blue-900">{child.firstName} {child.lastName}</h4>
-                      <p className="text-gray-600 text-sm">Student ID: {child.studentId}</p>
-                    </div>
-                  </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        {parentData.children.length > 0 ? (
+          parentData.children.map((child) => (
+            <motion.div variants={itemVariants} key={child._id} className="bg-white p-6 rounded-lg shadow-md border border-blue-200 hover:shadow-xl transition-shadow duration-300">
+              <div className="flex items-center mb-4">
+                <img
+                  // 💡 MODIFIED LINE HERE
+                  src={child.avatarUrl || `https://via.placeholder.com/60/9CA3AF/FFFFFF?text=${(child.firstName?.[0] || '') + (child.lastName?.[0] || '')}`}
+                  alt={`${child.firstName || ''} ${child.lastName || ''} Avatar`} // Also defensive for alt text
+                  className="w-16 h-16 rounded-full object-cover mr-4"
+                />
+                <div>
+                  <h4 className="text-xl font-semibold text-blue-900">{child.firstName} {child.lastName}</h4>
+                  <p className="text-gray-600 text-sm">Student ID: {child.studentId}</p>
+                </div>
+              </div>
                   <p className="text-gray-700 mb-3">
                     <span className="font-medium">Current Grade Average:</span>{' '}
                     <span className={`font-bold ${child.gradeAverage >= 80 ? 'text-green-600' : child.gradeAverage >= 70 ? 'text-yellow-600' : 'text-red-600'}`}>
