@@ -502,7 +502,7 @@ const getUpcomingDeadlines = async (req, res) => {
 // @desc    Get total count of students
 // @route   GET /api/students/count
 // @access  Private/Admin
-export const getStudentCount = async (req, res) => {
+const getStudentCount = async (req, res) => {
     try {
         const count = await Student.countDocuments({}); 
         res.status(200).json({ count });
