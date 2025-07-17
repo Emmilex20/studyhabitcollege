@@ -40,6 +40,7 @@ const DashboardPage: React.FC = () => {
           { name: 'Record Attendance', path: '/dashboard/teacher-attendance' },
           { name: 'Events', path: '/dashboard/events' },
           { name: 'Announcements', path: '/dashboard/announcements' },
+          { name: 'Settings', path: '/dashboard/settings' },
         ];
       case 'student':
         return [
@@ -48,12 +49,14 @@ const DashboardPage: React.FC = () => {
           { name: 'Attendance', path: '/dashboard/student-attendance' },
           { name: 'Announcements', path: '/dashboard/announcements' },
           { name: 'Events', path: '/dashboard/events' },
+          { name: 'Settings', path: '/dashboard/settings' },
         ];
       case 'parent':
         return [
           { name: 'My Children', path: '/dashboard/child' },
           { name: 'Announcements', path: '/dashboard/announcements' },
           { name: 'Events', path: '/dashboard/events' },
+          { name: 'Settings', path: '/dashboard/settings' },
         ];
 
       default:
