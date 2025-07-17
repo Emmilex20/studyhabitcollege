@@ -87,13 +87,13 @@ const updateUserProfile = asyncHandler(async (req, res) => {
 const changePassword = asyncHandler(async (req, res) => {
     const { currentPassword, newPassword } = req.body;
 
-    // Optional: Add more robust logging for debugging in development environments
-    // console.log('--- Change Password Request ---');
-    // console.log('Received currentPassword (masked): ****');
-    // console.log('Received newPassword (masked): ****');
-    // console.log('req.user (from token):', req.user); // Useful to check if req.user is populated
+    console.log('--- Change Password Request Initiated ---');
+    console.log(`[userController] Received currentPassword (masked): ${currentPassword ? '****' : 'empty'}`);
+    console.log(`[userController] Received newPassword (masked): ${newPassword ? '****' : 'empty'}`);
+    console.log('[userController] req.user from token:', req.user ? `ID: ${req.user._id}, Role: ${req.user.role}` : 'undefined');
 
-    if (!req.user || !req.user._id) { // Added explicit check for req.user._id
+    if (!req.user || !req.user._id) {
+        console.error('[userController] Error: Not authorized, no user ID found in token.');
         res.status(401);
         throw new Error('Not authorized, no user ID found in token.');
     }
@@ -101,27 +101,33 @@ const changePassword = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id);
 
     if (!user) {
-        // console.log('Error: User not found for ID:', req.user._id);
+        console.error(`[userController] Error: User not found for ID: ${req.user._id}`);
         res.status(404);
         throw new Error('User not found');
     }
-    // console.log('User found in DB:', user.email);
+    console.log(`[userController] User found in DB: ${user.email}`);
 
     // Check current password using a method on your User model (e.g., user.matchPassword)
+    console.log('[userController] Calling user.matchPassword to verify current password...');
     const isMatch = await user.matchPassword(currentPassword);
-    // console.log('Current password match result (isMatch):', isMatch); // Log result of match
+    console.log(`[userController] Current password match result (isMatch): ${isMatch}`);
 
     if (!isMatch) {
+        console.warn(`[userController] Invalid current password provided for user: ${user.email}`);
         res.status(401); // Unauthorized
         throw new Error('Invalid current password'); // This is the error message sent to frontend
     }
 
     // Hash new password and update
+    console.log('[userController] Hashing new password...');
     const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(newPassword, salt);
+    const hashedNewPassword = await bcrypt.hash(newPassword, salt);
+    user.password = hashedNewPassword; // Assign the new hashed password
+    console.log(`[userController] New password hashed. Starting user.save()...`);
+    
+    // The pre('save') hook in User.js should NOT re-hash here because `this.isModified('password')` will be true
     await user.save();
-
-    // console.log('Password updated successfully for user:', user.email);
+    console.log(`[userController] Password updated successfully for user: ${user.email}`);
     res.status(200).json({ message: 'Password updated successfully' });
 });
 
@@ -133,7 +139,6 @@ const updateUser = asyncHandler(async (req, res) => {
     // This is for ADMIN updating ANY user's profile
     const { firstName, lastName, email, role } = req.body;
 
-    // No try-catch needed here because of asyncHandler, it catches sync and async errors
     const user = await User.findById(req.params.id);
 
     if (user) {
@@ -170,7 +175,7 @@ const updateUser = asyncHandler(async (req, res) => {
         });
     } else {
         res.status(404);
-        throw new Error('User not found'); // Corrected typo here
+        throw new Error('User not found');
     }
 });
 
