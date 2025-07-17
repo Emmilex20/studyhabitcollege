@@ -1,17 +1,18 @@
 // server/routes/studentRoutes.js
 import express from 'express';
 import {
-  getStudents,
-  getStudentById,
-  createStudent,
-  updateStudent,
-  deleteStudent,
-  getMyCourses,
-  getMyChildren,
-  getChildGrades,
-  getChildAttendance,
-  getParentAnnouncements, 
-  getParentEvents,  
+    getStudents,
+    getStudentById,
+    createStudent,
+    updateStudent,
+    deleteStudent,
+    getMyCourses,
+    getMyChildren,
+    getChildGrades,
+    getChildAttendance,
+    getParentAnnouncements,
+    getParentEvents,
+    getStudentGPA, // <-- Add this import
 } from '../controllers/studentController.js';
 import { getMyGrades } from '../controllers/gradeController.js';
 import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
@@ -20,18 +21,20 @@ import { getMyAttendance } from '../controllers/attendanceController.js';
 const router = express.Router();
 
 router.route('/')
-   .get(protect, authorizeRoles('admin', 'teacher', 'parent', 'student'), getStudents) // Admin, Teacher, Parent can view
-  .post(protect, authorizeRoles('admin'), createStudent); // Only admin can create
-  router.get('/me/courses', protect, authorizeRoles('student'), getMyCourses);
-  router.get('/me/grades', protect, authorizeRoles('student'), getMyGrades);
-  router.get('/me/attendance', protect, authorizeRoles('student'), getMyAttendance);
+    .get(protect, authorizeRoles('admin', 'teacher', 'parent', 'student'), getStudents) // Admin, Teacher, Parent can view
+    .post(protect, authorizeRoles('admin'), createStudent); // Only admin can create
+
+router.get('/me/courses', protect, authorizeRoles('student'), getMyCourses);
+router.get('/me/grades', protect, authorizeRoles('student'), getMyGrades);
+router.get('/me/attendance', protect, authorizeRoles('student'), getMyAttendance);
+router.get('/me/gpa', protect, authorizeRoles('student'), getStudentGPA); // <-- Add this new route
 
 router.route('/:id')
-  .get(protect, authorizeRoles('admin', 'teacher', 'parent'))
-  .put(protect, authorizeRoles('admin'), updateStudent) 
-  .delete(protect, authorizeRoles('admin'), deleteStudent);
+    .get(protect, authorizeRoles('admin', 'teacher', 'parent'))
+    .put(protect, authorizeRoles('admin'), updateStudent)
+    .delete(protect, authorizeRoles('admin'), deleteStudent);
 
-  // Get parent's linked children
+// Get parent's linked children
 router.get('/parent/me/children', protect, authorizeRoles('parent'), getMyChildren);
 
 // Get grades for a specific child

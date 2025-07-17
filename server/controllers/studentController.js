@@ -365,6 +365,61 @@ const getParentEvents = async (req, res) => {
     }
 };
 
+// @desc    Get overall GPA for the logged-in student
+// @route   GET /api/student/me/gpa
+// @access  Private/Student
+const getStudentGPA = async (req, res) => {
+    try {
+        // Find the student record linked to the current logged-in user
+        const student = await Student.findOne({ user: req.user._id });
+
+        if (!student) {
+            return res.status(404).json({ message: 'Student profile not found.' });
+        }
+
+        // Fetch all grades for this student
+        const grades = await Grade.find({ student: student._id }).populate('course', 'credits');
+
+        if (grades.length === 0) {
+            return res.json({ gpa: 0.0, message: 'No grades recorded yet.' });
+        }
+
+        let totalGradePoints = 0;
+        let totalCredits = 0;
+
+        for (const gradeEntry of grades) {
+            if (gradeEntry.score !== undefined && gradeEntry.course && gradeEntry.course.credits !== undefined) {
+                let gradePoints = 0;
+                // Define your GPA scale here. This is a common 4.0 scale example.
+                if (gradeEntry.score >= 90) { // A
+                    gradePoints = 4.0;
+                } else if (gradeEntry.score >= 80) { // B
+                    gradePoints = 3.0;
+                } else if (gradeEntry.score >= 70) { // C
+                    gradePoints = 2.0;
+                } else if (gradeEntry.score >= 60) { // D
+                    gradePoints = 1.0;
+                } else { // F
+                    gradePoints = 0.0;
+                }
+
+                const credits = gradeEntry.course.credits;
+                totalGradePoints += (gradePoints * credits);
+                totalCredits += credits;
+            }
+        }
+
+        const overallGPA = totalCredits > 0 ? (totalGradePoints / totalCredits) : 0.0;
+
+        res.status(200).json({ gpa: parseFloat(overallGPA.toFixed(2)) }); // Return GPA rounded to 2 decimal places
+
+    } catch (error) {
+        console.error('Error fetching student GPA:', error);
+        res.status(500).json({ message: 'Server error retrieving student GPA.' });
+    }
+};
+
+
 
 export {
     getStudents,
@@ -378,4 +433,5 @@ export {
     getChildAttendance,
     getParentAnnouncements,
     getParentEvents,
+    getStudentGPA,
 };

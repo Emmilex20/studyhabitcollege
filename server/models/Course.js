@@ -20,19 +20,26 @@ const courseSchema = mongoose.Schema(
     teacher: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: false,
+      required: false, // Make required:true if a course must always have an assigned teacher
     },
     yearLevel: {
       type: String,
       required: true,
+      enum: ['Freshman', 'Sophomore', 'Junior', 'Senior', 'Graduate'], // Added enum for better data validation
     },
     academicYear: {
       type: String,
-      required: false, // make required if needed
+      required: false, // Set to true if an academic year is always mandatory
     },
     term: {
       type: String,
-      required: false, // make required if needed
+      required: false, // Set to true if a term is always mandatory
+    },
+    credits: { // ✨ ADDED THIS FIELD FOR GPA CALCULATION
+      type: Number,
+      required: true, // Credits are typically required for GPA calculation
+      min: 0, // Credits should not be negative
+      default: 3, // Common default, adjust as needed for your institution
     },
     students: [
       {
@@ -45,7 +52,6 @@ const courseSchema = mongoose.Schema(
     timestamps: true,
   }
 );
-
 
 const Course = mongoose.model('Course', courseSchema);
 
