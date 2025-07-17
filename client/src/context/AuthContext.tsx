@@ -6,8 +6,8 @@ import React, {
   useState,
   useEffect,
   useCallback,
-  type Dispatch, // <--- Import Dispatch
-  type SetStateAction, // <--- Import SetStateAction
+  type Dispatch,
+  type SetStateAction,
 } from 'react';
 import axios from 'axios';
 
@@ -17,16 +17,16 @@ interface UserInfo {
   firstName: string;
   lastName: string;
   role: string;
-  token: string;
+  token: string; // Ensure token is part of UserInfo
 }
 
 interface AuthContextType {
   userInfo: UserInfo | null;
+  userToken: string | null; // <-- ADD THIS LINE to expose userToken
   login: (userData: UserInfo) => void;
   logout: () => void;
   fetchUserProfile: () => Promise<void>;
-  // Add setUserInfo here, specifying its type
-  setUserInfo: Dispatch<SetStateAction<UserInfo | null>>; // <--- ADD THIS LINE
+  setUserInfo: Dispatch<SetStateAction<UserInfo | null>>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,6 +43,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       return null;
     }
   });
+
+  // Derive userToken from userInfo
+  const userToken = userInfo?.token || null; // <-- ADD THIS LINE
 
   const fetchUserProfile = useCallback(async () => {
     const stored = localStorage.getItem('userInfo');
@@ -90,7 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   return (
     <AuthContext.Provider
-      value={{ userInfo, login, logout, fetchUserProfile, setUserInfo }} // <--- Make sure setUserInfo is in the value prop
+      value={{ userInfo, userToken, login, logout, fetchUserProfile, setUserInfo }} // <-- Include userToken here
     >
       {children}
     </AuthContext.Provider>
