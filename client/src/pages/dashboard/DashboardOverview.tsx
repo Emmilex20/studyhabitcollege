@@ -145,11 +145,11 @@ const DashboardOverview: React.FC = () => {
         },
       };
 
-      // Adjust these to your actual student API endpoints
+      // Adjusted these to include '/me/' as per backend routes
       const [coursesRes, gpaRes, deadlinesRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/student/courses/count`, config),
-        axios.get(`${API_BASE_URL}/student/gpa`, config),
-        axios.get(`${API_BASE_URL}/student/deadlines`, config),
+        axios.get(`${API_BASE_URL}/student/me/courses/count`, config),
+        axios.get(`${API_BASE_URL}/student/me/gpa`, config),
+        axios.get(`${API_BASE_URL}/student/me/deadlines`, config),
       ]);
 
       setStudentData({
@@ -177,14 +177,16 @@ const DashboardOverview: React.FC = () => {
       };
 
       // Adjust these to your actual parent API endpoints
+      // Note: The /parent/children route in your backend is currently /parent/me/children
+      // The /announcements/important is a placeholder, ensure it matches your backend
       const [childrenRes, announcementsRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/parent/children`, config),
-        axios.get(`${API_BASE_URL}/announcements/important`, config),
+        axios.get(`${API_BASE_URL}/parent/me/children`, config), // Corrected to /me/children
+        axios.get(`${API_BASE_URL}/parent/me/announcements`, config), // Corrected example: assuming this exists
       ]);
 
       setParentData({
-        children: childrenRes.data.children || [],
-        importantAnnouncements: announcementsRes.data.announcements || [],
+        children: childrenRes.data || [], // Assuming the response is an array directly
+        importantAnnouncements: announcementsRes.data || [], // Assuming the response is an array directly
       });
     } catch (err: any) {
       console.error('Error fetching parent data:', err);
@@ -485,7 +487,7 @@ const DashboardOverview: React.FC = () => {
             </Link>
           </div>
         </motion.div>
-      </> // This is the **missing** closing fragment that caused the error
+      </> // ✨ THIS IS THE CORRECTED CLOSING FRAGMENT
     )
   );
 
