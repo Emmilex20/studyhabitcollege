@@ -6,9 +6,9 @@ import { useAuth } from '../../context/AuthContext';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import AddUserModal from '../../components/modals/AddUserModal';
-import CourseFormModal from '../../components/modals/CourseFormModal'; // ⬅️ IMPORTED CourseFormModal
+import CourseFormModal from '../../components/modals/CourseFormModal';
 
-// Define interfaces for your fetched data structures (rest of your interfaces remain the same)
+// Define interfaces for your fetched data structures
 interface AdminDashboardData {
   totalUsers: number;
   activeCourses: number;
@@ -41,7 +41,6 @@ interface ParentDashboardData {
   importantAnnouncements: { title: string; content: string }[];
 }
 
-// ⬅️ ADDED Course interface for type safety when setting selectedCourse
 interface Course {
   _id: string;
   name: string;
@@ -55,7 +54,6 @@ interface Course {
   };
   createdAt: string;
 }
-
 
 const DashboardOverview: React.FC = () => {
   const { userInfo, userToken } = useAuth();
@@ -73,11 +71,11 @@ const DashboardOverview: React.FC = () => {
   const [addUserError, setAddUserError] = useState<string | null>(null);
   const [isAddingUser, setIsAddingUser] = useState(false);
 
-  // ⬅️ NEW STATE FOR COURSE MODAL
+  // State for CourseFormModal
   const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null); // To set to null for 'create' mode
 
-  // Variants for section animations (unchanged)
+  // Variants for section animations
   const sectionVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
@@ -87,7 +85,7 @@ const DashboardOverview: React.FC = () => {
     },
   };
 
-  // Variants for individual cards/items (unchanged)
+  // Variants for individual cards/items
   const itemVariants = {
     hidden: { opacity: 0, scale: 0.9 },
     visible: {
@@ -99,7 +97,7 @@ const DashboardOverview: React.FC = () => {
 
   const API_BASE_URL = 'https://studyhabitcollege.onrender.com/api';
 
-  // Function to fetch admin data (updated to use /users/count)
+  // Function to fetch admin data
   const fetchAdminData = useCallback(async () => {
     try {
       setLoading(true);
@@ -111,13 +109,13 @@ const DashboardOverview: React.FC = () => {
       };
 
       const [usersRes, coursesRes, studentsRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/users/count`, config), // Assuming you have a /users/count endpoint
+        axios.get(`${API_BASE_URL}/users/count`, config),
         axios.get(`${API_BASE_URL}/courses/count`, config),
         axios.get(`${API_BASE_URL}/students/count`, config),
       ]);
 
       setAdminData({
-        totalUsers: usersRes.data.count || 0, // Expecting { count: N }
+        totalUsers: usersRes.data.count || 0,
         activeCourses: coursesRes.data.count || 0,
         enrolledStudents: studentsRes.data.count || 0,
       });
@@ -128,7 +126,6 @@ const DashboardOverview: React.FC = () => {
       setLoading(false);
     }
   }, [userToken]);
-
 
   // Function to add a new user (for the modal)
   const handleAddNewUser = async (userData: { firstName: string; lastName: string; email: string; password?: string; role: string }) => {
@@ -147,9 +144,8 @@ const DashboardOverview: React.FC = () => {
           'Content-Type': 'application/json',
         },
       };
-      await axios.post(`${API_BASE_URL}/users/register`, userData, config); // Assuming this is your registration endpoint
-      // Re-fetch admin data to update the total users count
-      await fetchAdminData();
+      await axios.post(`${API_BASE_URL}/users/register`, userData, config);
+      await fetchAdminData(); // Re-fetch admin data to update the total users count
       setIsAddUserModalOpen(false); // Close modal on success
       alert('User added successfully!'); // Or use a toast notification
     } catch (err: any) {
@@ -161,14 +157,13 @@ const DashboardOverview: React.FC = () => {
     }
   };
 
-  // ⬅️ NEW HANDLER FOR COURSE MODAL SAVE
+  // Handler for course modal save
   const handleSaveCourse = useCallback(async () => {
     await fetchAdminData(); // Refresh admin data to update course count
     setIsCourseModalOpen(false); // Close the modal
   }, [fetchAdminData]);
 
-
-  // Function to fetch teacher data (unchanged)
+  // Function to fetch teacher data
   const fetchTeacherData = useCallback(async () => {
     try {
       setLoading(true);
@@ -180,8 +175,8 @@ const DashboardOverview: React.FC = () => {
       };
 
       const [coursesRes, studentsRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/users/teacher/students/count`, config),
-        axios.get(`${API_BASE_URL}/users/teacher/students/count`, config),
+        axios.get(`${API_BASE_URL}/users/teacher/students/count`, config), // Assuming this counts teacher's active courses
+        axios.get(`${API_BASE_URL}/users/teacher/students/count`, config), // Assuming this counts students taught by the teacher
       ]);
 
       setTeacherData({
@@ -196,7 +191,7 @@ const DashboardOverview: React.FC = () => {
     }
   }, [userToken]);
 
-  // Function to fetch student data (unchanged)
+  // Function to fetch student data
   const fetchStudentData = useCallback(async () => {
     try {
       setLoading(true);
@@ -226,7 +221,7 @@ const DashboardOverview: React.FC = () => {
     }
   }, [userToken]);
 
-  // Function to fetch parent data (unchanged)
+  // Function to fetch parent data
   const fetchParentData = useCallback(async () => {
     try {
       setLoading(true);
@@ -237,7 +232,7 @@ const DashboardOverview: React.FC = () => {
         },
       };
 
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate loading time
 
       const [childrenRes, announcementsRes] = await Promise.all([
         axios.get(`${API_BASE_URL}/parents/me/children`, config),
@@ -258,6 +253,7 @@ const DashboardOverview: React.FC = () => {
 
   useEffect(() => {
     if (userInfo && userToken) {
+      // Clear previous data before fetching new role-specific data
       setAdminData(null);
       setTeacherData(null);
       setStudentData(null);
@@ -353,7 +349,6 @@ const DashboardOverview: React.FC = () => {
           <h3 className="text-2xl font-bold text-blue-900 mb-4">Quick Actions ⚡</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <motion.div variants={itemVariants} className="bg-gray-50 p-4 rounded-lg shadow hover:shadow-lg transition-shadow duration-300 flex items-center justify-center h-24">
-              {/* Changed Link to a button that opens the modal */}
               <button
                 onClick={() => setIsAddUserModalOpen(true)}
                 className="text-blue-700 font-semibold text-center"
@@ -362,7 +357,6 @@ const DashboardOverview: React.FC = () => {
               </button>
             </motion.div>
             <motion.div variants={itemVariants} className="bg-gray-50 p-4 rounded-lg shadow hover:shadow-lg transition-shadow duration-300 flex items-center justify-center h-24">
-              {/* ⬅️ CHANGED THIS LINK TO A BUTTON TO OPEN CourseFormModal */}
               <button
                 onClick={() => {
                   setSelectedCourse(null); // Ensure it's in create mode
@@ -395,7 +389,7 @@ const DashboardOverview: React.FC = () => {
           isLoading={isAddingUser}
         />
 
-        {/* ⬅️ ADDED THE COURSE FORM MODAL HERE */}
+        {/* ADDED THE COURSE FORM MODAL HERE */}
         <CourseFormModal
           isOpen={isCourseModalOpen}
           onClose={() => setIsCourseModalOpen(false)}
@@ -515,40 +509,62 @@ const DashboardOverview: React.FC = () => {
           </p>
 
           <h3 className="text-2xl font-bold text-blue-900 mb-4">My Children 👧👦</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        {parentData.children.length > 0 ? (
-          parentData.children.map((child) => (
-            <motion.div variants={itemVariants} key={child._id} className="bg-white p-6 rounded-lg shadow-md border border-blue-200 hover:shadow-xl transition-shadow duration-300">
-              <div className="flex items-center mb-4">
-                <img
-                  // 💡 MODIFIED LINE HERE
-                  src={child.avatarUrl || `https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRISxBTQ88B9PvlreCwRY0_wqZK7y4XoG4zIQ&s${(child.firstName?.[0] || '') + (child.lastName?.[0] || '')}`}
-                  alt={`${child.firstName || ''} ${child.lastName || ''} Avatar`} // Also defensive for alt text
-                  className="w-16 h-16 rounded-full object-cover mr-4"
-                />
-                <div>
-                  <h4 className="text-xl font-semibold text-blue-900">{child.firstName} {child.lastName}</h4>
-                  <p className="text-gray-600 text-sm">Student ID: {child.studentId}</p>
-                </div>
-              </div>
-                  <p className="text-gray-700 mb-3">
-                    <span className="font-medium">Current Grade Average:</span>{' '}
-                    <span className={`font-bold ${child.gradeAverage >= 80 ? 'text-green-600' : child.gradeAverage >= 70 ? 'text-yellow-600' : 'text-red-600'}`}>
-                      {child.gradeAverage}% ({child.gradeAverage >= 90 ? 'A+' : child.gradeAverage >= 80 ? 'A-' : child.gradeAverage >= 70 ? 'C+' : 'F'})
-                    </span>
-                  </p>
-                  <p className="text-gray-700 mb-4">
-                    <span className="font-medium">Attendance:</span>{' '}
-                    <span className="font-bold text-blue-600">{child.attendancePercentage}%</span>
-                  </p>
-                  <Link to={`/dashboard/child/${child.studentId}/grades`} className="text-blue-600 hover:underline text-sm mr-4">
-                    View Grades <i className="fas fa-external-link-alt ml-1"></i>
-                  </Link>
-                  <Link to={`/dashboard/child/${child.studentId}/attendance`} className="text-blue-600 hover:underline text-sm">
-                    View Attendance <i className="fas fa-external-link-alt ml-1"></i>
-                  </Link>
-                </motion.div>
-              ))
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            {parentData.children.length > 0 ? (
+              parentData.children.map((child) => {
+                // Safely get initials for avatar
+                const firstInitial = child.firstName?.[0] || '';
+                const lastInitial = child.lastName?.[0] || '';
+                const initials = firstInitial + lastInitial;
+
+                // Safely get grade average and attendance percentage, ensuring they are numbers
+                const displayGradeAverage = typeof child.gradeAverage === 'number' ? child.gradeAverage : null;
+                const displayAttendancePercentage = typeof child.attendancePercentage === 'number' ? child.attendancePercentage : null;
+
+                // Determine grade letter
+                const getGradeLetter = (average: number | null) => {
+                  if (average === null) return 'N/A'; // If grade is null, display N/A
+                  if (average >= 90) return 'A+';
+                  if (average >= 80) return 'A-';
+                  if (average >= 70) return 'C+';
+                  return 'F';
+                };
+
+                return (
+                  <motion.div variants={itemVariants} key={child._id} className="bg-white p-6 rounded-lg shadow-md border border-blue-200 hover:shadow-xl transition-shadow duration-300">
+                    <div className="flex items-center mb-4">
+                      <img
+                        // Using via.placeholder.com for reliable text-based avatars
+                        src={child.avatarUrl || `https://via.placeholder.com/60/9CA3AF/FFFFFF?text=${initials}`}
+                        alt={`${child.firstName || 'Unknown'} ${child.lastName || ''} Avatar`} // Defensive for alt text
+                        className="w-16 h-16 rounded-full object-cover mr-4"
+                      />
+                      <div>
+                        <h4 className="text-xl font-semibold text-blue-900">{child.firstName || 'Unknown'} {child.lastName || ''}</h4>
+                        <p className="text-gray-600 text-sm">Student ID: {child.studentId || 'N/A'}</p>
+                      </div>
+                    </div>
+                    <p className="text-gray-700 mb-3">
+                      <span className="font-medium">Current Grade Average:</span>{' '}
+                      <span className={`font-bold ${displayGradeAverage !== null && displayGradeAverage >= 80 ? 'text-green-600' : displayGradeAverage !== null && displayGradeAverage >= 70 ? 'text-yellow-600' : 'text-red-600'}`}>
+                        {displayGradeAverage !== null ? `${displayGradeAverage}%` : 'N/A'} ({getGradeLetter(displayGradeAverage)})
+                      </span>
+                    </p>
+                    <p className="text-gray-700 mb-4">
+                      <span className="font-medium">Attendance:</span>{' '}
+                      <span className="font-bold text-blue-600">
+                        {displayAttendancePercentage !== null ? `${displayAttendancePercentage}%` : 'N/A'}
+                      </span>
+                    </p>
+                    <Link to={`/dashboard/child/${child.studentId}/grades`} className="text-blue-600 hover:underline text-sm mr-4">
+                      View Grades <i className="fas fa-external-link-alt ml-1"></i>
+                    </Link>
+                    <Link to={`/dashboard/child/${child.studentId}/attendance`} className="text-blue-600 hover:underline text-sm">
+                      View Attendance <i className="fas fa-external-link-alt ml-1"></i>
+                    </Link>
+                  </motion.div>
+                );
+              })
             ) : (
               <p className="text-gray-600 col-span-full">No children linked to this account. 😟</p>
             )}
