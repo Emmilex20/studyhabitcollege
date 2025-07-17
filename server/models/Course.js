@@ -25,21 +25,22 @@ const courseSchema = mongoose.Schema(
     yearLevel: {
       type: String,
       required: true,
-      enum: ['Freshman', 'Sophomore', 'Junior', 'Senior', 'Graduate'], // Added enum for better data validation
+      // ✨ TEMPORARY FIX: Add your existing school year levels here
+      enum: ['Freshman', 'Sophomore', 'Junior', 'Senior', 'Graduate', 'JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3', 'SSS1', 'SSS2', 'SSS3', 'Year 7'],
     },
     academicYear: {
       type: String,
-      required: false, // Set to true if an academic year is always mandatory
+      required: false,
     },
     term: {
       type: String,
-      required: false, // Set to true if a term is always mandatory
+      required: false,
     },
-    credits: { // ✨ ADDED THIS FIELD FOR GPA CALCULATION
+    credits: {
       type: Number,
-      required: true, // Credits are typically required for GPA calculation
-      min: 0, // Credits should not be negative
-      default: 3, // Common default, adjust as needed for your institution
+      required: true,
+      min: 0,
+      default: 3,
     },
     students: [
       {
