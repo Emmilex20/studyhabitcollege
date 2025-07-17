@@ -180,7 +180,7 @@ const DashboardOverview: React.FC = () => {
       };
 
       const [coursesRes, studentsRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/teacher/courses/count`, config),
+        axios.get(`${API_BASE_URL}/users/teacher/students/count`, config),
         axios.get(`${API_BASE_URL}/teacher/students/count`, config),
       ]);
 
