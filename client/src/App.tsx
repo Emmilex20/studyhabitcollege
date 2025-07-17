@@ -33,7 +33,7 @@ import AdminAttendancePage from './pages/dashboard/AdminAttendancePage';
 import AdminEventsPage from './pages/dashboard/AdminEventsPage';
 import AdminAnnouncementsPage from './pages/dashboard/AdminAnnouncementsPage';
 import GalleryManagement from './pages/dashboard/GalleryManagement';
-import SettingsPage from './pages/dashboard/SettingsPage'; // <--- Import SettingsPage here
+import SettingsPage from './pages/dashboard/SettingsPage'; // Import SettingsPage here
 
 // === TEACHER DASHBOARD PAGES ===
 import TeacherCoursesPage from './pages/dashboard/TeacherCoursesPage';
@@ -77,6 +77,11 @@ function App() {
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-of-service" element={<TermsOfService />} />
               <Route path="/gallery" element={<Gallery />} />
+
+              {/* ⭐ Settings Page (now Publicly Accessible) ⭐ */}
+              {/* Note: This is now a top-level route, not nested under /dashboard */}
+              <Route path="/settings" element={<SettingsPage />} />
+
 
               {/* Protected Dashboard Layout */}
               <Route
@@ -127,11 +132,6 @@ function App() {
                 <Route
                   path="gallery"
                   element={<ProtectedRoute allowedRoles={['admin']}><GalleryManagement /></ProtectedRoute>}
-                />
-                {/* ⭐ Settings Page (Admin only) ⭐ */}
-                <Route
-                  path="settings" // <--- Add this route path
-                  element={<ProtectedRoute allowedRoles={['admin']}><SettingsPage /></ProtectedRoute>} // <--- Render SettingsPage here
                 />
 
 
