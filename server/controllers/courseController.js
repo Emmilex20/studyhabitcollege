@@ -175,10 +175,26 @@ const deleteCourse = async (req, res) => {
   }
 };
 
+// @desc    Get total count of courses
+// @route   GET /api/courses/count
+// @access  Private/Admin
+const getCourseCount = async (req, res) => {
+    try {
+        // You might want to add filtering here for 'active' courses,
+        // but for a simple total count, Course.countDocuments({}) is fine.
+        const count = await Course.countDocuments({}); 
+        res.status(200).json({ count });
+    } catch (error) {
+        console.error('Error fetching course count:', error);
+        res.status(500).json({ message: 'Server error fetching course count.' });
+    }
+};
+
 export {
   getCourses,
   getCourseById,
   createCourse,
   updateCourse,
   deleteCourse,
+  getCourseCount,
 };

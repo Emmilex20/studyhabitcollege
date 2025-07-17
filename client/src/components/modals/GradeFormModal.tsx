@@ -18,7 +18,7 @@ interface Grade {
     weight: number;
     term: string;
     academicYear: string;
-    dateGraded: string; // Renamed from dateRecorded
+    dateGraded: string; 
     remarks?: string;
 }
 

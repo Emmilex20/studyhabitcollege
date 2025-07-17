@@ -13,13 +13,13 @@ interface Grade {
     course: { _id: string; name: string; code: string; };
     teacher: { _id: string; firstName: string; lastName: string; };
     gradeType: string;
-    assignmentName?: string; // Add this if your backend schema includes it as optional
+    assignmentName?: string;
     score: number;
-    maxScore: number; // ✨ ADDED: maxScore property ✨
+    maxScore: number; 
     weight: number;
     term: string;
     academicYear: string;
-    dateGraded: string; // ✨ CHANGED: from dateRecorded to dateGraded ✨
+    dateGraded: string; 
     remarks?: string;
 }
 

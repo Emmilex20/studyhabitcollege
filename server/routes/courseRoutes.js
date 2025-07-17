@@ -5,6 +5,7 @@ import {
   createCourse,
   updateCourse,
   deleteCourse,
+  getCourseCount,
 } from '../controllers/courseController.js';
 import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
 
