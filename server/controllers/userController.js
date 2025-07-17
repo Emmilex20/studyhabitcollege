@@ -211,6 +211,51 @@ const getUserCount = async (req, res) => {
   }
 };
 
+const getTeacherCourseCount = async (req, res) => {
+    try {
+        // req.user is populated by your protect middleware
+        const teacherId = req.user._id;
+
+        const courseCount = await Course.countDocuments({ teacher: teacherId });
+
+        res.status(200).json({ count: courseCount });
+    } catch (error) {
+        console.error('Error fetching teacher course count:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+// @desc    Get count of students taught by the authenticated teacher
+// @route   GET /api/users/teacher/students/count
+// @access  Private (Teacher only)
+const getTeacherStudentCount = asyncHandler(async (req, res) => {
+    const teacherId = req.user._id;
+
+    // 1. Find all courses taught by this teacher
+    const coursesTaught = await Course.find({ teacher: teacherId }).select('_id'); // Only need course IDs
+
+    const uniqueStudentIds = new Set();
+
+    if (coursesTaught.length > 0) {
+        const courseIds = coursesTaught.map(course => course._id);
+
+        // Find all Student documents whose 'enrolledCourses' array contains any of the teacher's course IDs
+        // Assuming a separate Student model with an 'enrolledCourses' array
+        const students = await Student.find({
+            enrolledCourses: { $in: courseIds }
+        }).select('user'); // Select the 'user' field which points to the User model
+
+        // Collect unique User _ids associated with these students
+        students.forEach(student => {
+            if (student.user) {
+                uniqueStudentIds.add(student.user.toString());
+            }
+        });
+    }
+
+    res.status(200).json({ count: uniqueStudentIds.size });
+});
+
 
 export {
     getAllUsers,
@@ -220,4 +265,6 @@ export {
     updateUser,
     deleteUser,
     getUserCount,
+    getTeacherCourseCount,
+    getTeacherStudentCount,
 };
