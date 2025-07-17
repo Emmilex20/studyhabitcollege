@@ -37,19 +37,12 @@ app.use(cors({
     credentials: true,
 }));
 
-// Database Connection
-mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log('MongoDB connected successfully!'))
-    .catch(err => console.error('MongoDB connection error:', err));
-
-// Basic route
+// ----------------------------------------------------
+// All API Routes - Define them before starting server
+// ----------------------------------------------------
 app.get('/', (req, res) => {
     res.send('Studyhabit College API is running!');
 });
-
-// ----------------------------------------------------
-// All API Routes
-// ----------------------------------------------------
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/courses', courseRoutes);
@@ -59,9 +52,9 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/parents', parentRoutes);
-console.log('Parent routes initialized.');
+console.log('Parent routes initialized.'); // Keep this log for verification
 app.use('/api/gallery', galleryRoutes);
-app.use('/api/enrollments', enrollmentRoutes); // ⬅️ NEW: Mount enrollment routes
+app.use('/api/enrollments', enrollmentRoutes);
 
 // ----------------------------------------------------
 // 404 Not Found Handler - MUST BE LAST AMONG ROUTES
@@ -71,7 +64,13 @@ app.use((req, res) => {
     res.status(404).json({ message: `Route not found: ${req.originalUrl}` });
 });
 
-// Start the server
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+// Database Connection & Server Start - ONLY START LISTENING AFTER DB CONNECTION
+mongoose.connect(process.env.MONGO_URI)
+    .then(() => {
+        console.log('MongoDB connected successfully!');
+        // Start the server ONLY after MongoDB is connected
+        app.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
+        });
+    })
+    .catch(err => console.error('MongoDB connection error:', err));
