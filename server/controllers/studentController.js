@@ -3,6 +3,7 @@ import Student from '../models/Student.js';
 import User from '../models/User.js'; // To check if user exists and is student/parent
 import Course from '../models/Course.js'; // To check if courses exist
 import Event from '../models/Event.js';
+import Grade from '../models/Grade.js';
 
 // @desc    Get all students
 // @route   GET /api/students
