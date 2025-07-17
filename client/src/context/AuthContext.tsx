@@ -1,10 +1,13 @@
 // src/context/AuthContext.tsx
+
 import React, {
   createContext,
   useContext,
   useState,
   useEffect,
   useCallback,
+  type Dispatch, // <--- Import Dispatch
+  type SetStateAction, // <--- Import SetStateAction
 } from 'react';
 import axios from 'axios';
 
@@ -22,6 +25,8 @@ interface AuthContextType {
   login: (userData: UserInfo) => void;
   logout: () => void;
   fetchUserProfile: () => Promise<void>;
+  // Add setUserInfo here, specifying its type
+  setUserInfo: Dispatch<SetStateAction<UserInfo | null>>; // <--- ADD THIS LINE
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -69,7 +74,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
-  // Fetch profile only once when AuthProvider mounts
   useEffect(() => {
     fetchUserProfile();
   }, [fetchUserProfile]);
@@ -86,7 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   return (
     <AuthContext.Provider
-      value={{ userInfo, login, logout, fetchUserProfile }}
+      value={{ userInfo, login, logout, fetchUserProfile, setUserInfo }} // <--- Make sure setUserInfo is in the value prop
     >
       {children}
     </AuthContext.Provider>
