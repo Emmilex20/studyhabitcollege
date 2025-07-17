@@ -14,7 +14,8 @@ import {
     getParentEvents,
     getStudentGPA,
     getMyCoursesCount,
-    getUpcomingDeadlines, // <--- Add this import
+    getUpcomingDeadlines,
+    getStudentCount,
 } from '../controllers/studentController.js';
 import { getMyGrades } from '../controllers/gradeController.js';
 import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
@@ -37,6 +38,8 @@ router.route('/:id')
     .get(protect, authorizeRoles('admin', 'teacher', 'parent'))
     .put(protect, authorizeRoles('admin'), updateStudent)
     .delete(protect, authorizeRoles('admin'), deleteStudent);
+
+router.get('/count', protect, authorizeRoles('admin'), getStudentCount); 
 
 // Get parent's linked children
 router.get('/parent/me/children', protect, authorizeRoles('parent'), getMyChildren);

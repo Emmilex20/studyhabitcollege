@@ -5,18 +5,21 @@ import {
   createCourse,
   updateCourse,
   deleteCourse,
-  getCourseCount,
+  getCourseCount, // Make sure this is imported
 } from '../controllers/courseController.js';
 import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
 router.route('/')
-  .get(protect, getCourses) // ✅ protect added here
+  .get(protect, getCourses)
   .post(protect, authorizeRoles('admin'), createCourse);
 
+// ✨ CRITICAL CHANGE: Place this route BEFORE the dynamic '/:id' route
+router.get('/count', protect, authorizeRoles('admin'), getCourseCount); 
+
 router.route('/:id')
-  .get(protect, getCourseById) // optional: make public if needed
+  .get(protect, getCourseById)
   .put(protect, authorizeRoles('admin'), updateCourse)
   .delete(protect, authorizeRoles('admin'), deleteCourse);
 

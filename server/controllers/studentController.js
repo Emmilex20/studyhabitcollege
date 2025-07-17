@@ -499,6 +499,19 @@ const getUpcomingDeadlines = async (req, res) => {
     }
 };
 
+// @desc    Get total count of students
+// @route   GET /api/students/count
+// @access  Private/Admin
+export const getStudentCount = async (req, res) => {
+    try {
+        const count = await Student.countDocuments({}); 
+        res.status(200).json({ count });
+    } catch (error) {
+        console.error('Error fetching student count:', error);
+        res.status(500).json({ message: 'Server error fetching student count.' });
+    }
+};
+
 
 export {
     getStudents,
@@ -515,4 +528,5 @@ export {
     getStudentGPA,
     getMyCoursesCount,
     getUpcomingDeadlines,
+    getStudentCount,
 };
