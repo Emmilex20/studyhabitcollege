@@ -240,8 +240,8 @@ const DashboardOverview: React.FC = () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       const [childrenRes, announcementsRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/parent/me/children`, config),
-        axios.get(`${API_BASE_URL}/parent/me/announcements`, config),
+        axios.get(`${API_BASE_URL}/parents/me/children`, config),
+        axios.get(`${API_BASE_URL}/parents/me/announcements`, config),
       ]);
 
       setParentData({
