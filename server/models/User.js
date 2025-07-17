@@ -56,7 +56,9 @@ userSchema.pre('save', async function (next) {
 // Method to compare entered password with hashed password in DB
 userSchema.methods.matchPassword = async function (enteredPassword) {
     console.log(`[User Model:matchPassword] Comparing entered password with stored hash.`);
-    // console.log(`[User Model:matchPassword] Entered: ${enteredPassword} | Stored: ${this.password}`); // CAUTION: Only for debug, do not log plain passwords in production
+    // CAUTION: Only uncomment the line below for very specific debugging in development,
+    // NEVER log plain enteredPassword or stored hash in production logs!
+    // console.log(`[User Model:matchPassword] Entered: ${enteredPassword} | Stored: ${this.password}`);
     const isMatch = await bcrypt.compare(enteredPassword, this.password);
     console.log(`[User Model:matchPassword] bcrypt.compare result: ${isMatch}`);
     return isMatch;

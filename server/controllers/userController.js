@@ -118,14 +118,13 @@ const changePassword = asyncHandler(async (req, res) => {
         throw new Error('Invalid current password'); // This is the error message sent to frontend
     }
 
-    // Hash new password and update
-    console.log('[userController] Hashing new password...');
-    const salt = await bcrypt.genSalt(10);
-    const hashedNewPassword = await bcrypt.hash(newPassword, salt);
-    user.password = hashedNewPassword; // Assign the new hashed password
-    console.log(`[userController] New password hashed. Starting user.save()...`);
-    
-    // The pre('save') hook in User.js should NOT re-hash here because `this.isModified('password')` will be true
+    // ⭐ CRITICAL CHANGE HERE: Assign the plain newPassword to user.password.
+    // The pre('save') hook in User.js will then hash this plain password.
+    console.log('[userController] Assigning plain newPassword to user.password. The pre-save hook will hash it.');
+    user.password = newPassword; // Assign the plain new password here, NOT the hashed one
+
+    console.log(`[userController] Starting user.save()...`);
+    // The pre('save') hook will now correctly detect the modification and hash it once.
     await user.save();
     console.log(`[userController] Password updated successfully for user: ${user.email}`);
     res.status(200).json({ message: 'Password updated successfully' });
