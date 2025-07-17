@@ -215,28 +215,28 @@ const AdmissionsPage: React.FC = () => {
               <span className="text-4xl mr-4">🗓️</span>
               <div>
                 <h3 className="text-xl font-semibold text-blue-800 mb-1">Application Opens:</h3>
-                <p className="text-gray-700">Annually on **October 1st** for the following academic year.</p>
+                <p className="text-gray-700">Annually on <strong>October 1st</strong> for the following academic year.</p>
               </div>
             </motion.div>
             <motion.div variants={itemVariants} transition={{ delay: 0.1 }} className="flex items-start p-4 bg-purple-50 rounded-lg shadow-sm">
               <span className="text-4xl mr-4">⏰</span>
               <div>
                 <h3 className="text-xl font-semibold text-blue-800 mb-1">Early Bird Application Deadline:</h3>
-                <p className="text-gray-700">**January 31st** (Highly recommended for priority consideration).</p>
+                <p className="text-gray-700"><strong>January 31st</strong> (Highly recommended for priority consideration).</p>
               </div>
             </motion.div>
             <motion.div variants={itemVariants} transition={{ delay: 0.2 }} className="flex items-start p-4 bg-purple-50 rounded-lg shadow-sm">
               <span className="text-4xl mr-4">📅</span>
               <div>
                 <h3 className="text-xl font-semibold text-blue-800 mb-1">Main Application Deadline:</h3>
-                <p className="text-gray-700">**April 30th** (Subject to availability).</p>
+                <p className="text-gray-700"><strong>April 30th</strong> (Subject to availability).</p>
               </div>
             </motion.div>
             <motion.div variants={itemVariants} transition={{ delay: 0.3 }} className="flex items-start p-4 bg-purple-50 rounded-lg shadow-sm">
               <span className="text-4xl mr-4">📝</span>
               <div>
                 <h3 className="text-xl font-semibold text-blue-800 mb-1">Entrance Examinations:</h3>
-                <p className="text-gray-700">Conducted between **February and May** each year. Specific dates will be communicated via email.</p>
+                <p className="text-gray-700">Conducted between <strong>February and May</strong> each year. Specific dates will be communicated via email.</p>
               </div>
             </motion.div>
           </div>
@@ -260,7 +260,7 @@ const AdmissionsPage: React.FC = () => {
             <span className="absolute left-1/2 transform -translate-x-1/2 bottom-0 w-24 h-1 bg-yellow-500 rounded-full"></span>
           </h2>
           <p className="text-lg text-gray-700 leading-relaxed mb-6">
-            Studyhabit College is committed to making quality education accessible. We offer a limited number of **merit-based scholarships** and need-based financial aid to deserving students. Information on how to apply for these opportunities is available through our admissions office.
+            Studyhabit College is committed to making quality education accessible. We offer a limited number of <strong>merit-based scholarships</strong> and need-based financial aid to deserving students. Information on how to apply for these opportunities is available through our admissions office.
           </p>
           <Link
             to="/contact" // Link to a dedicated financial aid page or contact form

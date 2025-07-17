@@ -5,18 +5,37 @@ import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 
+// Interface for a Grade object as received from the backend (potentially populated)
 interface Grade {
     _id: string;
     student: { _id: string; user: { _id: string; firstName: string; lastName: string; }; studentId: string; };
     course: { _id: string; name: string; code: string; };
     teacher: { _id: string; firstName: string; lastName: string; };
     gradeType: string;
+    assignmentName?: string; // Optional if backend model makes it so
     score: number;
+    maxScore: number;
     weight: number;
     term: string;
     academicYear: string;
-    dateRecorded: string;
+    dateGraded: string; // Renamed from dateRecorded
     remarks?: string;
+}
+
+// Interface for the payload sent to the backend when creating/updating a grade
+// Note: student, course, and teacher are just their string IDs here
+interface GradePayload {
+    student: string;
+    course: string;
+    teacher: string;
+    gradeType: string;
+    score: number;
+    maxScore: number;
+    weight: number;
+    term: string;
+    academicYear: string;
+    assignmentName?: string; // Optional
+    remarks?: string; // Optional
 }
 
 interface StudentOption {
@@ -36,17 +55,19 @@ interface GradeFormModalProps {
     onClose: () => void;
     gradeToEdit?: Grade | null; // Null for create, object for edit
     onSave: (grade: Grade) => void;
-    isTeacherView?: boolean; // Added prop, though backend filtering makes it less critical here
+    isTeacherView?: boolean; // Not used in this component, but kept if needed elsewhere
 }
 
 const GradeFormModal: React.FC<GradeFormModalProps> = ({ isOpen, onClose, gradeToEdit, onSave }) => {
     const { userInfo } = useAuth();
     const [formData, setFormData] = useState({
-        student: '',
-        course: '',
+        student: '', // Stores student ID string
+        course: '',  // Stores course ID string
         gradeType: '',
-        score: '', // Use string for input to handle empty state
-        weight: '', // Use string for input
+        assignmentName: '',
+        score: '',
+        maxScore: '100', // Initialize as string for input
+        weight: '',
         term: '',
         academicYear: '',
         remarks: '',
@@ -69,7 +90,9 @@ const GradeFormModal: React.FC<GradeFormModalProps> = ({ isOpen, onClose, gradeT
                 student: gradeToEdit.student._id,
                 course: gradeToEdit.course._id,
                 gradeType: gradeToEdit.gradeType,
+                assignmentName: gradeToEdit.assignmentName || '',
                 score: gradeToEdit.score.toString(),
+                maxScore: gradeToEdit.maxScore.toString(), // Initialize with existing maxScore
                 weight: gradeToEdit.weight.toString(),
                 term: gradeToEdit.term,
                 academicYear: gradeToEdit.academicYear,
@@ -81,7 +104,9 @@ const GradeFormModal: React.FC<GradeFormModalProps> = ({ isOpen, onClose, gradeT
                 student: '',
                 course: '',
                 gradeType: '',
+                assignmentName: '',
                 score: '',
+                maxScore: '100', // Reset maxScore to default for new grades
                 weight: '',
                 term: '',
                 academicYear: '',
@@ -102,7 +127,6 @@ const GradeFormModal: React.FC<GradeFormModalProps> = ({ isOpen, onClose, gradeT
 
             try {
                 setLoadingDependencies(true);
-                // These API calls will automatically be filtered by the backend based on `userInfo.role`
                 const { data: coursesData } = await axios.get('https://studyhabitcollege.onrender.com/api/courses', config);
                 setCourses(coursesData);
 
@@ -148,11 +172,36 @@ const GradeFormModal: React.FC<GradeFormModalProps> = ({ isOpen, onClose, gradeT
 
         try {
             let response;
-            const payload = {
-                ...formData,
+            // Construct the payload with only the IDs for referenced documents
+            const payload: GradePayload = {
+                student: formData.student,
+                course: formData.course,
+                gradeType: formData.gradeType,
                 score: parseFloat(formData.score),
+                maxScore: parseFloat(formData.maxScore),
                 weight: parseFloat(formData.weight || '1'),
+                term: formData.term,
+                academicYear: formData.academicYear,
+                teacher: userInfo._id, // Use _id from userInfo
             };
+
+            // Conditionally add assignmentName if it has a value AND is relevant for the gradeType
+            const isAssignmentNameRelevant = formData.gradeType === 'Assignment' || formData.gradeType === 'Project';
+            if (isAssignmentNameRelevant && formData.assignmentName) {
+                payload.assignmentName = formData.assignmentName;
+            }
+
+            // Conditionally add remarks if it has a value
+            if (formData.remarks) {
+                payload.remarks = formData.remarks;
+            }
+
+            // Client-side validation for score against maxScore (optional but good practice)
+            if (isNaN(payload.score) || isNaN(payload.maxScore) || payload.score < 0 || payload.score > payload.maxScore) {
+                setError(`Score must be a number between 0 and Max Score (${payload.maxScore}).`);
+                setIsSubmitting(false);
+                return;
+            }
 
             if (gradeToEdit) {
                 response = await axios.put(`https://studyhabitcollege.onrender.com/api/grades/${gradeToEdit._id}`, payload, config);
@@ -170,6 +219,10 @@ const GradeFormModal: React.FC<GradeFormModalProps> = ({ isOpen, onClose, gradeT
     };
 
     if (!isOpen) return null;
+
+    // Determine if assignmentName field should be required based on gradeType
+    // This frontend logic should match your backend Mongoose schema's `required` condition for `assignmentName`
+    const isAssignmentNameRequired = formData.gradeType === 'Assignment' || formData.gradeType === 'Project';
 
     return (
         <AnimatePresence>
@@ -251,8 +304,27 @@ const GradeFormModal: React.FC<GradeFormModalProps> = ({ isOpen, onClose, gradeT
                                     ))}
                                 </select>
                             </div>
+
+                            {/* NEW FIELD: Assignment Name - Conditionally rendered based on gradeType */}
+                            {(formData.gradeType === 'Assignment' || formData.gradeType === 'Project') && (
+                                <div>
+                                    <label htmlFor="assignmentName" className="block text-sm font-medium text-gray-700">
+                                        Assignment Name {isAssignmentNameRequired ? '*' : ''}
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="assignmentName"
+                                        name="assignmentName"
+                                        value={formData.assignmentName}
+                                        onChange={handleChange}
+                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        required={isAssignmentNameRequired}
+                                    />
+                                </div>
+                            )}
+
                             <div>
-                                <label htmlFor="score" className="block text-sm font-medium text-gray-700">Score (0-100)</label>
+                                <label htmlFor="score" className="block text-sm font-medium text-gray-700">Score</label>
                                 <input
                                     type="number"
                                     id="score"
@@ -260,8 +332,22 @@ const GradeFormModal: React.FC<GradeFormModalProps> = ({ isOpen, onClose, gradeT
                                     value={formData.score}
                                     onChange={handleChange}
                                     min="0"
-                                    max="100"
                                     step="0.1"
+                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                    required
+                                />
+                            </div>
+                            {/* NEW FIELD: Max Score */}
+                            <div>
+                                <label htmlFor="maxScore" className="block text-sm font-medium text-gray-700">Max Score</label>
+                                <input
+                                    type="number"
+                                    id="maxScore"
+                                    name="maxScore"
+                                    value={formData.maxScore}
+                                    onChange={handleChange}
+                                    min="1"
+                                    step="1"
                                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                     required
                                 />

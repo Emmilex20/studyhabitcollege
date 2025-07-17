@@ -86,7 +86,7 @@ const AcademicsPage: React.FC = () => {
               Empowering Minds: Our Academic Journey 🧠
             </h1>
             <p className="text-lg md:text-xl max-w-3xl mx-auto mb-8 leading-relaxed">
-              At **Studyhabit College**, our academic programs are meticulously crafted to provide a robust and dynamic learning experience. We foster intellectual curiosity, critical thinking, and a lifelong passion for knowledge, preparing students to excel in a rapidly evolving world, both locally and internationally.
+              At <strong>Studyhabit College</strong>, our academic programs are meticulously crafted to provide a robust and dynamic learning experience. We foster intellectual curiosity, critical thinking, and a lifelong passion for knowledge, preparing students to excel in a rapidly evolving world, both locally and internationally.
             </p>
             <Link
               to="/admissions"
@@ -112,7 +112,7 @@ const AcademicsPage: React.FC = () => {
             <span className="absolute left-1/2 transform -translate-x-1/2 bottom-0 w-24 h-1 bg-yellow-500 rounded-full"></span>
           </h2>
           <p className="text-lg text-gray-700 leading-relaxed">
-            Studyhabit College is committed to an **inclusive and progressive educational philosophy**. We believe that true learning extends beyond memorization, emphasizing understanding, application, and innovation. Our curriculum integrates a blend of national and international standards, ensuring a well-rounded education that empowers students to be adaptable, resourceful, and globally aware citizens. We focus on fostering a stimulating environment where intellectual curiosity is celebrated, and every student is challenged to achieve their personal best.
+            Studyhabit College is committed to an <strong>inclusive and progressive educational philosophy</strong>. We believe that true learning extends beyond memorization, emphasizing understanding, application, and innovation. Our curriculum integrates a blend of national and international standards, ensuring a well-rounded education that empowers students to be adaptable, resourceful, and globally aware citizens. We focus on fostering a stimulating environment where intellectual curiosity is celebrated, and every student is challenged to achieve their personal best.
           </p>
         </motion.section>
 
@@ -230,20 +230,20 @@ const AcademicsPage: React.FC = () => {
             <span className="absolute left-1/2 transform -translate-x-1/2 bottom-0 w-24 h-1 bg-green-500 rounded-full"></span>
           </h2>
           <p className="text-lg text-gray-700 leading-relaxed mb-6">
-            The heart of Studyhabit College's academic success lies in our exceptional faculty. Our educators are not just teachers; they are **mentors, innovators, and subject matter experts** who bring passion and dedication to the classroom every day. They are committed to fostering an engaging learning environment, employing modern pedagogical approaches, and providing personalized support to ensure every student thrives.
+            The heart of Studyhabit College's academic success lies in our exceptional faculty. Our educators are not just teachers; they are <strong>mentors, innovators, and subject matter experts</strong> who bring passion and dedication to the classroom every day. They are committed to fostering an engaging learning environment, employing modern pedagogical approaches, and providing personalized support to ensure every student thrives.
           </p>
           <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-gray-700 list-disc list-inside">
             <motion.li variants={cardVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }} transition={{ delay: 0.1 }} className="bg-green-50 p-4 rounded-lg shadow-sm">
-              **Highly Qualified:** Many hold advanced degrees and international certifications.
+              <strong>Highly Qualified:</strong> Many hold advanced degrees and international certifications.
             </motion.li>
             <motion.li variants={cardVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }} transition={{ delay: 0.2 }} className="bg-green-50 p-4 rounded-lg shadow-sm">
-              **Experienced:** Years of experience in their respective fields and in preparing students for various examinations.
+              <strong>Experienced:</strong> Years of experience in their respective fields and in preparing students for various examinations.
             </motion.li>
             <motion.li variants={cardVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }} transition={{ delay: 0.3 }} className="bg-green-50 p-4 rounded-lg shadow-sm">
-              **Student-Centric:** Dedicated to understanding individual learning styles and providing tailored support.
+              <strong>Student-Centric:</strong> Dedicated to understanding individual learning styles and providing tailored support.
             </motion.li>
             <motion.li variants={cardVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.5 }} transition={{ delay: 0.4 }} className="bg-green-50 p-4 rounded-lg shadow-sm">
-              **Continuous Professional Development:** Regularly updated on the latest educational trends and methodologies.
+              <strong>Continuous Professional Development:</strong> Regularly updated on the latest educational trends and methodologies.
             </motion.li>
           </ul>
         </motion.section>

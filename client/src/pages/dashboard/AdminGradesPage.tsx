@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import { motion } from 'framer-motion';
-import GradeFormModal from '../../components/modals/GradeFormModal'; // Import the modal
+import GradeFormModal from '../../components/modals/GradeFormModal';
 
 interface Grade {
   _id: string;
@@ -13,11 +13,13 @@ interface Grade {
   course: { _id: string; name: string; code: string; };
   teacher: { _id: string; firstName: string; lastName: string; };
   gradeType: string;
+  assignmentName?: string; // Add this if it's in your Grade model
   score: number;
+  maxScore: number; // <-- ADDED
   weight: number;
   term: string;
   academicYear: string;
-  dateRecorded: string;
+  dateGraded: string; // <-- RENAMED
   remarks?: string;
 }
 
@@ -73,12 +75,19 @@ const AdminGradesPage: React.FC = () => {
     await fetchGrades(); // Re-fetch all grades
   };
 
-  const handleDeleteGrade = async (gradeId: string, studentName: string, courseName: string, gradeType: string) => {
+  const handleDeleteGrade = async (gradeId: string, studentName: string, courseName: string, gradeType: string, assignmentName?: string) => {
     if (!userInfo?.token) {
       setError('User not authenticated.');
       return;
     }
-    if (window.confirm(`Are you sure you want to delete the ${gradeType} grade for ${studentName} in ${courseName}?`)) {
+
+    let confirmMessage = `Are you sure you want to delete the ${gradeType}`;
+    if (assignmentName) {
+      confirmMessage += ` "${assignmentName}"`;
+    }
+    confirmMessage += ` grade for ${studentName} in ${courseName}?`;
+
+    if (window.confirm(confirmMessage)) {
       setDeleteLoading(gradeId);
       try {
         const config = {
@@ -133,7 +142,7 @@ const AdminGradesPage: React.FC = () => {
                 Course
               </th>
               <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Type
+                Type & Name
               </th>
               <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                 Score
@@ -148,8 +157,8 @@ const AdminGradesPage: React.FC = () => {
                 Recorded By
               </th>
               <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Date
-              </th>
+                Date Graded
+              </th> {/* <-- RENAMED */}
               <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                 Actions
               </th>
@@ -166,9 +175,10 @@ const AdminGradesPage: React.FC = () => {
                 </td>
                 <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                   {grade.gradeType}
+                  {grade.assignmentName && <span className="block text-xs text-gray-500 italic">({grade.assignmentName})</span>} {/* Display assignment name */}
                 </td>
                 <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                  <span className="font-bold text-blue-700">{grade.score}</span> / 100
+                  <span className="font-bold text-blue-700">{grade.score}</span> / {grade.maxScore} {/* Display maxScore */}
                   {grade.remarks && <p className="text-xs text-gray-500 italic">{grade.remarks}</p>}
                 </td>
                 <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
@@ -181,7 +191,7 @@ const AdminGradesPage: React.FC = () => {
                   {grade.teacher?.firstName} {grade.teacher?.lastName}
                 </td>
                 <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                  {new Date(grade.dateRecorded).toLocaleDateString()}
+                  {new Date(grade.dateGraded).toLocaleDateString()} {/* <-- Display dateGraded */}
                 </td>
                 <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                   <button
@@ -191,7 +201,13 @@ const AdminGradesPage: React.FC = () => {
                     Edit
                   </button>
                   <button
-                    onClick={() => handleDeleteGrade(grade._id, `${grade.student?.user?.firstName} ${grade.student?.user?.lastName}`, grade.course?.name || '', grade.gradeType)}
+                    onClick={() => handleDeleteGrade(
+                        grade._id,
+                        `${grade.student?.user?.firstName} ${grade.student?.user?.lastName}`,
+                        grade.course?.name || '',
+                        grade.gradeType,
+                        grade.assignmentName // Pass assignmentName
+                    )}
                     className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={deleteLoading === grade._id}
                   >

@@ -101,10 +101,10 @@ const Faculty: React.FC = () => {
             Meet Our <span className="text-indigo-600">Distinguished Faculty</span> 👨‍🏫👩‍🏫
           </h1>
           <p className="text-lg text-gray-700 max-w-3xl mx-auto font-light leading-relaxed">
-            At **Studyhabit College**, our strength lies in our extraordinary academic staff.
+            At <strong>Studyhabit College</strong>, our strength lies in our extraordinary academic staff.
             Comprising highly qualified and passionate educators, cutting-edge researchers,
             and seasoned industry experts, they are deeply committed to nurturing the next generation of leaders.
-            They embody our dedication to **academic excellence**, **innovative teaching**, and **personal mentorship**.
+            They embody our dedication to <strong>academic excellence</strong>, <strong>innovative teaching</strong>, and <strong>personal mentorship</strong>.
           </p>
         </motion.div>
 
