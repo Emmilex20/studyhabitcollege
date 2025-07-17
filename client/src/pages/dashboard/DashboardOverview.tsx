@@ -5,8 +5,9 @@ import { motion, easeOut } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { Link } from 'react-router-dom';
 import axios from 'axios'; // For making API requests
+import AddUserModal from '../../components/modals/AddUserModal'; // Import the new modal
 
-// Define interfaces for your fetched data structures
+// Define interfaces for your fetched data structures (rest of your interfaces remain the same)
 interface AdminDashboardData {
   totalUsers: number;
   activeCourses: number;
@@ -31,7 +32,7 @@ interface ChildData {
   studentId: string;
   gradeAverage: number;
   attendancePercentage: number;
-  avatarUrl?: string; // Made optional
+  avatarUrl?: string;
 }
 
 interface ParentDashboardData {
@@ -40,7 +41,7 @@ interface ParentDashboardData {
 }
 
 const DashboardOverview: React.FC = () => {
-  const { userInfo, userToken } = useAuth(); // Also get userToken for authenticated requests
+  const { userInfo, userToken } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,7 +51,12 @@ const DashboardOverview: React.FC = () => {
   const [studentData, setStudentData] = useState<StudentDashboardData | null>(null);
   const [parentData, setParentData] = useState<ParentDashboardData | null>(null);
 
-  // Variants for section animations
+  // State for AddUserModal
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [addUserError, setAddUserError] = useState<string | null>(null);
+  const [isAddingUser, setIsAddingUser] = useState(false);
+
+  // Variants for section animations (unchanged)
   const sectionVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
@@ -60,7 +66,7 @@ const DashboardOverview: React.FC = () => {
     },
   };
 
-  // Variants for individual cards/items
+  // Variants for individual cards/items (unchanged)
   const itemVariants = {
     hidden: { opacity: 0, scale: 0.9 },
     visible: {
@@ -70,10 +76,9 @@ const DashboardOverview: React.FC = () => {
     },
   };
 
-  // Use the explicit API base URL from your AdminUsersPage.tsx
   const API_BASE_URL = 'https://studyhabitcollege.onrender.com/api';
 
-  // Function to fetch admin data
+  // Function to fetch admin data (updated to use /users/count)
   const fetchAdminData = useCallback(async () => {
     try {
       setLoading(true);
@@ -84,16 +89,14 @@ const DashboardOverview: React.FC = () => {
         },
       };
 
-      // These are example endpoints. Adjust them to your actual backend API.
-      // You might have a single endpoint like '/api/admin/dashboard-stats' that returns all these counts.
       const [usersRes, coursesRes, studentsRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/users?role=all`, config), // Example: Get all users count
-        axios.get(`${API_BASE_URL}/courses/count`, config), // Example: Get active courses count
-        axios.get(`${API_BASE_URL}/students/count`, config), // Example: Get enrolled students count
+        axios.get(`${API_BASE_URL}/users/count`, config), // Assuming you have a /users/count endpoint
+        axios.get(`${API_BASE_URL}/courses/count`, config),
+        axios.get(`${API_BASE_URL}/students/count`, config),
       ]);
 
       setAdminData({
-        totalUsers: usersRes.data.count || usersRes.data.length || 0, // Adjust based on your API response
+        totalUsers: usersRes.data.count || 0, // Expecting { count: N }
         activeCourses: coursesRes.data.count || 0,
         enrolledStudents: studentsRes.data.count || 0,
       });
@@ -105,7 +108,40 @@ const DashboardOverview: React.FC = () => {
     }
   }, [userToken]);
 
-  // Function to fetch teacher data
+
+  // Function to add a new user (for the modal)
+  const handleAddNewUser = async (userData: { firstName: string; lastName: string; email: string; password?: string; role: string }) => {
+    if (!userToken) {
+      setAddUserError('Authentication required to add user.');
+      return;
+    }
+
+    setIsAddingUser(true);
+    setAddUserError(null);
+
+    try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${userToken}`,
+          'Content-Type': 'application/json',
+        },
+      };
+      await axios.post(`${API_BASE_URL}/users/register`, userData, config); // Assuming this is your registration endpoint
+      // Re-fetch admin data to update the total users count
+      await fetchAdminData();
+      setIsAddUserModalOpen(false); // Close modal on success
+      alert('User added successfully!'); // Or use a toast notification
+    } catch (err: any) {
+      console.error('Error adding new user:', err);
+      setAddUserError(err.response?.data?.message || 'Failed to add user. Please try again.');
+      throw err; // Re-throw to keep the modal's error state
+    } finally {
+      setIsAddingUser(false);
+    }
+  };
+
+
+  // Function to fetch teacher data (unchanged)
   const fetchTeacherData = useCallback(async () => {
     try {
       setLoading(true);
@@ -116,7 +152,6 @@ const DashboardOverview: React.FC = () => {
         },
       };
 
-      // Adjust these to your actual teacher API endpoints
       const [coursesRes, studentsRes] = await Promise.all([
         axios.get(`${API_BASE_URL}/teacher/courses/count`, config),
         axios.get(`${API_BASE_URL}/teacher/students/count`, config),
@@ -134,7 +169,7 @@ const DashboardOverview: React.FC = () => {
     }
   }, [userToken]);
 
-  // Function to fetch student data
+  // Function to fetch student data (unchanged)
   const fetchStudentData = useCallback(async () => {
     try {
       setLoading(true);
@@ -145,7 +180,6 @@ const DashboardOverview: React.FC = () => {
         },
       };
 
-      // Adjusted these to include '/me/' as per backend routes
       const [coursesRes, gpaRes, deadlinesRes] = await Promise.all([
         axios.get(`${API_BASE_URL}/students/me/courses/count`, config),
         axios.get(`${API_BASE_URL}/students/me/gpa`, config),
@@ -165,7 +199,7 @@ const DashboardOverview: React.FC = () => {
     }
   }, [userToken]);
 
-  // Function to fetch parent data
+  // Function to fetch parent data (unchanged)
   const fetchParentData = useCallback(async () => {
     try {
       setLoading(true);
@@ -176,17 +210,14 @@ const DashboardOverview: React.FC = () => {
         },
       };
 
-      // Adjust these to your actual parent API endpoints
-      // Note: The /parent/children route in your backend is currently /parent/me/children
-      // The /announcements/important is a placeholder, ensure it matches your backend
       const [childrenRes, announcementsRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/parent/me/children`, config), // Corrected to /me/children
-        axios.get(`${API_BASE_URL}/parent/me/announcements`, config), // Corrected example: assuming this exists
+        axios.get(`${API_BASE_URL}/parent/me/children`, config),
+        axios.get(`${API_BASE_URL}/parent/me/announcements`, config),
       ]);
 
       setParentData({
-        children: childrenRes.data || [], // Assuming the response is an array directly
-        importantAnnouncements: announcementsRes.data || [], // Assuming the response is an array directly
+        children: childrenRes.data || [],
+        importantAnnouncements: announcementsRes.data || [],
       });
     } catch (err: any) {
       console.error('Error fetching parent data:', err);
@@ -198,13 +229,12 @@ const DashboardOverview: React.FC = () => {
 
   useEffect(() => {
     if (userInfo && userToken) {
-      // Reset states when user/token changes to re-fetch relevant data
       setAdminData(null);
       setTeacherData(null);
       setStudentData(null);
       setParentData(null);
       setError(null);
-      setLoading(true); // Start loading when fetch is initiated
+      setLoading(true);
 
       switch (userInfo.role) {
         case 'admin':
@@ -220,7 +250,7 @@ const DashboardOverview: React.FC = () => {
           fetchParentData();
           break;
         default:
-          setLoading(false); // If role is unknown, stop loading
+          setLoading(false);
       }
     } else {
       setLoading(false);
@@ -257,7 +287,7 @@ const DashboardOverview: React.FC = () => {
   }
 
   const renderAdminDashboard = () => (
-    adminData && ( // Ensure adminData is not null before rendering
+    adminData && (
       <>
         <motion.div variants={sectionVariants} initial="hidden" animate="visible">
           <h2 className="text-3xl font-bold text-blue-900 mb-6">Admin Overview 📊</h2>
@@ -294,9 +324,13 @@ const DashboardOverview: React.FC = () => {
           <h3 className="text-2xl font-bold text-blue-900 mb-4">Quick Actions ⚡</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <motion.div variants={itemVariants} className="bg-gray-50 p-4 rounded-lg shadow hover:shadow-lg transition-shadow duration-300 flex items-center justify-center h-24">
-              <Link to="/dashboard/users/new" className="text-blue-700 font-semibold text-center">
+              {/* Change Link to a button that opens the modal */}
+              <button
+                onClick={() => setIsAddUserModalOpen(true)}
+                className="text-blue-700 font-semibold text-center"
+              >
                 <i className="fas fa-user-plus text-2xl block mb-1"></i> Add New User
-              </Link>
+              </button>
             </motion.div>
             <motion.div variants={itemVariants} className="bg-gray-50 p-4 rounded-lg shadow hover:shadow-lg transition-shadow duration-300 flex items-center justify-center h-24">
               <Link to="/dashboard/courses/new" className="text-green-700 font-semibold text-center">
@@ -315,12 +349,21 @@ const DashboardOverview: React.FC = () => {
             </motion.div>
           </div>
         </motion.div>
+
+        {/* Add the new AddUserModal here */}
+        <AddUserModal
+          isOpen={isAddUserModalOpen}
+          onClose={() => setIsAddUserModalOpen(false)}
+          onAddUser={handleAddNewUser}
+          errorMessage={addUserError}
+          isLoading={isAddingUser}
+        />
       </>
     )
   );
 
   const renderTeacherDashboard = () => (
-    teacherData && ( // Ensure teacherData is not null before rendering
+    teacherData && (
       <>
         <motion.div variants={sectionVariants} initial="hidden" animate="visible">
           <h2 className="text-3xl font-bold text-blue-900 mb-6">Teacher Overview 🍎</h2>
@@ -371,7 +414,7 @@ const DashboardOverview: React.FC = () => {
   );
 
   const renderStudentDashboard = () => (
-    studentData && ( // Ensure studentData is not null before rendering
+    studentData && (
       <>
         <motion.div variants={sectionVariants} initial="hidden" animate="visible">
           <h2 className="text-3xl font-bold text-blue-900 mb-6">Student Overview 🎓</h2>
@@ -420,7 +463,7 @@ const DashboardOverview: React.FC = () => {
 
   const renderParentDashboard = () => (
     parentData && (
-      <> {/* This is the outer fragment for renderParentDashboard */}
+      <>
         <motion.div variants={sectionVariants} initial="hidden" animate="visible">
           <h2 className="text-3xl font-bold text-blue-900 mb-6">Parent Overview 👨‍👩‍👧‍👦</h2>
           <p className="text-gray-700 mb-8">
@@ -487,7 +530,7 @@ const DashboardOverview: React.FC = () => {
             </Link>
           </div>
         </motion.div>
-      </> // ✨ THIS IS THE CORRECTED CLOSING FRAGMENT
+      </>
     )
   );
 
