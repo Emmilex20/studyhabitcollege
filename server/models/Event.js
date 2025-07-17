@@ -29,11 +29,15 @@ const eventSchema = mongoose.Schema({
         ref: 'User', // User who created/organized the event (e.g., Admin)
         required: true,
     },
-    // Optional: Target audience (e.g., 'all', 'students', 'teachers', 'parents', specific classes)
     targetAudience: {
         type: [String], // Array of strings for different roles/groups
         default: ['all'],
         enum: ['all', 'students', 'teachers', 'parents', 'JSS1', 'SS2', 'Year 7'], // Example enums, extend as needed
+    },
+    course: { // ✨ ADDED THIS FIELD to link events/deadlines to courses
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Course',
+        required: false, // Not all events are course-specific (e.g., general school events)
     },
 }, {
     timestamps: true,

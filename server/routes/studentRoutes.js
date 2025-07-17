@@ -13,7 +13,8 @@ import {
     getParentAnnouncements,
     getParentEvents,
     getStudentGPA,
-    getMyCoursesCount, // <--- Add this import
+    getMyCoursesCount,
+    getUpcomingDeadlines, // <--- Add this import
 } from '../controllers/studentController.js';
 import { getMyGrades } from '../controllers/gradeController.js';
 import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
@@ -29,7 +30,8 @@ router.get('/me/courses', protect, authorizeRoles('student'), getMyCourses);
 router.get('/me/grades', protect, authorizeRoles('student'), getMyGrades);
 router.get('/me/attendance', protect, authorizeRoles('student'), getMyAttendance);
 router.get('/me/gpa', protect, authorizeRoles('student'), getStudentGPA);
-router.get('/me/courses/count', protect, authorizeRoles('student'), getMyCoursesCount); // <--- Add this new route
+router.get('/me/courses/count', protect, authorizeRoles('student'), getMyCoursesCount);
+router.get('/me/deadlines', protect, authorizeRoles('student'), getUpcomingDeadlines); // <--- Add this new route
 
 router.route('/:id')
     .get(protect, authorizeRoles('admin', 'teacher', 'parent'))

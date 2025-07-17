@@ -2,6 +2,7 @@
 import Student from '../models/Student.js';
 import User from '../models/User.js'; // To check if user exists and is student/parent
 import Course from '../models/Course.js'; // To check if courses exist
+import Event from '../models/Event.js';
 
 // @desc    Get all students
 // @route   GET /api/students
@@ -443,6 +444,61 @@ const getMyCoursesCount = async (req, res) => {
     }
 };
 
+// @desc    Get upcoming deadlines for the logged-in student
+// @route   GET /api/student/me/deadlines
+// @access  Private/Student
+const getUpcomingDeadlines = async (req, res) => {
+    try {
+        const student = await Student.findOne({ user: req.user._id }).populate('user', 'yearLevel'); // Populate user to get student's yearLevel
+
+        if (!student) {
+            return res.status(404).json({ message: 'Student profile not found.' });
+        }
+
+        // Get the IDs of courses the student is enrolled in
+        const enrolledCourseIds = student.enrolledCourses;
+
+        // Determine relevant target audiences for this student
+        const studentYearLevel = student.user?.yearLevel?.toLowerCase(); // Assuming yearLevel is on the User model linked to Student
+        const targetAudiences = ['all', 'students'];
+        if (studentYearLevel) {
+            // Add specific year level if applicable (e.g., 'freshmen', 'sophomores')
+            targetAudiences.push(studentYearLevel);
+        }
+
+        // Find events that are either:
+        // 1. Targeted at 'all', 'students', or the student's specific year level.
+        // 2. Or, are linked to one of the student's enrolled courses.
+        const upcomingDeadlines = await Event.find({
+            eventDate: { $gte: new Date() }, // Only future events/deadlines
+            $or: [
+                { targetAudience: { $in: targetAudiences } },
+                { course: { $in: enrolledCourseIds } }
+            ]
+        })
+        .populate('course', 'name code') // Populate course name and code for course-specific deadlines
+        .sort({ eventDate: 1 }) // Sort by date, ascending (nearest first)
+        .select('title eventDate course'); // Select relevant fields
+
+        // Format deadlines for the frontend
+        const formattedDeadlines = upcomingDeadlines.map(deadline => ({
+            title: deadline.title,
+            // If the deadline is course-specific, use the course name. Otherwise, just the title.
+            // You might refine this display logic on the frontend too.
+            course: deadline.course ? deadline.course.name : 'General',
+            dueDate: deadline.eventDate.toISOString().split('T')[0], // Format date as YYYY-MM-DD
+        }));
+
+
+        res.status(200).json({ deadlines: formattedDeadlines });
+
+    } catch (error) {
+        console.error('Error fetching upcoming deadlines:', error);
+        res.status(500).json({ message: 'Server error retrieving upcoming deadlines.' });
+    }
+};
+
+
 export {
     getStudents,
     getStudentById,
@@ -457,4 +513,5 @@ export {
     getParentEvents,
     getStudentGPA,
     getMyCoursesCount,
+    getUpcomingDeadlines,
 };
