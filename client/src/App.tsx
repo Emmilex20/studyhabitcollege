@@ -32,7 +32,8 @@ import AdminGradesPage from './pages/dashboard/AdminGradesPage';
 import AdminAttendancePage from './pages/dashboard/AdminAttendancePage';
 import AdminEventsPage from './pages/dashboard/AdminEventsPage';
 import AdminAnnouncementsPage from './pages/dashboard/AdminAnnouncementsPage';
-import GalleryManagement from './pages/dashboard/GalleryManagement'; // This is the import for GalleryManagement
+import GalleryManagement from './pages/dashboard/GalleryManagement';
+import SettingsPage from './pages/dashboard/SettingsPage'; // <--- Import SettingsPage here
 
 // === TEACHER DASHBOARD PAGES ===
 import TeacherCoursesPage from './pages/dashboard/TeacherCoursesPage';
@@ -97,8 +98,6 @@ function App() {
                   path="users"
                   element={<ProtectedRoute allowedRoles={['admin']}><AdminUsersPage /></ProtectedRoute>}
                 />
-                {/* You might want to add a nested route for adding a new user if it's a separate form */}
-                {/* <Route path="users/new" element={<ProtectedRoute allowedRoles={['admin']}><AdminUserFormPage /></ProtectedRoute>} /> */}
                 <Route
                   path="courses"
                   element={<ProtectedRoute allowedRoles={['admin']}><AdminCoursesPage /></ProtectedRoute>}
@@ -126,14 +125,14 @@ function App() {
                 />
                 {/* 🎨 Admin Gallery Management Route */}
                 <Route
-                  path="gallery" 
+                  path="gallery"
                   element={<ProtectedRoute allowedRoles={['admin']}><GalleryManagement /></ProtectedRoute>}
                 />
-                {/* Add AdminSettingsPage if you create it */}
-                {/* <Route
-                  path="settings"
-                  element={<ProtectedRoute allowedRoles={['admin']}><AdminSettingsPage /></ProtectedRoute>}
-                /> */}
+                {/* ⭐ Settings Page (Admin only) ⭐ */}
+                <Route
+                  path="settings" // <--- Add this route path
+                  element={<ProtectedRoute allowedRoles={['admin']}><SettingsPage /></ProtectedRoute>} // <--- Render SettingsPage here
+                />
 
 
                 {/* Teacher Routes */}
@@ -182,14 +181,6 @@ function App() {
                     path=":studentId/attendance"
                     element={<ChildAttendancePage />}
                   />
-                  {/* Optional index route for /dashboard/child if ParentChildrenPage also has an Outlet
-                      If ParentChildrenPage itself displays a list and no default nested view,
-                      you might not need this index route here, or it can be a "select a child" message.
-                  */}
-                  {/* <Route
-                    index
-                    element={<p className="text-gray-500">Please select a child to view details.</p>}
-                  /> */}
                 </Route>
               </Route>
 
