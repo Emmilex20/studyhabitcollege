@@ -4,8 +4,9 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { motion, easeOut } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { Link } from 'react-router-dom';
-import axios from 'axios'; // For making API requests
-import AddUserModal from '../../components/modals/AddUserModal'; // Import the new modal
+import axios from 'axios';
+import AddUserModal from '../../components/modals/AddUserModal';
+import CourseFormModal from '../../components/modals/CourseFormModal'; // ⬅️ IMPORTED CourseFormModal
 
 // Define interfaces for your fetched data structures (rest of your interfaces remain the same)
 interface AdminDashboardData {
@@ -40,6 +41,22 @@ interface ParentDashboardData {
   importantAnnouncements: { title: string; content: string }[];
 }
 
+// ⬅️ ADDED Course interface for type safety when setting selectedCourse
+interface Course {
+  _id: string;
+  name: string;
+  code: string;
+  description?: string;
+  yearLevel: string;
+  teacher?: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+  };
+  createdAt: string;
+}
+
+
 const DashboardOverview: React.FC = () => {
   const { userInfo, userToken } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -55,6 +72,10 @@ const DashboardOverview: React.FC = () => {
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [addUserError, setAddUserError] = useState<string | null>(null);
   const [isAddingUser, setIsAddingUser] = useState(false);
+
+  // ⬅️ NEW STATE FOR COURSE MODAL
+  const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null); // To set to null for 'create' mode
 
   // Variants for section animations (unchanged)
   const sectionVariants = {
@@ -139,6 +160,12 @@ const DashboardOverview: React.FC = () => {
       setIsAddingUser(false);
     }
   };
+
+  // ⬅️ NEW HANDLER FOR COURSE MODAL SAVE
+  const handleSaveCourse = useCallback(async () => {
+    await fetchAdminData(); // Refresh admin data to update course count
+    setIsCourseModalOpen(false); // Close the modal
+  }, [fetchAdminData]);
 
 
   // Function to fetch teacher data (unchanged)
@@ -324,7 +351,7 @@ const DashboardOverview: React.FC = () => {
           <h3 className="text-2xl font-bold text-blue-900 mb-4">Quick Actions ⚡</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <motion.div variants={itemVariants} className="bg-gray-50 p-4 rounded-lg shadow hover:shadow-lg transition-shadow duration-300 flex items-center justify-center h-24">
-              {/* Change Link to a button that opens the modal */}
+              {/* Changed Link to a button that opens the modal */}
               <button
                 onClick={() => setIsAddUserModalOpen(true)}
                 className="text-blue-700 font-semibold text-center"
@@ -333,9 +360,16 @@ const DashboardOverview: React.FC = () => {
               </button>
             </motion.div>
             <motion.div variants={itemVariants} className="bg-gray-50 p-4 rounded-lg shadow hover:shadow-lg transition-shadow duration-300 flex items-center justify-center h-24">
-              <Link to="/dashboard/courses/new" className="text-green-700 font-semibold text-center">
+              {/* ⬅️ CHANGED THIS LINK TO A BUTTON TO OPEN CourseFormModal */}
+              <button
+                onClick={() => {
+                  setSelectedCourse(null); // Ensure it's in create mode
+                  setIsCourseModalOpen(true);
+                }}
+                className="text-green-700 font-semibold text-center"
+              >
                 <i className="fas fa-plus-square text-2xl block mb-1"></i> Create Course
-              </Link>
+              </button>
             </motion.div>
             <motion.div variants={itemVariants} className="bg-gray-50 p-4 rounded-lg shadow hover:shadow-lg transition-shadow duration-300 flex items-center justify-center h-24">
               <Link to="/dashboard/announcements" className="text-red-700 font-semibold text-center">
@@ -358,6 +392,14 @@ const DashboardOverview: React.FC = () => {
           errorMessage={addUserError}
           isLoading={isAddingUser}
         />
+
+        {/* ⬅️ ADDED THE COURSE FORM MODAL HERE */}
+        <CourseFormModal
+          isOpen={isCourseModalOpen}
+          onClose={() => setIsCourseModalOpen(false)}
+          courseToEdit={selectedCourse} // Will be null for new course, which is correct
+          onSave={handleSaveCourse}
+        />
       </>
     )
   );
@@ -368,7 +410,7 @@ const DashboardOverview: React.FC = () => {
         <motion.div variants={sectionVariants} initial="hidden" animate="visible">
           <h2 className="text-3xl font-bold text-blue-900 mb-6">Teacher Overview 🍎</h2>
           <p className="text-gray-700 mb-8">
-            Hello, <span className="font-semibold">{userInfo.firstName}</span>! Here's your teaching summary.
+            Hello, <span className="font-semibold">{userInfo!.firstName}</span>! Here's your teaching summary.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -419,7 +461,7 @@ const DashboardOverview: React.FC = () => {
         <motion.div variants={sectionVariants} initial="hidden" animate="visible">
           <h2 className="text-3xl font-bold text-blue-900 mb-6">Student Overview 🎓</h2>
           <p className="text-gray-700 mb-8">
-            Welcome, <span className="font-semibold">{userInfo.firstName}</span>! Here's your academic snapshot.
+            Welcome, <span className="font-semibold">{userInfo!.firstName}</span>! Here's your academic snapshot.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -467,7 +509,7 @@ const DashboardOverview: React.FC = () => {
         <motion.div variants={sectionVariants} initial="hidden" animate="visible">
           <h2 className="text-3xl font-bold text-blue-900 mb-6">Parent Overview 👨‍👩‍👧‍👦</h2>
           <p className="text-gray-700 mb-8">
-            Welcome, <span className="font-semibold">{userInfo.firstName}</span>! Here's a summary of your children's academic progress.
+            Welcome, <span className="font-semibold">{userInfo!.firstName}</span>! Here's a summary of your children's academic progress.
           </p>
 
           <h3 className="text-2xl font-bold text-blue-900 mb-4">My Children 👧👦</h3>
