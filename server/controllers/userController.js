@@ -1,8 +1,8 @@
 // server/controllers/userController.js
 
 import User from '../models/User.js';
-import asyncHandler from 'express-async-handler'; // Import asyncHandler
-import bcrypt from 'bcryptjs'; // Needed for password changes, if you add that here later (though often in a separate profile route)
+import asyncHandler from 'express-async-handler';
+import bcrypt from 'bcryptjs';
 
 // @desc    Get all users
 // @route   GET /api/users
@@ -85,19 +85,35 @@ const updateUserProfile = asyncHandler(async (req, res) => {
 // @route   PUT /api/users/change-password
 // @access  Private
 const changePassword = asyncHandler(async (req, res) => {
-    const user = await User.findById(req.user._id);
     const { currentPassword, newPassword } = req.body;
 
+    // Optional: Add more robust logging for debugging in development environments
+    // console.log('--- Change Password Request ---');
+    // console.log('Received currentPassword (masked): ****');
+    // console.log('Received newPassword (masked): ****');
+    // console.log('req.user (from token):', req.user); // Useful to check if req.user is populated
+
+    if (!req.user || !req.user._id) { // Added explicit check for req.user._id
+        res.status(401);
+        throw new Error('Not authorized, no user ID found in token.');
+    }
+
+    const user = await User.findById(req.user._id);
+
     if (!user) {
+        // console.log('Error: User not found for ID:', req.user._id);
         res.status(404);
         throw new Error('User not found');
     }
+    // console.log('User found in DB:', user.email);
 
     // Check current password using a method on your User model (e.g., user.matchPassword)
-    const isMatch = await user.matchPassword(currentPassword); // Assumes you have this method
+    const isMatch = await user.matchPassword(currentPassword);
+    // console.log('Current password match result (isMatch):', isMatch); // Log result of match
+
     if (!isMatch) {
         res.status(401); // Unauthorized
-        throw new Error('Invalid current password');
+        throw new Error('Invalid current password'); // This is the error message sent to frontend
     }
 
     // Hash new password and update
@@ -105,6 +121,7 @@ const changePassword = asyncHandler(async (req, res) => {
     user.password = await bcrypt.hash(newPassword, salt);
     await user.save();
 
+    // console.log('Password updated successfully for user:', user.email);
     res.status(200).json({ message: 'Password updated successfully' });
 });
 
@@ -116,51 +133,44 @@ const updateUser = asyncHandler(async (req, res) => {
     // This is for ADMIN updating ANY user's profile
     const { firstName, lastName, email, role } = req.body;
 
-    try {
-        const user = await User.findById(req.params.id);
+    // No try-catch needed here because of asyncHandler, it catches sync and async errors
+    const user = await User.findById(req.params.id);
 
-        if (user) {
-            user.firstName = firstName !== undefined ? firstName : user.firstName;
-            user.lastName = lastName !== undefined ? lastName : user.lastName;
+    if (user) {
+        user.firstName = firstName !== undefined ? firstName : user.firstName;
+        user.lastName = lastName !== undefined ? lastName : user.lastName;
 
-            // Handle email change: check if it's different and if the new email is already taken
-            if (email !== undefined && email !== user.email) {
-                const emailExists = await User.findOne({ email: email });
-                if (emailExists && emailExists._id.toString() !== user._id.toString()) {
-                    res.status(400);
-                    throw new Error('Email already taken by another user.');
-                }
-                user.email = email;
+        // Handle email change: check if it's different and if the new email is already taken
+        if (email !== undefined && email !== user.email) {
+            const emailExists = await User.findOne({ email: email });
+            if (emailExists && emailExists._id.toString() !== user._id.toString()) {
+                res.status(400);
+                throw new Error('Email already taken by another user.');
             }
+            user.email = email;
+        }
 
-            // Admin can change role
-            // Prevent an admin from demoting themselves (optional but recommended)
-            if (role !== undefined) {
-                if (req.user._id.toString() === user._id.toString() && role !== 'admin') {
-                    res.status(400);
-                    throw new Error('Admin cannot demote their own account.');
-                }
-                user.role = role;
+        // Admin can change role
+        // Prevent an admin from demoting themselves (optional but recommended)
+        if (role !== undefined) {
+            if (req.user._id.toString() === user._id.toString() && role !== 'admin') {
+                res.status(400);
+                throw new Error('Admin cannot demote their own account.');
             }
+            user.role = role;
+        }
 
-            const updatedUser = await user.save();
-            res.status(200).json({
-                _id: updatedUser._id,
-                firstName: updatedUser.firstName,
-                lastName: updatedUser.lastName,
-                email: updatedUser.email,
-                role: updatedUser.role,
-            });
-        } else {
-            res.status(404);
-            throw new new Error('User not found'); // Corrected from `new Error`
-        }
-    } catch (error) {
-        console.error(error);
-        if (error.code === 11000) { // Duplicate email error from MongoDB
-            return res.status(400).json({ message: 'Email already registered.' });
-        }
-        res.status(500).json({ message: error.message || 'Server error' });
+        const updatedUser = await user.save();
+        res.status(200).json({
+            _id: updatedUser._id,
+            firstName: updatedUser.firstName,
+            lastName: updatedUser.lastName,
+            email: updatedUser.email,
+            role: updatedUser.role,
+        });
+    } else {
+        res.status(404);
+        throw new Error('User not found'); // Corrected typo here
     }
 });
 
@@ -187,11 +197,12 @@ const deleteUser = asyncHandler(async (req, res) => {
     }
 });
 
+
 export {
     getAllUsers,
     getUserProfile,
-    updateUserProfile, // Added for users to update their own profile
-    changePassword,     // Added for users to change their own password
-    updateUser,         // For admin to update any user by ID
+    updateUserProfile,
+    changePassword,
+    updateUser,
     deleteUser,
 };
