@@ -1,152 +1,89 @@
 // src/pages/EventsCalendarPage.tsx
-import React, { useState } from 'react';
-import { motion, easeOut } from 'framer-motion';
+import React, { useState, useEffect, useCallback } from 'react';
+import { motion, easeOut, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 
 // Placeholder for an Events Calendar hero image
 import calendarHero from '../assets/calendar-hero.png'; // e.g., a diverse group of students at an event
 
-// Define the type for an event item (expanded from NewsEventsPage)
-interface EventItem {
-  id: number;
+// Define the type for an event item as it comes from your backend
+// This should match the Event interface used in AdminEventsPage and EventFormModal
+interface Event {
+  _id: string;
   title: string;
-  date: string; // Could be a single date or a range "July 15-17, 2025"
-  time: string;
-  location: string;
-  description: string;
-  category: 'Academic' | 'Sports' | 'Cultural' | 'Community' | 'General';
-  imageUrl?: string; // Optional image for larger event cards
-  link?: string; // Optional link for more details about a specific event
+  description?: string;
+  startDate: string; // ISO string
+  endDate: string; // ISO string
+  location?: string;
+  organizer: { _id: string; firstName: string; lastName: string };
+  targetAudience: string[];
+  createdAt: string; // To allow sorting or display creation date
 }
 
-// Sample Full Events Data (more extensive)
-const allEvents: EventItem[] = [
-  {
-    id: 1,
-    title: "New Student Orientation",
-    date: "August 20, 2025",
-    time: "9:00 AM - 3:00 PM",
-    location: "College Main Hall",
-    description: "A comprehensive welcoming event for all new students and their parents. Meet faculty, explore facilities, and learn about college life.",
-    category: 'General',
-    imageUrl: "https://images.pexels.com/photos/3769747/pexels-photo-3769747.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
-  },
-  {
-    id: 2,
-    title: "Resumption for New Academic Session (All Students)",
-    date: "September 08, 2025",
-    time: "All Day",
-    location: "Studyhabit College Campus",
-    description: "The official commencement of the new academic year for all returning and new students.",
-    category: 'Academic',
-    imageUrl: "https://images.pexels.com/photos/4145347/pexels-photo-4145347.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
-  },
-  {
-    id: 3,
-    title: "Annual Inter-House Debate Competition Finals",
-    date: "October 15, 2025",
-    time: "10:00 AM - 1:00 PM",
-    location: "College Auditorium",
-    description: "Witness captivating arguments and intellectual prowess as our houses battle for the prestigious debate championship title.",
-    category: 'Academic',
-    imageUrl: "https://images.pexels.com/photos/8199580/pexels-photo-8199580.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
-  },
-  {
-    id: 4,
-    title: "Cultural Day Celebration",
-    date: "October 25, 2025",
-    time: "11:00 AM - 4:00 PM",
-    location: "College Sports Field",
-    description: "A vibrant showcase of Nigeria's rich cultural diversity through traditional music, dance, fashion, and cuisine.",
-    category: 'Cultural',
-    imageUrl: "https://images.pexels.com/photos/16147424/pexels-photo-16147424/free-photo-of-man-in-traditional-costume-dancing.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
-  },
-  {
-    id: 5,
-    title: "Mid-Term Break",
-    date: "November 01 - 07, 2025",
-    time: "All Day",
-    location: "Off-Campus",
-    description: "A period for students to rest and rejuvenate before the final stretch of the term.",
-    category: 'General'
-  },
-  {
-    id: 6,
-    title: "Annual Sports Festival",
-    date: "November 20-22, 2025",
-    time: "9:00 AM - 5:00 PM daily",
-    location: "College Sports Complex",
-    description: "Three days of exhilarating sporting events, showcasing student athletic talent and sportsmanship across various disciplines.",
-    category: 'Sports',
-    imageUrl: "https://images.pexels.com/photos/17260537/pexels-photo-17260537/free-photo-of-man-in-white-t-shirt-and-black-shorts-running-on-track.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
-  },
-  {
-    id: 7,
-    title: "End of Term Examinations",
-    date: "December 01 - 12, 2025",
-    time: "Scheduled Times",
-    location: "College Examination Halls",
-    description: "Comprehensive examinations covering all subjects taught during the term.",
-    category: 'Academic'
-  },
-  {
-    id: 8,
-    title: "Christmas Carol Service",
-    date: "December 15, 2025",
-    time: "6:00 PM - 8:00 PM",
-    location: "College Auditorium",
-    description: "A joyous celebration featuring choir performances, readings, and festive cheer.",
-    category: 'Cultural'
-  },
-  {
-    id: 9,
-    title: "Christmas / New Year Break",
-    date: "December 16, 2025 - January 05, 2026",
-    time: "All Day",
-    location: "Off-Campus",
-    description: "Extended holiday period for students to spend time with family.",
-    category: 'General'
-  },
-  {
-    id: 10,
-    title: "Parent-Teacher Conference (First Term)",
-    date: "January 10, 2026",
-    time: "9:00 AM - 4:00 PM",
-    location: "College Classrooms",
-    description: "Opportunity for parents to discuss student progress with teachers.",
-    category: 'Community'
-  },
-  {
-    id: 11,
-    title: "Excursion: Visit to Lekki Conservation Centre",
-    date: "January 25, 2026",
-    time: "8:00 AM - 5:00 PM",
-    location: "Lekki Conservation Centre",
-    description: "An educational outing for students to experience nature and learn about conservation efforts.",
-    category: 'General',
-    imageUrl: "https://images.pexels.com/photos/3471441/pexels-photo-3471441.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
-  },
-  {
-    id: 12,
-    title: "School Play: 'The Lion and the Jewel'",
-    date: "February 14-15, 2026",
-    time: "7:00 PM - 9:00 PM",
-    location: "College Auditorium",
-    description: "Our drama club presents a captivating performance of Wole Soyinka's classic play.",
-    category: 'Cultural',
-    imageUrl: "https://images.pexels.com/photos/15668677/pexels-photo-15668677/free-photo-of-people-playing-on-stage.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
-  },
-];
+// Helper to format dates for display
+const formatDateForDisplay = (isoString: string): string => {
+  const date = new Date(isoString);
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+};
 
+// Helper to format time (assuming events might have a more specific time if added to backend)
+const formatTimeForDisplay = (isoString: string): string => {
+  const date = new Date(isoString);
+  // If your backend stores a time, extract it. Otherwise, default.
+  // For simplicity, we'll just say "All Day" if start and end dates are the same,
+  // or imply a range. You might need to adjust this if your backend sends specific times.
+  return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+};
 
 const EventsCalendarPage: React.FC = () => {
-  const eventsPerPage = 6; // Number of events to show initially
+  const eventsPerPage = 6;
+  const [events, setEvents] = useState<Event[]>([]); // State to hold fetched events
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [displayedEventsCount, setDisplayedEventsCount] = useState(eventsPerPage);
-  const [selectedCategory, setSelectedCategory] = useState<EventItem['category'] | 'All'>('All');
+  const [selectedCategory, setSelectedCategory] = useState<string | 'All'>('All'); // Changed to string to accommodate dynamic categories
 
-  const filteredEvents = allEvents.filter(event =>
-    selectedCategory === 'All' || event.category === selectedCategory
-  );
+  const fetchEvents = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // No token needed for public events view
+      const { data } = await axios.get('https://studyhabitcollege.onrender.com/api/events');
+      // Ensure data is an array, or extract events if wrapped in an object like { events: [...] }
+      const eventsData = Array.isArray(data) ? data : (data && Array.isArray(data.events) ? data.events : []);
+
+      // Sort events by startDate, closest upcoming first
+      const sortedEvents = eventsData.sort((a: Event, b: Event) => {
+        return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+      });
+
+      setEvents(sortedEvents);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      console.error('Error fetching events:', err);
+      setError(err.response?.data?.message || 'Failed to fetch events. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
+
+  // Derive categories from fetched events
+  const allCategories = Array.from(new Set(events.flatMap(event => event.targetAudience)));
+  const categories = ['All', ...allCategories.filter(cat => cat !== 'all')]; // 'all' can be a category, but often you'd list specific ones + 'All' overarching
+
+  const filteredEvents = events.filter(event => {
+    if (selectedCategory === 'All') {
+      return true; // Show all events
+    }
+    // Check if any of the event's target audiences match the selected category
+    return event.targetAudience.includes(selectedCategory.toLowerCase());
+  });
+
 
   const eventsToShow = filteredEvents.slice(0, displayedEventsCount);
   const hasMoreEvents = displayedEventsCount < filteredEvents.length;
@@ -154,8 +91,6 @@ const EventsCalendarPage: React.FC = () => {
   const loadMore = () => {
     setDisplayedEventsCount(prevCount => prevCount + eventsPerPage);
   };
-
-  const categories = ['All', ...Array.from(new Set(allEvents.map(event => event.category)))];
 
   // Variants for section animations
   const sectionVariants = {
@@ -224,7 +159,7 @@ const EventsCalendarPage: React.FC = () => {
               <button
                 key={category}
                 onClick={() => {
-                  setSelectedCategory(category as EventItem['category'] | 'All');
+                  setSelectedCategory(category);
                   setDisplayedEventsCount(eventsPerPage); // Reset displayed count on category change
                 }}
                 className={`px-6 py-2 rounded-full font-semibold transition-all duration-300
@@ -233,7 +168,7 @@ const EventsCalendarPage: React.FC = () => {
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
               >
-                {category}
+                {category === 'all' ? 'All Stakeholders' : category.charAt(0).toUpperCase() + category.slice(1)}
               </button>
             ))}
           </div>
@@ -249,60 +184,123 @@ const EventsCalendarPage: React.FC = () => {
           viewport={{ once: true, amount: 0.3 }}
           className="mb-16 bg-white p-8 md:p-12 rounded-2xl shadow-xl border-t-8 border-indigo-500"
         >
-          {filteredEvents.length === 0 ? (
-            <p className="text-center text-xl text-gray-600">No events found for this category.</p>
-          ) : (
+          {loading && (
+            <div className="flex flex-col items-center justify-center py-10">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mb-4"></div>
+              <p className="text-lg font-medium text-gray-700">Loading events... ⏳</p>
+            </div>
+          )}
+
+          {error && !loading && (
+            <div className="text-center py-10 px-6 bg-red-50 border-2 border-red-300 text-red-800 rounded-xl shadow-md">
+              <p className="text-xl font-bold mb-3 flex items-center justify-center">
+                <i className="fas fa-exclamation-triangle mr-3 text-red-600"></i> Error Loading Events!
+              </p>
+              <p className="text-md mb-4">{error}</p>
+              <button
+                onClick={fetchEvents}
+                className="mt-4 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-300 shadow-md flex items-center justify-center mx-auto"
+              >
+                <i className="fas fa-redo-alt mr-2"></i> Retry
+              </button>
+            </div>
+          )}
+
+          {!loading && !error && events.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="text-center py-10 px-6 bg-blue-50 rounded-xl shadow-inner border-2 border-blue-200"
+            >
+              <p className="text-xl font-bold text-blue-700 mb-4 flex items-center justify-center">
+                <i className="fas fa-calendar-times mr-3 text-blue-500"></i> No Events Scheduled Yet!
+              </p>
+              <p className="text-md text-gray-700 leading-relaxed">
+                Check back soon for exciting updates and activities.
+              </p>
+            </motion.div>
+          )}
+
+          {!loading && !error && filteredEvents.length === 0 && events.length > 0 && (
+            <div className="text-center py-10 px-6 bg-yellow-50 rounded-xl shadow-inner border-2 border-yellow-200">
+              <p className="text-xl font-bold text-yellow-700 mb-4 flex items-center justify-center">
+                <i className="fas fa-info-circle mr-3 text-yellow-500"></i> No Events in this Category
+              </p>
+              <p className="text-md text-gray-700 leading-relaxed">
+                Try selecting a different category or "All" to see more events.
+              </p>
+            </div>
+          )}
+
+
+          {!loading && !error && filteredEvents.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {eventsToShow.map((event, index) => (
-                <motion.div
-                  key={event.id}
-                  variants={eventCardVariants}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true, amount: 0.3 }}
-                  transition={{ delay: index * 0.05 }} // Staggered animation for events
-                  className="bg-gray-50 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col h-full"
-                >
-                  {event.imageUrl && (
-                    <img
-                      src={event.imageUrl}
-                      alt={event.title}
-                      className="w-full h-40 object-cover rounded-md mb-4"
-                    />
-                  )}
-                  <h3 className="text-xl font-bold text-blue-900 mb-2 leading-tight">
-                    {event.title}
-                  </h3>
-                  <p className="text-gray-600 text-sm mb-1">
-                    <i className="far fa-calendar-alt mr-2"></i>
-                    <span className="font-semibold">{event.date}</span>
-                  </p>
-                  <p className="text-gray-600 text-sm mb-1">
-                    <i className="far fa-clock mr-2"></i>
-                    <span className="font-semibold">{event.time}</span>
-                  </p>
-                  <p className="text-gray-600 text-sm mb-3">
-                    <i className="fas fa-map-marker-alt mr-2"></i>
-                    {event.location}
-                  </p>
-                  <p className="text-gray-700 text-base flex-grow mb-4">
-                    {event.description}
-                  </p>
-                  <div className="mt-auto">
-                    <span className="inline-block bg-indigo-200 text-indigo-800 text-xs font-semibold px-3 py-1 rounded-full">
-                      {event.category}
-                    </span>
-                    {event.link && (
-                      <Link
-                        to={event.link}
-                        className="inline-block ml-4 text-blue-600 hover:text-blue-800 font-semibold transition-colors duration-200"
-                      >
-                        Details <i className="fas fa-external-link-alt ml-1 text-xs"></i>
-                      </Link>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
+              <AnimatePresence>
+                {eventsToShow.map((event, index) => (
+                  <motion.div
+                    key={event._id} // Use event._id for unique key from backend
+                    variants={eventCardVariants}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, amount: 0.3 }}
+                    transition={{ delay: index * 0.05 }} // Staggered animation for events
+                    className="bg-gray-50 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col h-full"
+                  >
+                    {/* If your backend events include an imageUrl, display it here */}
+                    {/* {event.imageUrl && (
+                      <img
+                        src={event.imageUrl}
+                        alt={event.title}
+                        className="w-full h-40 object-cover rounded-md mb-4"
+                      />
+                    )} */}
+                    <h3 className="text-xl font-bold text-blue-900 mb-2 leading-tight">
+                      {event.title}
+                    </h3>
+                    <p className="text-gray-600 text-sm mb-1">
+                      <i className="far fa-calendar-alt mr-2"></i>
+                      <span className="font-semibold">{formatDateForDisplay(event.startDate)}</span>
+                      {new Date(event.startDate).toDateString() !== new Date(event.endDate).toDateString() &&
+                        ` - ${formatDateForDisplay(event.endDate)}` // Show end date if different
+                      }
+                    </p>
+                    {/* Assuming you don't store time specifically yet, just note "All Day" or time from start date */}
+                    <p className="text-gray-600 text-sm mb-1">
+                      <i className="far fa-clock mr-2"></i>
+                      {/* You can refine this if your backend provides specific event times */}
+                      {new Date(event.startDate).toDateString() === new Date(event.endDate).toDateString() ?
+                       `Starts ${formatTimeForDisplay(event.startDate)}` : 'Multiple Days'
+                      }
+                    </p>
+                    <p className="text-gray-600 text-sm mb-3">
+                      <i className="fas fa-map-marker-alt mr-2"></i>
+                      {event.location || 'Location to be announced'}
+                    </p>
+                    <p className="text-gray-700 text-base flex-grow mb-4">
+                      {event.description || 'No description provided.'}
+                    </p>
+                    <div className="mt-auto">
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {event.targetAudience.map(audience => (
+                          <span key={audience} className="inline-block bg-indigo-200 text-indigo-800 text-xs font-semibold px-3 py-1 rounded-full">
+                            {audience.charAt(0).toUpperCase() + audience.slice(1)}
+                          </span>
+                        ))}
+                      </div>
+                      {/* You can add a link if your events have more detailed pages */}
+                      {/* {event.link && (
+                        <Link
+                          to={event.link}
+                          className="inline-block ml-4 text-blue-600 hover:text-blue-800 font-semibold transition-colors duration-200"
+                        >
+                          Details <i className="fas fa-external-link-alt ml-1 text-xs"></i>
+                        </Link>
+                      )} */}
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
           )}
 
