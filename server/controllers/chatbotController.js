@@ -2,38 +2,70 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import asyncHandler from 'express-async-handler';
 import dotenv from 'dotenv';
-import schoolData from '../data/schoolData.json' assert { type: 'json' }; // Import your data
+import fs from 'fs'; // Import the file system module
+import path from 'path'; // Import the path module
+import { fileURLToPath } from 'url'; // For ES Modules to get __dirname
 
 dotenv.config();
 
+// --- Configuration for __dirname in ES Modules ---
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+// --- End Configuration ---
+
+// Path to your JSON data file
+const schoolDataPath = path.join(__dirname, '../data/schoolData.json');
+let schoolData = {};
+
+try {
+    const rawData = fs.readFileSync(schoolDataPath, 'utf8');
+    schoolData = JSON.parse(rawData);
+} catch (error) {
+    console.error('Error loading schoolData.json:', error);
+    // Handle the error appropriately, e.g., log it and continue with empty data
+    // or exit the process if the data is critical.
+}
+
+
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'dummy_key');
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
 
 // Helper function to find relevant data (very basic keyword matching)
 const retrieveRelevantInfo = (query) => {
     query = query.toLowerCase();
     let context = [];
 
+    // Ensure schoolData is loaded before trying to access its properties
+    if (Object.keys(schoolData).length === 0) {
+        console.warn('schoolData is empty. Cannot retrieve specific info.');
+        return ''; // Return empty if data isn't loaded
+    }
+
     if (query.includes('about') || query.includes('college')) {
-        context.push(`About our college: ${schoolData.about}`);
+        if (schoolData.about) context.push(`About our college: ${schoolData.about}`);
     }
     if (query.includes('admissions') || query.includes('apply')) {
-        context.push(`Admissions information: ${schoolData.admissions}`);
+        if (schoolData.admissions) context.push(`Admissions information: ${schoolData.admissions}`);
     }
     if (query.includes('courses') || query.includes('classes') || query.includes('subjects')) {
-        context.push("Here are some of our courses:");
-        schoolData.courses.forEach(course => {
-            context.push(`- ${course.code}: ${course.name} - ${course.description}`);
-        });
+        if (schoolData.courses && schoolData.courses.length > 0) {
+            context.push("Here are some of our courses:");
+            schoolData.courses.forEach(course => {
+                context.push(`- ${course.code}: ${course.name} - ${course.description}`);
+            });
+        }
     }
     if (query.includes('contact') || query.includes('reach us')) {
-        context.push(`Contact information: ${schoolData.contact}`);
+        if (schoolData.contact) context.push(`Contact information: ${schoolData.contact}`);
     }
     if (query.includes('events') || query.includes('calendar')) {
-        context.push("Upcoming events:");
-        schoolData.events.forEach(event => {
-            context.push(`- ${event.name} on ${event.date}`);
-        });
+        if (schoolData.events && schoolData.events.length > 0) {
+            context.push("Upcoming events:");
+            schoolData.events.forEach(event => {
+                context.push(`- ${event.name} on ${event.date}`);
+            });
+        }
     }
 
     return context.join('\n');
