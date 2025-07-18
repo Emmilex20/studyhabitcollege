@@ -14,12 +14,20 @@ const teacherTeachesCourse = async (teacherId, courseId) => {
 // Helper function to check if a student is in a teacher's course
 const isStudentInTeachersCourse = async (teacherId, studentId, courseId) => {
     if (!courseId) return true; // For general attendance, no course-specific student check
+    
+    // First, check if the course exists and is taught by the given teacher
     const course = await Course.findById(courseId);
     if (!course || course.teacher.toString() !== teacherId.toString()) {
+        console.warn(`Attempt to verify student for course not taught by teacher ${teacherId} or course ${courseId} not found.`);
         return false;
     }
-    const student = await Student.findById(studentId);
-    return student && student.courses.includes(courseId);
+
+    // Now, find the student and POPULATE their 'courses' array
+    const student = await Student.findById(studentId).populate('courses'); // ✨ FIX: Populate courses here
+
+    // Check if student exists and their 'courses' array includes the specific courseId
+    // Ensure student.courses is an array before calling .includes()
+    return student && Array.isArray(student.courses) && student.courses.some(c => c._id.toString() === courseId.toString());
 };
 
 
@@ -145,9 +153,15 @@ const createAttendance = async (req, res) => {
             }
             // If specific course, verify student is in that course
             if (course) {
-                const studentInCourse = await isStudentInTeachersCourse(req.user._id, student, course);
+                // Ensure the student ID passed in the body is a valid student ID
+                const actualStudent = await Student.findById(student).populate('courses'); // ✨ IMPORTANT: Populate student courses here too for proper validation
+                if (!actualStudent) {
+                    return res.status(404).json({ message: 'Student not found.' });
+                }
+
+                const studentInCourse = await isStudentInTeachersCourse(req.user._id, actualStudent._id, course); // Pass actualStudent._id
                 if (!studentInCourse) {
-                     return res.status(403).json({ message: 'Student is not in this course or you do not teach them for this course.' });
+                    return res.status(403).json({ message: 'Student is not in this course or you do not teach them for this course.' });
                 }
             }
         }
@@ -253,22 +267,22 @@ const deleteAttendance = async (req, res) => {
 // @route   GET /api/students/me/attendance
 // @access  Private/Student
 const getMyAttendance = async (req, res) => {
-  try {
-    const student = await Student.findOne({ user: req.user._id });
+    try {
+        const student = await Student.findOne({ user: req.user._id });
 
-    if (!student) {
-      return res.status(404).json({ message: 'Student profile not found.' });
+        if (!student) {
+            return res.status(404).json({ message: 'Student profile not found.' });
+        }
+
+        const attendanceRecords = await Attendance.find({ student: student._id })
+            .populate('course', 'name code')
+            .sort({ date: -1 });
+
+        res.status(200).json(attendanceRecords);
+    } catch (error) {
+        console.error('Error fetching attendance:', error);
+        res.status(500).json({ message: 'Server error' });
     }
-
-    const attendanceRecords = await Attendance.find({ student: student._id })
-      .populate('course', 'name code')
-      .sort({ date: -1 });
-
-    res.status(200).json(attendanceRecords);
-  } catch (error) {
-    console.error('Error fetching attendance:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
 };
 
 
