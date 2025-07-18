@@ -33,7 +33,7 @@ interface GroupedGrades {
 }
 
 // (Optional) Define a list of predefined categories for the filter dropdown
-const GRADE_CATEGORIES = ['All Categories', 'Quiz', 'Exam', 'Homework', 'Classwork', 'Project', 'Participation', 'Midterm', 'Final'];
+const GRADE_CATEGORIES = ['All Categories', 'Test', 'Exam', 'Quiz', 'Assignment', 'Project', 'Midterm', 'Final'];
 
 const TeacherGradebookPage: React.FC = () => {
     const { userInfo } = useAuth();
