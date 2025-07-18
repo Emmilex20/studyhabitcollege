@@ -5,7 +5,9 @@ import dotenv from 'dotenv';
 
 dotenv.config(); // Load environment variables from .env file
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+console.log('GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? 'Key Loaded' : 'Key NOT Loaded');
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'dummy_key'); // Provide a dummy to prevent immediate crash if not loaded
 // Initialize the model here. Choose the appropriate model for your needs.
 // For text-only chat, 'gemini-pro' is a good choice.
 const model = genAI.getGenerativeModel({ model: "gemini-pro" });
@@ -22,8 +24,10 @@ const handleChatbotMessage = asyncHandler(async (req, res) => {
     try {
         // Send the user's message to the Gemini AI model
         const result = await model.generateContent(message);
+        console.log('AI response result object:', result); // Log the full result
         const response = await result.response;
-        const text = response.text(); // Extract the plain text reply from the AI
+        const text = response.text();
+        console.log('AI response text:', text); // Log the extracted text
 
         // Send the AI's reply back to the frontend
         res.status(200).json({ reply: text });
