@@ -14,7 +14,7 @@ interface Grade {
     teacher: { _id: string; firstName: string; lastName: string; };
     gradeType: string;
     assignmentName?: string;
-    category?: string; // Added category property
+    category?: string; // category property remains in interface for data structure, but won't be a separate column/filter
     score: number;
     maxScore: number;
     weight: number;
@@ -32,8 +32,8 @@ interface GroupedGrades {
     };
 }
 
-// (Optional) Define a list of predefined categories for the filter dropdown
-const GRADE_CATEGORIES = ['All Categories', 'Test', 'Exam', 'Quiz', 'Assignment', 'Project', 'Midterm', 'Final'];
+// GRADE_CATEGORIES constant is no longer needed if filter is removed
+// const GRADE_CATEGORIES = ['All Categories', 'Test', 'Exam', 'Quiz', 'Assignment', 'Project', 'Midterm', 'Final'];
 
 const TeacherGradebookPage: React.FC = () => {
     const { userInfo } = useAuth();
@@ -43,7 +43,7 @@ const TeacherGradebookPage: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedGrade, setSelectedGrade] = useState<Grade | null>(null);
     const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
-    const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('All Categories'); // ✨ New state for category filter
+    // Removed selectedCategoryFilter state as it's no longer used for filtering
 
     const fetchGrades = async () => {
         if (!userInfo?.token || userInfo.role !== 'teacher') {
@@ -76,14 +76,12 @@ const TeacherGradebookPage: React.FC = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userInfo]);
 
-    // Group and filter grades by course and then sort grades within each group by score (descending)
-    const groupedAndFilteredGrades = useMemo(() => {
+    // Group grades by course and then sort grades within each group by score (descending)
+    // No category filtering applied here anymore
+    const groupedAndSortedGrades = useMemo(() => {
         const groups: GroupedGrades = {};
-        const filteredGrades = selectedCategoryFilter === 'All Categories'
-            ? grades
-            : grades.filter(grade => grade.category === selectedCategoryFilter); // ✨ Apply category filter
 
-        filteredGrades.forEach(grade => {
+        grades.forEach(grade => { // Iterating directly over `grades` state, no prior filtering
             if (grade.course) {
                 if (!groups[grade.course._id]) {
                     groups[grade.course._id] = {
@@ -101,7 +99,7 @@ const TeacherGradebookPage: React.FC = () => {
         }
 
         return groups;
-    }, [grades, selectedCategoryFilter]); // ✨ Re-run memoization when filter changes
+    }, [grades]); // Only re-run memoization when `grades` data changes
 
     const handleAddGradeClick = () => {
         setSelectedGrade(null);
@@ -144,8 +142,8 @@ const TeacherGradebookPage: React.FC = () => {
 
     // Framer Motion Variants
     const pageVariants = {
-      hidden: { opacity: 0, y: 20 },
-      visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: easeOut } },
+        hidden: { opacity: 0, y: 20 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: easeOut } },
     };
 
     const courseSectionVariants = {
@@ -161,16 +159,16 @@ const TeacherGradebookPage: React.FC = () => {
     };
 
     const tableRowVariants = {
-      hidden: { opacity: 0, y: 10 },
-      visible: (i: number) => ({
-        opacity: 1,
-        y: 0,
-        transition: {
-          delay: i * 0.05,
-          duration: 0.3,
-          ease: easeOut,
-        },
-      }),
+        hidden: { opacity: 0, y: 10 },
+        visible: (i: number) => ({
+            opacity: 1,
+            y: 0,
+            transition: {
+                delay: i * 0.05,
+                duration: 0.3,
+                ease: easeOut,
+            },
+        }),
     };
 
     return (
@@ -195,21 +193,7 @@ const TeacherGradebookPage: React.FC = () => {
                     <i className="fas fa-plus mr-2"></i> Add New Grade
                 </button>
 
-                {/* ✨ NEW: Category Filter Dropdown */}
-                <div className="flex items-center space-x-2">
-                    <label htmlFor="categoryFilter" className="text-gray-700 font-medium">Filter by Category:</label>
-                    <select
-                        id="categoryFilter"
-                        name="categoryFilter"
-                        value={selectedCategoryFilter}
-                        onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    >
-                        {GRADE_CATEGORIES.map(category => (
-                            <option key={category} value={category}>{category}</option>
-                        ))}
-                    </select>
-                </div>
+                {/* Removed Category Filter Dropdown */}
             </div>
 
             {loading ? (
@@ -225,22 +209,19 @@ const TeacherGradebookPage: React.FC = () => {
                     <p>{error}</p>
                     <p className="text-sm mt-3 text-red-500">Please ensure you are logged in as a teacher. ⚠️</p>
                 </div>
-            ) : Object.keys(groupedAndFilteredGrades).length === 0 ? (
+            ) : Object.keys(groupedAndSortedGrades).length === 0 ? (
                 <div className="text-center py-10 bg-blue-50 rounded-lg shadow-inner border border-blue-200">
                     <p className="text-xl font-semibold text-blue-600 mb-3 flex items-center justify-center">
                         <i className="fas fa-info-circle mr-3 text-blue-500"></i> No Grades Found!
                     </p>
                     <p className="text-gray-600">
-                        {selectedCategoryFilter === 'All Categories'
-                            ? `It looks like there are no grade entries for your assigned courses yet. Click "Add New Grade" to get started!`
-                            : `No grades found for the category "${selectedCategoryFilter}" in your assigned courses.`
-                        }
+                        It looks like there are no grade entries for your assigned courses yet. Click "Add New Grade" to get started!
                     </p>
                 </div>
             ) : (
                 <div className="space-y-8">
                     <AnimatePresence>
-                        {Object.values(groupedAndFilteredGrades).map((group, groupIndex) => (
+                        {Object.values(groupedAndSortedGrades).map((group, groupIndex) => (
                             <motion.div
                                 key={group.courseInfo._id}
                                 variants={courseSectionVariants}
@@ -264,13 +245,10 @@ const TeacherGradebookPage: React.FC = () => {
                                                 <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                                     Type
                                                 </th>
-                                                {/* ✨ NEW: Separate Category Header */}
+                                                {/* Removed Category Header */}
                                                 <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                                    Category
-                                                </th>
-                                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                                    Assignment Name
-                                                </th>
+                                                    Assignment/Category
+                                                </th> {/* Updated header */}
                                                 <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                                     Score
                                                 </th>
@@ -317,14 +295,15 @@ const TeacherGradebookPage: React.FC = () => {
                                                     <td className="px-5 py-4 text-sm text-gray-900">
                                                         <span className="font-semibold text-indigo-700">{grade.gradeType}</span>
                                                     </td>
-                                                    {/* ✨ NEW: Separate Category Column */}
-                                                    <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                        <span className="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
-                                                            {grade.category || 'N/A'}
-                                                        </span>
-                                                    </td>
+                                                    {/* Removed Category Column */}
                                                     <td className="px-5 py-4 text-sm text-gray-900">
-                                                        {grade.assignmentName || 'N/A'}
+                                                        {grade.assignmentName && grade.category ?
+                                                            <span className="block">{grade.assignmentName}</span> :
+                                                            grade.assignmentName || grade.category || 'N/A'
+                                                        }
+                                                        {grade.assignmentName && grade.category && (
+                                                            <span className="block text-gray-500 text-xs italic">({grade.category})</span>
+                                                        )}
                                                     </td>
                                                     <td className="px-5 py-4 whitespace-nowrap text-sm">
                                                         <span className="font-extrabold text-lg text-green-700">{grade.score}</span>
@@ -379,7 +358,7 @@ const TeacherGradebookPage: React.FC = () => {
                                     </table>
                                 </div>
                                 {group.grades.length === 0 && (
-                                    <p className="text-center text-gray-500 mt-4">No grades recorded for this course yet under the selected filter.</p>
+                                    <p className="text-center text-gray-500 mt-4">No grades recorded for this course yet.</p>
                                 )}
                             </motion.div>
                         ))}

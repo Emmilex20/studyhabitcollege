@@ -29,12 +29,27 @@ const userSchema = mongoose.Schema(
             default: 'student', // Default role for new registrations
         },
 
-         avatarUrl: { // ✨ ADD THIS FIELD ✨
+        avatarUrl: {
             type: String,
             required: false, // Not all users might have an avatar
             default: '', // Or a default placeholder URL if you have one
         },
-        // Add more fields as needed for specific roles (e.g., studentId, parentId, classesTaught)
+        // ✨ ADD THIS FIELD to link teachers to the courses they teach ✨
+        // If a user (specifically a teacher) needs to know what courses they teach
+        classesTaught: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'Course', // Reference the 'Course' model
+            },
+        ],
+        // If a user (specifically a student) needs to know what courses they are enrolled in
+        // You might also add:
+        // enrolledCourses: [
+        //     {
+        //         type: mongoose.Schema.Types.ObjectId,
+        //         ref: 'Course',
+        //     },
+        // ],
     },
     {
         timestamps: true, // Adds createdAt and updatedAt timestamps

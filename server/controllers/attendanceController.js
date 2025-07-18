@@ -14,7 +14,7 @@ const teacherTeachesCourse = async (teacherId, courseId) => {
 // Helper function to check if a student is in a teacher's course
 const isStudentInTeachersCourse = async (teacherId, studentId, courseId) => {
     if (!courseId) return true; // For general attendance, no course-specific student check
-    
+
     // First, check if the course exists and is taught by the given teacher
     const course = await Course.findById(courseId);
     if (!course || course.teacher.toString() !== teacherId.toString()) {
@@ -22,18 +22,18 @@ const isStudentInTeachersCourse = async (teacherId, studentId, courseId) => {
         return false;
     }
 
-    // Now, find the student and POPULATE their 'courses' array
-    const student = await Student.findById(studentId).populate('courses'); // ✨ FIX: Populate courses here
+    // Now, find the student and POPULATE their 'enrolledCourses' array
+    const student = await Student.findById(studentId).populate('enrolledCourses'); // FIX: Populate 'enrolledCourses'
 
-    // Check if student exists and their 'courses' array includes the specific courseId
-    // Ensure student.courses is an array before calling .includes()
-    return student && Array.isArray(student.courses) && student.courses.some(c => c._id.toString() === courseId.toString());
+    // Check if student exists and their 'enrolledCourses' array includes the specific courseId
+    // Ensure student.enrolledCourses is an array before calling .some()
+    return student && Array.isArray(student.enrolledCourses) && student.enrolledCourses.some(c => c._id.toString() === courseId.toString());
 };
 
 
-// @desc    Get all attendance records (Admin sees all, Teacher sees their courses' attendance)
-// @route   GET /api/attendance
-// @access  Private (Admin, Teacher, Student, Parent)
+// @desc     Get all attendance records (Admin sees all, Teacher sees their courses' attendance)
+// @route    GET /api/attendance
+// @access   Private (Admin, Teacher, Student, Parent)
 const getAttendance = async (req, res) => {
     try {
         let query = {};
@@ -80,9 +80,9 @@ const getAttendance = async (req, res) => {
     }
 };
 
-// @desc    Get single attendance record by ID
-// @route   GET /api/attendance/:id
-// @access  Private
+// @desc     Get single attendance record by ID
+// @route    GET /api/attendance/:id
+// @access   Private
 const getAttendanceById = async (req, res) => {
     try {
         const attendance = await Attendance.findById(req.params.id)
@@ -133,9 +133,9 @@ const getAttendanceById = async (req, res) => {
     }
 };
 
-// @desc    Create a new attendance record
-// @route   POST /api/attendance
-// @access  Private/Admin, Teacher
+// @desc     Create a new attendance record
+// @route    POST /api/attendance
+// @access   Private/Admin, Teacher
 const createAttendance = async (req, res) => {
     const { student, course, date, status, remarks } = req.body;
 
@@ -154,7 +154,7 @@ const createAttendance = async (req, res) => {
             // If specific course, verify student is in that course
             if (course) {
                 // Ensure the student ID passed in the body is a valid student ID
-                const actualStudent = await Student.findById(student).populate('courses'); // ✨ IMPORTANT: Populate student courses here too for proper validation
+                const actualStudent = await Student.findById(student).populate('enrolledCourses'); // IMPORTANT: Populate student 'enrolledCourses' here too for proper validation
                 if (!actualStudent) {
                     return res.status(404).json({ message: 'Student not found.' });
                 }
@@ -199,9 +199,9 @@ const createAttendance = async (req, res) => {
     }
 };
 
-// @desc    Update an attendance record
-// @route   PUT /api/attendance/:id
-// @access  Private/Admin, Teacher
+// @desc     Update an attendance record
+// @route    PUT /api/attendance/:id
+// @access   Private/Admin, Teacher
 const updateAttendance = async (req, res) => {
     const { status, remarks } = req.body; // Only allow status and remarks to be updated for existing records
 
@@ -236,9 +236,9 @@ const updateAttendance = async (req, res) => {
     }
 };
 
-// @desc    Delete an attendance record
-// @route   DELETE /api/attendance/:id
-// @access  Private/Admin, Teacher
+// @desc     Delete an attendance record
+// @route    DELETE /api/attendance/:id
+// @access   Private/Admin, Teacher
 const deleteAttendance = async (req, res) => {
     try {
         const attendance = await Attendance.findById(req.params.id);
@@ -263,9 +263,9 @@ const deleteAttendance = async (req, res) => {
     }
 };
 
-// @desc    Get attendance for the logged-in student
-// @route   GET /api/students/me/attendance
-// @access  Private/Student
+// @desc     Get attendance for the logged-in student
+// @route    GET /api/students/me/attendance
+// @access   Private/Student
 const getMyAttendance = async (req, res) => {
     try {
         const student = await Student.findOne({ user: req.user._id });
