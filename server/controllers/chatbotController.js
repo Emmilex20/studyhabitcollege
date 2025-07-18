@@ -23,7 +23,7 @@ try {
 } catch (error) {
     console.error('Error loading schoolData.json:', error);
     // Handle the error appropriately, e.g., log it and continue with empty data
-    // or exit the process if the data is critical.
+    
 }
 
 
