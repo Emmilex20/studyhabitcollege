@@ -6,7 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { motion, AnimatePresence, easeOut } from 'framer-motion';
 import GradeFormModal from '../../components/modals/GradeFormModal';
 
-// Updated Grade interface (as above, with category)
+// Updated Grade interface to match the one in GradeFormModal.tsx
 interface Grade {
     _id: string;
     student: { _id: string; user: { _id: string; firstName: string; lastName: string; }; studentId: string; };
@@ -14,7 +14,7 @@ interface Grade {
     teacher: { _id: string; firstName: string; lastName: string; };
     gradeType: string;
     assignmentName?: string;
-    category?: string; // ✨ Added category
+    category?: string; // Added category property
     score: number;
     maxScore: number;
     weight: number;
@@ -32,6 +32,9 @@ interface GroupedGrades {
     };
 }
 
+// (Optional) Define a list of predefined categories for the filter dropdown
+const GRADE_CATEGORIES = ['All Categories', 'Quiz', 'Exam', 'Homework', 'Classwork', 'Project', 'Participation', 'Midterm', 'Final'];
+
 const TeacherGradebookPage: React.FC = () => {
     const { userInfo } = useAuth();
     const [grades, setGrades] = useState<Grade[]>([]);
@@ -40,6 +43,7 @@ const TeacherGradebookPage: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedGrade, setSelectedGrade] = useState<Grade | null>(null);
     const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
+    const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('All Categories'); // ✨ New state for category filter
 
     const fetchGrades = async () => {
         if (!userInfo?.token || userInfo.role !== 'teacher') {
@@ -72,10 +76,14 @@ const TeacherGradebookPage: React.FC = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userInfo]);
 
-    // Group grades by course and then sort grades within each group by score (descending)
-    const groupedGrades = useMemo(() => {
+    // Group and filter grades by course and then sort grades within each group by score (descending)
+    const groupedAndFilteredGrades = useMemo(() => {
         const groups: GroupedGrades = {};
-        grades.forEach(grade => {
+        const filteredGrades = selectedCategoryFilter === 'All Categories'
+            ? grades
+            : grades.filter(grade => grade.category === selectedCategoryFilter); // ✨ Apply category filter
+
+        filteredGrades.forEach(grade => {
             if (grade.course) {
                 if (!groups[grade.course._id]) {
                     groups[grade.course._id] = {
@@ -93,7 +101,7 @@ const TeacherGradebookPage: React.FC = () => {
         }
 
         return groups;
-    }, [grades]);
+    }, [grades, selectedCategoryFilter]); // ✨ Re-run memoization when filter changes
 
     const handleAddGradeClick = () => {
         setSelectedGrade(null);
@@ -179,12 +187,30 @@ const TeacherGradebookPage: React.FC = () => {
                 Manage and view grades for students in your assigned courses. You can add, edit, or delete grade entries here. 📊
             </p>
 
-            <button
-                onClick={handleAddGradeClick}
-                className="mb-6 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 flex items-center"
-            >
-                <i className="fas fa-plus mr-2"></i> Add New Grade
-            </button>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 space-y-4 sm:space-y-0 sm:space-x-4">
+                <button
+                    onClick={handleAddGradeClick}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 flex items-center justify-center"
+                >
+                    <i className="fas fa-plus mr-2"></i> Add New Grade
+                </button>
+
+                {/* ✨ NEW: Category Filter Dropdown */}
+                <div className="flex items-center space-x-2">
+                    <label htmlFor="categoryFilter" className="text-gray-700 font-medium">Filter by Category:</label>
+                    <select
+                        id="categoryFilter"
+                        name="categoryFilter"
+                        value={selectedCategoryFilter}
+                        onChange={(e) => setSelectedCategoryFilter(e.target.value)}
+                        className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    >
+                        {GRADE_CATEGORIES.map(category => (
+                            <option key={category} value={category}>{category}</option>
+                        ))}
+                    </select>
+                </div>
+            </div>
 
             {loading ? (
                 <div className="flex items-center justify-center h-48">
@@ -199,19 +225,22 @@ const TeacherGradebookPage: React.FC = () => {
                     <p>{error}</p>
                     <p className="text-sm mt-3 text-red-500">Please ensure you are logged in as a teacher. ⚠️</p>
                 </div>
-            ) : Object.keys(groupedGrades).length === 0 ? (
+            ) : Object.keys(groupedAndFilteredGrades).length === 0 ? (
                 <div className="text-center py-10 bg-blue-50 rounded-lg shadow-inner border border-blue-200">
                     <p className="text-xl font-semibold text-blue-600 mb-3 flex items-center justify-center">
                         <i className="fas fa-info-circle mr-3 text-blue-500"></i> No Grades Found!
                     </p>
                     <p className="text-gray-600">
-                        It looks like there are no grade entries for your assigned courses yet. Click "Add New Grade" to get started!
+                        {selectedCategoryFilter === 'All Categories'
+                            ? `It looks like there are no grade entries for your assigned courses yet. Click "Add New Grade" to get started!`
+                            : `No grades found for the category "${selectedCategoryFilter}" in your assigned courses.`
+                        }
                     </p>
                 </div>
             ) : (
                 <div className="space-y-8">
                     <AnimatePresence>
-                        {Object.values(groupedGrades).map((group, groupIndex) => (
+                        {Object.values(groupedAndFilteredGrades).map((group, groupIndex) => (
                             <motion.div
                                 key={group.courseInfo._id}
                                 variants={courseSectionVariants}
@@ -233,7 +262,14 @@ const TeacherGradebookPage: React.FC = () => {
                                                     Student
                                                 </th>
                                                 <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                                    Type / Assignment / Category {/* ✨ Updated Table Header */}
+                                                    Type
+                                                </th>
+                                                {/* ✨ NEW: Separate Category Header */}
+                                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                                    Category
+                                                </th>
+                                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                                    Assignment Name
                                                 </th>
                                                 <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                                     Score
@@ -280,15 +316,15 @@ const TeacherGradebookPage: React.FC = () => {
                                                     </td>
                                                     <td className="px-5 py-4 text-sm text-gray-900">
                                                         <span className="font-semibold text-indigo-700">{grade.gradeType}</span>
-                                                        {grade.assignmentName && (
-                                                            <p className="text-xs text-gray-500 italic mt-1">({grade.assignmentName})</p>
-                                                        )}
-                                                        {/* ✨ NEW: Display category if available */}
-                                                        {grade.category && (
-                                                            <p className="text-xs text-purple-600 font-medium mt-1">
-                                                                Category: {grade.category}
-                                                            </p>
-                                                        )}
+                                                    </td>
+                                                    {/* ✨ NEW: Separate Category Column */}
+                                                    <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                        <span className="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
+                                                            {grade.category || 'N/A'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-5 py-4 text-sm text-gray-900">
+                                                        {grade.assignmentName || 'N/A'}
                                                     </td>
                                                     <td className="px-5 py-4 whitespace-nowrap text-sm">
                                                         <span className="font-extrabold text-lg text-green-700">{grade.score}</span>
@@ -343,7 +379,7 @@ const TeacherGradebookPage: React.FC = () => {
                                     </table>
                                 </div>
                                 {group.grades.length === 0 && (
-                                    <p className="text-center text-gray-500 mt-4">No grades recorded for this course yet.</p>
+                                    <p className="text-center text-gray-500 mt-4">No grades recorded for this course yet under the selected filter.</p>
                                 )}
                             </motion.div>
                         ))}
