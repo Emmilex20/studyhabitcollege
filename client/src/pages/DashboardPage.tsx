@@ -1,12 +1,14 @@
+// src/pages/DashboardPage.tsx
 import React from 'react';
-import { motion, AnimatePresence, easeOut } from 'framer-motion';
-import { useAuth } from '../context/AuthContext';
+import { motion, AnimatePresence, easeOut, type Variants } from 'framer-motion';
+import { useAuth } from '../context/AuthContext'; // Assuming you have an AuthContext
 import { Link, Outlet, useLocation } from 'react-router-dom';
 
 const DashboardPage: React.FC = () => {
-  const { userInfo } = useAuth();
+  const { userInfo, logout } = useAuth(); // Destructure logout from useAuth
   const location = useLocation(); // To highlight active sidebar link
 
+  // If user info isn't available, show a loading/not authenticated message
   if (!userInfo) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-100 to-blue-100 p-6">
@@ -76,19 +78,44 @@ const DashboardPage: React.FC = () => {
   const sidebarLinks = getSidebarLinks(userInfo.role);
 
   // Animation variants for main content
-  const contentVariants = {
+  const contentVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: easeOut } },
     exit: { opacity: 0, y: -20, transition: { duration: 0.4, ease: easeOut } }
+  };
+
+  // NEW & IMPROVED Sidebar Animation Variants
+  const sidebarVariants: Variants = {
+    hidden: {
+      x: '-100%',
+      opacity: 0,
+      transition: { type: "spring", stiffness: 100, damping: 20 } as const
+    },
+    visible: {
+      x: '0%',
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 80,
+        damping: 15,
+        delayChildren: 0.2,
+        staggerChildren: 0.05
+      } as const
+    }
+  };
+
+  const sidebarItemVariants: Variants = {
+    hidden: { opacity: 0, x: -20 },
+    visible: { opacity: 1, x: 0 }
   };
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 font-sans antialiased overflow-hidden">
       {/* Sidebar */}
       <motion.aside
-        initial={{ x: '-100%', opacity: 0 }}
-        animate={{ x: '0%', opacity: 1 }}
-        transition={{ duration: 0.6, ease: easeOut, delay: 0.1 }}
+        variants={sidebarVariants}
+        initial="hidden"
+        animate="visible"
         className="w-full md:w-72 lg:w-80 bg-gradient-to-b from-blue-900 to-indigo-950 text-white shadow-2xl p-6 md:p-8 md:sticky md:top-0 md:h-screen flex flex-col z-20 transform transition-all duration-300 ease-in-out"
       >
         <h2 className="text-3xl lg:text-4xl font-extrabold mb-8 mt-4 border-b border-blue-700 pb-5 text-blue-100 tracking-wide">
@@ -98,11 +125,12 @@ const DashboardPage: React.FC = () => {
             <span className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full animate-pulse-fade"></span>
           </span>
         </h2>
-        <nav className="flex-grow overflow-y-auto custom-scrollbar pr-2"> {/* Added custom-scrollbar */}
+        <nav className="flex-grow overflow-y-auto custom-scrollbar pr-2">
           <ul>
             {sidebarLinks.map((link) => (
               <motion.li
                 key={link.name}
+                variants={sidebarItemVariants}
                 className="mb-3"
                 whileHover={{ scale: 1.03, x: 8, transition: { duration: 0.2 } }}
                 whileTap={{ scale: 0.98 }}
@@ -139,7 +167,10 @@ const DashboardPage: React.FC = () => {
           <p className="text-sm text-blue-300 mb-1">Logged in as:</p>
           <p className="font-bold text-2xl mb-1 text-white truncate">{userInfo.firstName} {userInfo.lastName}</p>
           <p className="text-xs text-blue-400 italic truncate">{userInfo.email}</p>
-          <button className="mt-4 w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 shadow-md">
+          <button
+            onClick={logout} 
+            className="mt-4 w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 shadow-md"
+          >
             Logout <i className="fas fa-sign-out-alt ml-2"></i>
           </button>
         </motion.div>
