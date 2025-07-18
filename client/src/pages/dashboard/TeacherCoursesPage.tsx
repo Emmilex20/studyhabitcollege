@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-import { motion, AnimatePresence, easeOut } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Course {
   _id: string;
@@ -52,7 +52,7 @@ const TeacherCoursesPage: React.FC = () => {
         };
 
         const { data } = await axios.get('https://studyhabitcollege.onrender.com/api/courses', config);
-        setCourses(data); // This line remains exactly as you provided it.
+        setCourses(data);
         setError(null);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
@@ -68,107 +68,43 @@ const TeacherCoursesPage: React.FC = () => {
 
   const closeModal = () => setSelectedCourse(null);
 
-  // Framer Motion Variants for page and cards
-  const pageVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: easeOut } },
-  };
-
-  const cardVariants = {
-    hidden: { opacity: 0, scale: 0.9, y: 20 },
-    visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.4, ease: easeOut } },
-    hover: { scale: 1.03, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)' } // Tailwind shadow-md and shadow-lg equivalent
-  };
-
-  const modalVariants = {
-    hidden: { opacity: 0, scale: 0.9, y: 50 },
-    visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.3, ease: easeOut } },
-    exit: { opacity: 0, scale: 0.9, y: 50, transition: { duration: 0.2, ease: easeOut } },
-  };
-
   return (
     <motion.div
-      initial="hidden"
-      animate="visible"
-      variants={pageVariants}
-      className="teacher-courses-page p-4 sm:p-6 bg-gray-50 min-h-screen font-sans"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="teacher-courses-page"
     >
-      <h2 className="text-3xl sm:text-4xl font-extrabold text-blue-800 mb-6 flex items-center">
-        <i className="fas fa-chalkboard-teacher mr-3 text-indigo-600"></i> My Courses
-      </h2>
-      <p className="text-gray-700 mb-8 text-lg">
-        Here are the courses you are currently teaching. Click on a course to see more details and enrolled students. 🎓
-      </p>
+      <h2 className="text-3xl font-bold text-blue-800 mb-6">My Courses</h2>
+      <p className="text-gray-700 mb-4">Here are the courses you are currently teaching.</p>
 
       {loading ? (
-        <div className="flex items-center justify-center h-48">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
-          <p className="ml-4 text-lg text-gray-600">Loading your courses... ⏳</p>
-        </div>
+        <div className="text-center py-10 text-gray-600">Loading your courses...</div>
       ) : error ? (
-        <div className="text-center py-10 px-4 bg-red-50 border border-red-200 text-red-700 rounded-lg shadow-sm">
-          <p className="text-xl font-semibold mb-2 flex items-center justify-center">
-            <i className="fas fa-exclamation-circle mr-3 text-red-500"></i> Error Loading Courses!
-          </p>
-          <p>{error}</p>
-          <p className="text-sm mt-3 text-red-500">Please ensure you are logged in as a teacher. ⚠️</p>
-        </div>
+        <div className="text-center py-10 text-red-600">{error}</div>
       ) : courses.length === 0 ? (
-        <div className="text-center py-10 bg-blue-50 rounded-lg shadow-inner border border-blue-200">
-          <p className="text-xl font-semibold text-blue-600 mb-3 flex items-center justify-center">
-            <i className="fas fa-info-circle mr-3 text-blue-500"></i> No Courses Assigned!
-          </p>
-          <p className="text-gray-600">
-            You are not currently assigned to teach any courses. Please contact the administration if this is incorrect. 📚
-          </p>
-        </div>
+        <p className="text-center text-gray-500 mt-8">You are not currently assigned to teach any courses.</p>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <AnimatePresence>
-            {courses.map((course) => (
-              <motion.div
-                key={course._id}
-                variants={cardVariants}
-                initial="hidden"
-                animate="visible"
-                whileHover="hover"
-                className="bg-white rounded-xl shadow-md p-6 border border-gray-200 cursor-pointer flex flex-col justify-between transition-all duration-300 ease-in-out"
-                onClick={() => setSelectedCourse(course)}
-              >
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2 flex items-center">
-                    <i className="fas fa-book-open text-green-500 mr-2"></i> {course.name}{' '}
-                    <span className="ml-2 text-blue-600 text-base font-semibold">({course.code})</span>
-                  </h3>
-                  <p className="text-gray-600 mb-4 text-sm leading-relaxed line-clamp-2">
-                    {course.description || 'No description provided for this course.'}
-                  </p>
-                </div>
-                <div className="text-sm text-gray-700 space-y-1 mt-auto">
-                  <p className="flex items-center">
-                    <span className="font-semibold w-28">Academic Year:</span>{' '}
-                    <span className="font-medium text-gray-800">{course.academicYear || '2024/2025'}</span>
-                  </p>
-                  <p className="flex items-center">
-                    <span className="font-semibold w-28">Term:</span>{' '}
-                    <span className="font-medium text-gray-800">{course.term || 'First Term'}</span>
-                  </p>
-                  <p className="flex items-center">
-                    <span className="font-semibold w-28">Students:</span>{' '}
-                    <span className="font-bold text-blue-700">{course.students.length} enrolled</span>
-                  </p>
-                </div>
-                <div className="mt-5 text-right">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setSelectedCourse(course); }}
-                    className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-base font-medium shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75"
-                  >
-                    View Details <i className="fas fa-arrow-right ml-2"></i>
-                  </button>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {courses.map((course) => (
+            <div key={course._id} className="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow duration-300">
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">{course.name} ({course.code})</h3>
+              <p className="text-gray-600 mb-3">{course.description || 'No description provided.'}</p>
+              <div className="text-sm text-gray-700 space-y-1">
+                <p><span className="font-medium">Academic Year:</span> {course.academicYear || '2024/2025'}</p>
+                <p><span className="font-medium">Term:</span> {course.term || 'First Term'}</p>
+                <p><span className="font-medium">Students Enrolled:</span> {course.students.length}</p>
+              </div>
+              <div className="mt-4 text-right">
+                <button
+                  onClick={() => setSelectedCourse(course)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+                >
+                  View Details
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -176,77 +112,39 @@ const TeacherCoursesPage: React.FC = () => {
       <AnimatePresence>
         {selectedCourse && (
           <motion.div
-            className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={closeModal}
           >
             <motion.div
-              className="bg-white rounded-xl p-8 w-full max-w-2xl shadow-2xl relative transform scale-100 opacity-100"
-              variants={modalVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              onClick={(e) => e.stopPropagation()} // Prevent modal close when clicking inside
+              className="bg-white rounded-lg p-6 w-full max-w-lg shadow-lg relative"
+              initial={{ y: 100 }}
+              animate={{ y: 0 }}
+              exit={{ y: 100 }}
+              onClick={(e) => e.stopPropagation()}
             >
               <button
                 onClick={closeModal}
-                className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl transition-colors duration-200"
-                aria-label="Close modal"
+                className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
               >
                 &times;
               </button>
-              <h2 className="text-3xl font-bold text-gray-900 mb-4 border-b pb-3 flex items-center">
-                <i className="fas fa-info-circle mr-3 text-blue-600"></i>
-                {selectedCourse.name} ({selectedCourse.code})
-              </h2>
-              <p className="mb-5 text-gray-700 leading-relaxed text-base">
-                {selectedCourse.description || 'No detailed description available for this course.'}
-              </p>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div>
-                  <p className="text-gray-800 text-lg mb-1">
-                    <strong className="font-semibold">Academic Year:</strong>{' '}
-                    <span className="text-blue-700">{selectedCourse.academicYear || 'N/A'}</span>
-                  </p>
-                  <p className="text-gray-800 text-lg">
-                    <strong className="font-semibold">Term:</strong>{' '}
-                    <span className="text-blue-700">{selectedCourse.term || 'N/A'}</span>
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-800 text-lg mb-1">
-                    <strong className="font-semibold">Total Students:</strong>{' '}
-                    <span className="text-green-700 font-bold">{selectedCourse.students.length}</span>
-                  </p>
-                  <p className="text-gray-800 text-lg">
-                    <strong className="font-semibold">Teacher:</strong>{' '}
-                    <span className="text-purple-700">{selectedCourse.teacher?.firstName} {selectedCourse.teacher?.lastName}</span>
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-4">
-                <h4 className="text-xl font-bold text-gray-800 mb-3 flex items-center border-b pb-2">
-                  <i className="fas fa-users-class mr-2 text-orange-500"></i> Enrolled Students
-                </h4>
-                {selectedCourse.students.length > 0 ? (
-                  <ul className="list-none space-y-2 text-base text-gray-800 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-                    {selectedCourse.students.map((s) => (
-                      <li key={s._id} className="bg-gray-50 p-3 rounded-md flex items-center justify-between shadow-sm border border-gray-100">
-                        <span className="font-medium text-gray-900">
-                          <i className="fas fa-user-circle mr-2 text-blue-500"></i>
-                          {s.user.firstName} {s.user.lastName}
-                        </span>
-                        <span className="text-sm text-gray-600">({s.user.email})</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-gray-600 italic">No students are currently enrolled in this course. 😔</p>
-                )}
+              <h2 className="text-xl font-bold mb-2">{selectedCourse.name} ({selectedCourse.code})</h2>
+              <p className="mb-4 text-gray-700">{selectedCourse.description || 'No description provided.'}</p>
+              <p className="mb-2"><strong>Academic Year:</strong> {selectedCourse.academicYear}</p>
+              <p className="mb-2"><strong>Term:</strong> {selectedCourse.term}</p>
+              <p className="mb-4"><strong>Total Students:</strong> {selectedCourse.students.length}</p>
+              <div>
+                <h4 className="font-semibold mb-2">Students List:</h4>
+                <ul className="list-disc list-inside text-sm text-gray-800 max-h-40 overflow-y-auto">
+                  {selectedCourse.students.map((s) => (
+                    <li key={s._id}>
+                      {s.user.firstName} {s.user.lastName} ({s.user.email})
+                    </li>
+                  ))}
+                </ul>
               </div>
             </motion.div>
           </motion.div>
