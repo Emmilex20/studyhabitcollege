@@ -34,6 +34,7 @@ const DashboardPage: React.FC = () => {
         ];
       case 'teacher':
         return [
+          { name: 'Overview', path: '/dashboard' },
           { name: 'My Courses', path: '/dashboard/teacher-courses' },
           { name: 'My Students', path: '/dashboard/teacher-students' },
           { name: 'Gradebook', path: '/dashboard/teacher-gradebook' },
@@ -44,6 +45,7 @@ const DashboardPage: React.FC = () => {
         ];
       case 'student':
         return [
+          { name: 'Overview', path: '/dashboard' },
           { name: 'My Courses', path: '/dashboard/student-course' },
           { name: 'My Grades', path: '/dashboard/student-grades' },
           { name: 'Attendance', path: '/dashboard/student-attendance' },
@@ -53,6 +55,7 @@ const DashboardPage: React.FC = () => {
         ];
       case 'parent':
         return [
+          { name: 'Overview', path: '/dashboard' },
           { name: 'My Children', path: '/dashboard/child' },
           { name: 'Announcements', path: '/dashboard/announcements' },
           { name: 'Events', path: '/dashboard/events' },
