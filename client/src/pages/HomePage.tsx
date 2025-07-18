@@ -23,6 +23,7 @@ import LibraryImg from '../assets/library.jpg';
 import SportsImg from '../assets/sports.avif';
 import GraduationImg from '../assets/graduation.jpg';
 import ClassroomImg from '../assets/classroom.jpeg';
+import ProprietorImage from '../assets/founder-portrait.png'; // Import your proprietor's image here
 
 
 const HomePage: React.FC = () => {
@@ -160,7 +161,7 @@ const HomePage: React.FC = () => {
               Welcome to Studyhabit College
             </h2>
             <p className="text-gray-700 text-base sm:text-lg leading-relaxed mb-4 md:mb-6">
-              At <strong>Studyhabit College</strong>, we are dedicated to fostering a vibrant learning environment
+              At **Studyhabit College**, we are dedicated to fostering a vibrant learning environment
               where academic rigor meets innovative thinking. Our commitment is to nurture the next
               generation of leaders, innovators, and global citizens through a holistic educational approach.
             </p>
@@ -183,6 +184,47 @@ const HomePage: React.FC = () => {
             className="rounded-3xl shadow-2xl w-full h-64 sm:h-80 md:h-96 object-cover transform rotate-3 hover:rotate-0 transition-transform duration-500 mx-auto lg:mx-0"
             {...slideInFromRight}
           />
+        </div>
+      </section>
+
+      ---
+
+      {/* Proprietor's Message Section */}
+      <section className="py-16 md:py-24 px-4 sm:px-6 lg:px-8 bg-blue-900 text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-pattern-dots opacity-10 -z-10"></div> {/* Background pattern */}
+        <div className="container mx-auto max-w-7xl grid lg:grid-cols-2 gap-12 lg:gap-16 items-center relative z-10">
+          <motion.img
+            src={ProprietorImage} // Use your proprietor's image here
+            alt="Proprietor of Studyhabit College"
+            className="rounded-3xl shadow-2xl w-full h-64 sm:h-80 md:h-96 object-cover object-center transform -rotate-3 hover:rotate-0 transition-transform duration-500 mx-auto lg:mx-0 border-4 border-yellow-500"
+            {...slideInFromLeft}
+          />
+          <motion.div
+            {...slideInFromRight}
+            className="flex flex-col justify-center text-center lg:text-left"
+          >
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-yellow-500 mb-4 md:mb-6 leading-tight">
+              A Message From Our Proprietor
+            </h2>
+            <p className="text-gray-200 text-base sm:text-lg leading-relaxed mb-4 md:mb-6 font-light">
+              "It fills me with immense pride to welcome you to Studyhabit College. Our vision has always been to create a learning sanctuary where every student feels empowered to explore, innovate, and excel. We believe in nurturing not just intellect, but character, empathy, and resilience. Your journey with us will be one of discovery, growth, and preparation for a future where you can truly make a difference."
+            </p>
+            <p className="text-white text-base sm:text-lg font-semibold mb-2">
+              — Dr. [Proprietor's Full Name]
+            </p>
+            <p className="text-yellow-300 text-sm sm:text-base">
+              Proprietor, Studyhabit College
+            </p>
+            <Link to="/about">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="mt-8 px-6 py-3 sm:px-8 sm:py-4 bg-yellow-500 text-blue-900 font-semibold rounded-full shadow-lg hover:bg-yellow-600 transition-all duration-300 text-base sm:text-lg md:text-xl"
+              >
+                Learn More About Us <span aria-hidden="true">&rarr;</span>
+              </motion.button>
+            </Link>
+          </motion.div>
         </div>
       </section>
 
@@ -249,8 +291,8 @@ const HomePage: React.FC = () => {
             </h2>
             <p className="text-gray-700 text-base sm:text-lg leading-relaxed mb-4 md:mb-6">
               Our curriculum is designed to challenge students intellectually and foster a deep understanding
-              of core subjects. With state-of-the-art <strong>science laboratories</strong> for Physics, Chemistry,
-              and Biology, and modern <strong>computer suites</strong>, students gain hands-on experience and develop
+              of core subjects. With state-of-the-art **science laboratories** for Physics, Chemistry,
+              and Biology, and modern **computer suites**, students gain hands-on experience and develop
               critical analytical skills essential for future success.
             </p>
             <ul className="list-disc list-inside text-gray-600 text-sm sm:text-base mb-6 md:mb-8 space-y-2 text-left mx-auto lg:mx-0">
@@ -362,7 +404,7 @@ const HomePage: React.FC = () => {
               Meet Our Exceptional Faculty
             </h2>
             <p className="text-gray-700 text-base sm:text-lg leading-relaxed mb-4 md:mb-6">
-              Our dedicated <strong>faculty members</strong> are not just educators; they are mentors, innovators,
+              Our dedicated **faculty members** are not just educators; they are mentors, innovators,
               and leaders in their respective fields. They bring a wealth of experience and a passion
               for teaching, inspiring students to achieve their academic and personal best.
             </p>
