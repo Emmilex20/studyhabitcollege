@@ -1,0 +1,14 @@
+{
+  "about": "Study Habit College is dedicated to fostering academic excellence and personal growth. We offer a supportive learning environment with a focus on practical skills and community engagement.",
+  "admissions": "Admission to Study Habit College is competitive. We require a minimum GPA of 3.0, two letters of recommendation, and a personal essay. Applications open annually on September 1st.",
+  "courses": [
+    {"name": "Introduction to Computer Science", "code": "CS101", "description": "Fundamentals of programming."},
+    {"name": "Advanced Calculus", "code": "MA305", "description": "In-depth study of calculus concepts."},
+    {"name": "History of World Civilizations", "code": "HI200", "description": "Overview of major historical periods."}
+  ],
+  "contact": "You can reach us at info@studyhabitcollege.edu or call (123) 456-7890. Our office hours are Monday-Friday, 9 AM - 5 PM.",
+  "events": [
+    {"name": "Freshers' Orientation", "date": "August 20, 2025"},
+    {"name": "Annual Career Fair", "date": "October 15, 2025"}
+  ]
+}
