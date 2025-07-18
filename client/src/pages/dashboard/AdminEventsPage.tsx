@@ -3,8 +3,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-import { motion, AnimatePresence, type Variants } from 'framer-motion'; // Import Variants
-import EventFormModal from '../../components/modals/EventFormModal'; // Import the modal
+import { motion, AnimatePresence, type Variants } from 'framer-motion';
+import EventFormModal from '../../components/modals/EventFormModal';
 
 interface Event {
   _id: string;
@@ -24,16 +24,16 @@ const AdminEventsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null); // For editing
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
 
   // Framer Motion Variants for page entry
   const pageVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] } }, // Using easeOut cubic-bezier
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] } },
   };
 
-  // Framer Motion Variants for table rows (for enter/exit animations)
+  // Framer Motion Variants for table rows
   const itemVariants: Variants = {
     hidden: { opacity: 0, x: -20 },
     visible: { opacity: 1, x: 0, transition: { duration: 0.3 } },
@@ -41,81 +41,103 @@ const AdminEventsPage: React.FC = () => {
   };
 
   const fetchEvents = useCallback(async () => {
-    // Ensure only admins can access this page
-    if (!userInfo?.token || userInfo.role !== 'admin') {
-      setError('You are not authorized to view this page. Admin access required.');
+    if (!userInfo?.token) {
+      setError('Authentication required to fetch events.');
       setLoading(false);
       return;
     }
 
     try {
       setLoading(true);
-      setError(null); // Clear previous errors
+      setError(null);
       const config = {
         headers: {
           Authorization: `Bearer ${userInfo.token}`,
         },
       };
       const { data } = await axios.get('https://studyhabitcollege.onrender.com/api/events', config);
-      // Ensure data is an array or handle nested array if API sends it that way
       const eventsData = Array.isArray(data) ? data : (data && Array.isArray(data.events) ? data.events : []);
       setEvents(eventsData);
     } catch (err: any) {
       console.error('Error fetching events:', err);
-      setError(err.response?.data?.message || 'Failed to fetch events. Please try again.');
+      let errorMessage = 'Failed to fetch events. Please try again.';
+      if (err.response) {
+        if (err.response.status === 401 || err.response.status === 403) {
+          errorMessage = 'You are not authorized to access event data. Please log in.';
+        } else {
+          errorMessage = err.response.data?.message || errorMessage;
+        }
+      }
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
-  }, [userInfo?.token, userInfo?.role]); // Depend on userInfo.token and role
+  }, [userInfo?.token]);
 
   useEffect(() => {
     fetchEvents();
-  }, [fetchEvents]); // Dependency on useCallback memoized fetchEvents
+  }, [fetchEvents]);
 
   const handleAddEventClick = () => {
-    setSelectedEvent(null); // Clear selected event for a new creation
+    if (!isAdminOrTeacher) {
+      alert('You are not authorized to create events.');
+      return;
+    }
+    setSelectedEvent(null);
     setIsModalOpen(true);
   };
 
   const handleEditEventClick = (event: Event) => {
+    if (!isAdminOrTeacher) {
+      alert('You are not authorized to edit events.');
+      return;
+    }
     setSelectedEvent(event);
     setIsModalOpen(true);
   };
 
   const handleSaveEvent = async () => {
-    setIsModalOpen(false); // Close modal after saving
-    await fetchEvents(); // Re-fetch events to update the list
-    alert('Event saved successfully!'); // Provide user feedback
+    setIsModalOpen(false);
+    await fetchEvents();
+    alert('Event saved successfully! ✅');
   };
 
   const handleDeleteEvent = async (eventId: string, eventTitle: string) => {
-    if (!userInfo?.token || userInfo.role !== 'admin') {
+    if (!isAdminOrTeacher) {
       alert('You are not authorized to delete events.');
       return;
     }
     if (window.confirm(`Are you sure you want to delete the event: "${eventTitle}"? This action cannot be undone.`)) {
-      setDeleteLoading(eventId); // Set loading state for the specific event's delete button
+      setDeleteLoading(eventId);
       try {
         const config = {
           headers: {
-            Authorization: `Bearer ${userInfo.token}`,
+            Authorization: `Bearer ${userInfo?.token}`,
           },
         };
         await axios.delete(`https://studyhabitcollege.onrender.com/api/events/${eventId}`, config);
-        await fetchEvents(); // Refresh the list
-        alert('Event deleted successfully!'); // User feedback
+        await fetchEvents();
+        alert('Event deleted successfully! 🗑️');
       } catch (err: any) {
         console.error('Error deleting event:', err);
-        setError(err.response?.data?.message || 'Failed to delete event.');
-        alert(`Error deleting event: ${err.response?.data?.message || 'Please try again.'}`);
+        let errorMessage = 'Failed to delete event.';
+        if (err.response) {
+          if (err.response.status === 401 || err.response.status === 403) {
+            errorMessage = 'You are not authorized to delete this event.';
+          } else {
+            errorMessage = err.response.data?.message || errorMessage;
+          }
+        }
+        setError(errorMessage);
+        alert(`Error deleting event: ${errorMessage}`);
       } finally {
-        setDeleteLoading(null); // Clear loading state
+        setDeleteLoading(null);
       }
     }
   };
 
-  // Determine if the current user is an admin
-  const isAdmin = userInfo?.role === 'admin';
+  // Determine if the current user is an admin or teacher
+  const isAdminOrTeacher = userInfo?.role === 'admin' || userInfo?.role === 'teacher';
 
   return (
     <motion.div
@@ -124,12 +146,11 @@ const AdminEventsPage: React.FC = () => {
       variants={pageVariants}
       className="admin-events-page p-4 sm:p-6 md:p-8 bg-gray-50 min-h-screen font-sans antialiased text-gray-800 rounded-lg shadow-inner"
     >
-      {/* Page Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
         <h2 className="text-3xl sm:text-4xl font-extrabold text-blue-800 mb-4 sm:mb-0 flex items-center">
           <i className="fas fa-calendar-alt mr-3 text-yellow-500"></i> Manage Events
         </h2>
-        {isAdmin && (
+        {isAdminOrTeacher && (
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -142,10 +163,11 @@ const AdminEventsPage: React.FC = () => {
       </div>
 
       <p className="text-gray-600 mb-8 text-base sm:text-lg max-w-3xl">
-        Oversee and manage all school events and activities. As an administrator, you can create, edit, and delete events.
+        Oversee and manage all school events and activities.
+        {isAdminOrTeacher && ' As an administrator or teacher, you can create, edit, and delete events.'}
+        {!isAdminOrTeacher && ' You can view all scheduled events here.'}
       </p>
 
-      {/* Loading State */}
       {loading && (
         <div className="flex flex-col items-center justify-center h-64 bg-white rounded-lg shadow-lg border border-blue-100 animate-pulse-fade">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent mb-4"></div>
@@ -153,16 +175,12 @@ const AdminEventsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Error State */}
       {error && !loading && (
         <div className="text-center py-12 px-6 bg-red-50 border-2 border-red-300 text-red-800 rounded-xl shadow-md">
           <p className="text-2xl font-bold mb-3 flex items-center justify-center">
             <i className="fas fa-exclamation-triangle mr-3 text-red-600"></i> Error Loading Events!
           </p>
           <p className="text-lg mb-4">{error}</p>
-          <p className="text-md text-red-700 font-semibold">
-            Please check your network connection or ensure you have administrative privileges.
-          </p>
           <button
             onClick={fetchEvents}
             className="mt-6 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-300 shadow-md flex items-center justify-center mx-auto"
@@ -172,7 +190,6 @@ const AdminEventsPage: React.FC = () => {
         </div>
       )}
 
-      {/* No Events Found State */}
       {!loading && !error && events.length === 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -185,15 +202,13 @@ const AdminEventsPage: React.FC = () => {
           </p>
           <p className="text-lg text-gray-700 leading-relaxed">
             There are currently no events in the system.
-            <br /> {isAdmin && 'Click the "Create New Event" button above to add the first one! 🎉'}
+            <br /> {isAdminOrTeacher && 'Click the "Create New Event" button above to add the first one! 🎉'}
           </p>
         </motion.div>
       )}
 
-      {/* Events Table */}
       {!loading && !error && events.length > 0 && (
         <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-          {/* Responsive Table Wrapper */}
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-100">
@@ -213,7 +228,7 @@ const AdminEventsPage: React.FC = () => {
                   <th scope="col" className="py-4 px-6 text-left text-xs font-bold text-gray-700 uppercase tracking-wider whitespace-nowrap">
                     <i className="fas fa-user-tie mr-2 text-blue-500"></i> Organizer
                   </th>
-                  {isAdmin && (
+                  {isAdminOrTeacher && (
                     <th scope="col" className="py-4 px-6 text-left text-xs font-bold text-gray-700 uppercase tracking-wider whitespace-nowrap">
                       <i className="fas fa-cogs mr-2 text-gray-500"></i> Actions
                     </th>
@@ -221,18 +236,18 @@ const AdminEventsPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-100">
-                <AnimatePresence> {/* For exit animations when items are deleted */}
+                <AnimatePresence>
                   {events.map((event) => (
                     <motion.tr
                       key={event._id}
-                      layout // Animate position changes
+                      layout
                       initial="hidden"
                       animate="visible"
-                      exit="exit" // Apply exit variant
+                      exit="exit"
                       variants={itemVariants}
                       transition={{ duration: 0.3 }}
                       whileHover={{ backgroundColor: '#f3f4f6', scale: 1.005, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)' }}
-                      className="hover:shadow-sm" // Tailwind for hover shadow
+                      className="hover:shadow-sm"
                     >
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         <span className="font-bold text-blue-700">{event.title}</span>
@@ -270,7 +285,7 @@ const AdminEventsPage: React.FC = () => {
                           <i className="fas fa-calendar-plus mr-1"></i> Created: {new Date(event.createdAt).toLocaleDateString()}
                         </p>
                       </td>
-                      {isAdmin && (
+                      {isAdminOrTeacher && (
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center space-x-2">
                             <button
@@ -287,7 +302,7 @@ const AdminEventsPage: React.FC = () => {
                               title="Delete Event"
                             >
                               {deleteLoading === event._id ? (
-                                <i className="fas fa-spinner fa-spin text-lg"></i> // Spinner for deleting state
+                                <i className="fas fa-spinner fa-spin text-lg"></i>
                               ) : (
                                 <i className="fas fa-trash-alt text-lg"></i>
                               )}
@@ -304,8 +319,7 @@ const AdminEventsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Modal for admin only */}
-      {isAdmin && (
+      {isAdminOrTeacher && (
         <AnimatePresence>
           {isModalOpen && (
             <EventFormModal
@@ -313,6 +327,8 @@ const AdminEventsPage: React.FC = () => {
               onClose={() => setIsModalOpen(false)}
               eventToEdit={selectedEvent}
               onSave={handleSaveEvent}
+              currentUserId={userInfo?._id}
+              userToken={userInfo?.token}
             />
           )}
         </AnimatePresence>
