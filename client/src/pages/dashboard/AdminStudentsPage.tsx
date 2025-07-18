@@ -190,6 +190,7 @@ const AdminStudentsPage: React.FC = () => {
         onClose={() => setIsModalOpen(false)}
         studentToEdit={selectedStudent}
         onSave={handleSaveStudent}
+        isTeacherView={false}
       />
     </motion.div>
   );
