@@ -63,7 +63,6 @@ const HomePage: React.FC = () => {
     { id: 6, src: GraduationImg, alt: 'Graduation ceremony celebration', category: 'Achievements' },
   ];
 
-  
   // Reusable animation variants
   const fadeIn = {
     initial: { opacity: 0, y: 20 },
