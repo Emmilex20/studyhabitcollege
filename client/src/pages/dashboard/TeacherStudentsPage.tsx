@@ -265,7 +265,7 @@ const TeacherStudentsPage: React.FC = () => {
         onClose={() => setIsModalOpen(false)}
         studentToEdit={selectedStudent}
         onSave={handleSaveStudent}
-        isTeacherView={true} // Add this prop to potentially adjust modal behavior for teachers
+        isTeacherView={false} // Add this prop to potentially adjust modal behavior for teachers
       />
     </motion.div>
   );
