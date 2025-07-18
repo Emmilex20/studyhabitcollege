@@ -35,6 +35,7 @@ interface StudentFormModalProps {
   onClose: () => void;
   studentToEdit?: Student | null;
   onSave: (student: Student) => void;
+  isTeacherView: boolean; // Prop is now properly defined
 }
 
 const StudentFormModal: React.FC<StudentFormModalProps> = ({
@@ -42,6 +43,7 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
   onClose,
   studentToEdit,
   onSave,
+  isTeacherView, // Prop is destructured here
 }) => {
   const { userInfo } = useAuth();
   const [formData, setFormData] = useState({
@@ -101,6 +103,8 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
           'https://studyhabitcollege.onrender.com/api/users',
           config
         );
+        // Teachers should only be able to pick existing users if creating a new student record
+        // This is a simplified example; you might filter based on roles further
         setStudentUsers(usersData.filter((u: UserOption) => u.role === 'student'));
         setParentUsers(usersData.filter((u: UserOption) => u.role === 'parent'));
 
@@ -123,7 +127,7 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
     if (isOpen) {
       fetchDependencies();
     }
-  }, [isOpen, userInfo?.token]); // ✅ Fixed dependency to avoid re-trigger loops
+  }, [isOpen, userInfo?.token]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -216,7 +220,8 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              {!studentToEdit && (
+              {/* Conditional rendering based on isTeacherView */}
+              {!studentToEdit && !isTeacherView && ( // Only show if creating and NOT in teacher view
                 <div>
                   <label htmlFor="userId" className="block text-sm font-medium text-gray-700">
                     Associated User (Student Role)
@@ -242,6 +247,18 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
                   </p>
                 </div>
               )}
+              {/* You might want to display student user info for editing even in teacher view */}
+              {studentToEdit && (
+                  <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                          Associated User
+                      </label>
+                      <p className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 text-gray-800 sm:text-sm">
+                          {studentToEdit.user.firstName} {studentToEdit.user.lastName} ({studentToEdit.user.email})
+                      </p>
+                  </div>
+              )}
+
 
               <div>
                 <label htmlFor="studentId" className="block text-sm font-medium text-gray-700">

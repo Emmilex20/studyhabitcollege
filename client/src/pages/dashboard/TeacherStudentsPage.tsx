@@ -1,7 +1,10 @@
-import React, { useState, useEffect } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// src/pages/dashboard/TeacherStudentsPage.tsx
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-import { motion, AnimatePresence, easeOut } from 'framer-motion'; // Added AnimatePresence, easeOut
+import { motion, AnimatePresence, easeOut } from 'framer-motion';
+import StudentFormModal from '../../components/modals/StudentFormModal'; // Import the StudentFormModal
 
 interface Student {
   _id: string;
@@ -10,12 +13,15 @@ interface Student {
     firstName: string;
     lastName: string;
     email: string;
-    gender: string;
-    dateOfBirth: string;
+    // Note: The 'user' object might *also* have dateOfBirth and gender
+    // if your User schema includes it, but the primary Student properties are top-level.
     phoneNumber?: string;
     address?: string;
   };
   studentId: string;
+  // THESE ARE THE MISSING PROPERTIES THAT NEED TO BE AT THE TOP LEVEL
+  dateOfBirth: string; // <-- ADD THIS HERE!
+  gender: string;      // <-- ADD THIS HERE!
   currentClass?: string;
   enrolledCourses: { _id: string; name: string; code: string }[];
   parent?: {
@@ -38,53 +44,66 @@ const TeacherStudentsPage: React.FC = () => {
   const [teacherCourses, setTeacherCourses] = useState<CourseOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null); // State for editing
+
+  const fetchTeacherStudentsAndCourses = useCallback(async () => {
+    if (!userInfo?.token || userInfo.role !== 'teacher') {
+      setError('Not authorized or logged in as a teacher.');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const config = {
+        headers: {
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+        withCredentials: true, // Ensure cookies are sent
+      };
+
+      // Fetch courses taught by this teacher first (backend already filters for teacher role)
+      const { data: coursesData } = await axios.get('https://studyhabitcollege.onrender.com/api/courses', config);
+      setTeacherCourses(coursesData);
+      const teacherCourseIds = new Set(coursesData.map((c: CourseOption) => c._id));
+
+      // Fetch students
+      const { data: studentsData } = await axios.get('https://studyhabitcollege.onrender.com/api/students', config);
+
+      // Client-side filter to ensure we only display students associated with *any* of the teacher's courses
+      const filteredStudents = studentsData.filter((student: Student) =>
+        student.enrolledCourses.some(course => teacherCourseIds.has(course._id))
+      );
+
+      setStudents(filteredStudents);
+      setError(null);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to fetch students. Please try again.');
+      console.error('Error fetching teacher students:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [userInfo]); // Depend on userInfo to re-fetch if user changes
 
   useEffect(() => {
-    const fetchTeacherStudentsAndCourses = async () => {
-      if (!userInfo?.token || userInfo.role !== 'teacher') {
-        setError('Not authorized or logged in as a teacher.');
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const config = {
-          headers: {
-            Authorization: `Bearer ${userInfo.token}`,
-          },
-          withCredentials: true, // Ensure cookies are sent
-        };
-
-        // Fetch courses taught by this teacher first (backend already filters for teacher role)
-        const { data: coursesData } = await axios.get('https://studyhabitcollege.onrender.com/api/courses', config);
-        setTeacherCourses(coursesData);
-        const teacherCourseIds = new Set(coursesData.map((c: CourseOption) => c._id));
-
-        // Fetch students
-        // IMPORTANT: For better performance, the backend /api/students endpoint
-        // should ideally be enhanced to filter students by the teacher's courses
-        // directly at the database level. The current client-side filter is a fallback.
-        const { data: studentsData } = await axios.get('https://studyhabitcollege.onrender.com/api/students', config);
-
-        // Client-side filter to ensure we only display students associated with *any* of the teacher's courses
-        const filteredStudents = studentsData.filter((student: Student) =>
-            student.enrolledCourses.some(course => teacherCourseIds.has(course._id))
-        );
-
-        setStudents(filteredStudents);
-        setError(null);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } catch (err: any) {
-        setError(err.response?.data?.message || 'Failed to fetch students. Please try again.');
-        console.error('Error fetching teacher students:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchTeacherStudentsAndCourses();
-  }, [userInfo]); // Depend on userInfo to re-fetch if user changes
+  }, [fetchTeacherStudentsAndCourses]); // Now depends on useCallback
+
+  const handleAddStudentClick = () => {
+    setSelectedStudent(null); // Clear any previously selected student
+    setIsModalOpen(true);
+  };
+
+  const handleEditStudentClick = (student: Student) => {
+    setSelectedStudent(student);
+    setIsModalOpen(true);
+  };
+
+  const handleSaveStudent = async () => {
+    // After saving, re-fetch the students to update the list
+    await fetchTeacherStudentsAndCourses();
+  };
 
   // Framer Motion Variants
   const pageVariants = {
@@ -116,8 +135,16 @@ const TeacherStudentsPage: React.FC = () => {
         <i className="fas fa-users-class mr-3 text-indigo-600"></i> My Students
       </h2>
       <p className="text-gray-700 mb-8 text-lg">
-        View the list of students enrolled in the courses you teach. 🧑‍🎓
+        View and manage students enrolled in the courses you teach. 🧑‍🎓
       </p>
+
+      {/* Add New Student Button */}
+      <button
+        onClick={handleAddStudentClick}
+        className="mb-6 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 flex items-center justify-center"
+      >
+        <i className="fas fa-user-plus mr-2"></i> Add New Student
+      </button>
 
       {loading ? (
         <div className="flex items-center justify-center h-48">
@@ -138,7 +165,7 @@ const TeacherStudentsPage: React.FC = () => {
             <i className="fas fa-info-circle mr-3 text-blue-500"></i> No Students Found!
           </p>
           <p className="text-gray-600">
-            It looks like no students are currently enrolled in any of your assigned courses.
+            It looks like no students are currently enrolled in any of your assigned courses. You can add one using the button above.
           </p>
         </div>
       ) : (
@@ -164,6 +191,9 @@ const TeacherStudentsPage: React.FC = () => {
                 <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Parent
                 </th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Actions
+                </th> {/* Added Actions column */}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -213,6 +243,15 @@ const TeacherStudentsPage: React.FC = () => {
                         ? <span className="font-medium text-orange-700">{student.parent.firstName} {student.parent.lastName}</span>
                         : 'N/A'}
                     </td>
+                    <td className="px-5 py-4 whitespace-nowrap text-sm">
+                        <button
+                            onClick={() => handleEditStudentClick(student)}
+                            className="text-indigo-600 hover:text-indigo-900 mr-3 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-75"
+                            title="Edit Student"
+                        >
+                            <i className="fas fa-edit"></i> Edit
+                        </button>
+                    </td> {/* Added Edit Button */}
                   </motion.tr>
                 ))}
               </AnimatePresence>
@@ -220,6 +259,14 @@ const TeacherStudentsPage: React.FC = () => {
           </table>
         </div>
       )}
+
+      <StudentFormModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        studentToEdit={selectedStudent}
+        onSave={handleSaveStudent}
+        isTeacherView={true} // Add this prop to potentially adjust modal behavior for teachers
+      />
     </motion.div>
   );
 };
