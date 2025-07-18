@@ -535,7 +535,7 @@ const DashboardOverview: React.FC = () => {
                     <div className="flex items-center mb-4">
                       <img
                         // Using via.placeholder.com for reliable text-based avatars
-                        src={child.avatarUrl || `https://via.placeholder.com/60/9CA3AF/FFFFFF?text=${initials}`}
+                        src={child.avatarUrl || `https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRISxBTQ88B9PvlreCwRY0_wqZK7y4XoG4zIQ&s${initials}`}
                         alt={`${child.firstName || 'Unknown'} ${child.lastName || ''} Avatar`} // Defensive for alt text
                         className="w-16 h-16 rounded-full object-cover mr-4"
                       />

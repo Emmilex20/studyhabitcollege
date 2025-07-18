@@ -28,6 +28,12 @@ const userSchema = mongoose.Schema(
             enum: ['student', 'parent', 'teacher', 'admin'], // Enforce specific roles
             default: 'student', // Default role for new registrations
         },
+
+         avatarUrl: { // ✨ ADD THIS FIELD ✨
+            type: String,
+            required: false, // Not all users might have an avatar
+            default: '', // Or a default placeholder URL if you have one
+        },
         // Add more fields as needed for specific roles (e.g., studentId, parentId, classesTaught)
     },
     {

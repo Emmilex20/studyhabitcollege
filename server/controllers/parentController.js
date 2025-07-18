@@ -2,60 +2,72 @@
 import Student from '../models/Student.js';
 import Grade from '../models/Grade.js';
 import Attendance from '../models/Attendance.js';
-import Course from '../models/Course.js'; 
+import Course from '../models/Course.js';
+import User from '../models/User.js'; // Import User model to access firstName, lastName directly
 
-// ✅ Get children of the logged-in parent
+// ✅ Get children of the logged-in parent with calculated grades and attendance
 const getMyChildren = async (req, res) => {
   try {
-    const children = await Student.find({ parent: req.user._id })
-      .populate('user', 'firstName lastName email gender dateOfBirth phoneNumber address')
-      .populate('enrolledCourses', 'name code'); // Fix: corrected field name
+    const childrenRaw = await Student.find({ parent: req.user._id })
+      .populate('user', 'firstName lastName email') // Populate user data for names
+      .populate('enrolledCourses', 'name code');
 
-    res.status(200).json(children);
+    const childrenWithStats = await Promise.all(
+      childrenRaw.map(async (child) => {
+        // Fetch grades for this child
+        const grades = await Grade.find({ student: child._id });
+
+        let totalScore = 0;
+        let totalMaxScore = 0;
+        grades.forEach((grade) => {
+          if (typeof grade.score === 'number' && typeof grade.maxScore === 'number' && grade.maxScore > 0) {
+            totalScore += grade.score;
+            totalMaxScore += grade.maxScore;
+          }
+        });
+
+        // Calculate grade average
+        const gradeAverage = totalMaxScore > 0 ? (totalScore / totalMaxScore) * 100 : 0;
+
+        // Fetch attendance records for this child
+        const attendanceRecords = await Attendance.find({ student: child._id });
+
+        let totalClasses = attendanceRecords.length;
+        let presentCount = 0;
+        attendanceRecords.forEach((record) => {
+          if (record.status === 'Present') {
+            presentCount++;
+          }
+        });
+
+        // Calculate attendance percentage
+        const attendancePercentage = totalClasses > 0 ? (presentCount / totalClasses) * 100 : 0;
+
+        // Construct the child object to send to the frontend
+        // Safely access user's firstName and lastName from the populated 'user' field
+        const firstName = child.user?.firstName || 'Unknown';
+        const lastName = child.user?.lastName || '';
+        const avatarUrl = child.user?.avatarUrl; // Assuming you might add an avatarUrl to the User model later
+
+        return {
+          _id: child._id,
+          firstName: firstName,
+          lastName: lastName,
+          studentId: child.studentId,
+          gradeAverage: parseFloat(gradeAverage.toFixed(1)), // Format to one decimal place
+          attendancePercentage: parseFloat(attendancePercentage.toFixed(1)), // Format to one decimal place
+          avatarUrl: avatarUrl, // Will be undefined if not in User model
+          currentClass: child.currentClass,
+          enrolledCourses: child.enrolledCourses,
+          // Add any other fields you want to send from the Student or populated User model
+        };
+      })
+    );
+
+    res.status(200).json(childrenWithStats);
   } catch (error) {
-    console.error(error);
+    console.error('Error fetching children for parent dashboard:', error);
     res.status(500).json({ message: 'Server error while fetching children' });
-  }
-};
-
-// ✅ Get grades for a specific child
-// ✅ controllers/parentController.js
-const getChildGrades = async (req, res) => {
-  const { studentId } = req.params;
-
-  try {
-    const student = await Student.findById(studentId);
-    if (!student || student.parent?.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Not authorized to view grades for this student' });
-    }
-
-    const grades = await Grade.find({ student: studentId })
-      .populate('course', 'name code') // ✅ make sure it's 'course', not 'enrolledCourses'
-      .populate('teacher', 'firstName lastName');
-
-    const formattedGrades = grades.map((grade) => ({
-      _id: grade._id,
-      course: grade.course ?? null, // ✅ send full course object
-      assignmentName: grade.gradeType || 'Unnamed',
-      score: grade.score ?? 0,
-      maxScore: grade.maxScore ?? 100,
-      percentage:
-        grade.maxScore && grade.maxScore > 0
-          ? `${((grade.score / grade.maxScore) * 100).toFixed(1)}%`
-          : 'N/A',
-      dateGraded: grade.dateGraded
-        ? new Date(grade.dateGraded).toISOString()
-        : null,
-      feedback: grade.remarks || 'N/A',
-      teacher: grade.teacher
-        ? `${grade.teacher.firstName} ${grade.teacher.lastName}`
-        : 'N/A',
-    }));
-
-    res.status(200).json(formattedGrades);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error fetching grades' });
   }
 };
 
