@@ -6,7 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { motion, AnimatePresence, easeOut } from 'framer-motion';
 import GradeFormModal from '../../components/modals/GradeFormModal';
 
-// Updated Grade interface to match the one in GradeFormModal.tsx
+// Updated Grade interface (as above, with category)
 interface Grade {
     _id: string;
     student: { _id: string; user: { _id: string; firstName: string; lastName: string; }; studentId: string; };
@@ -14,6 +14,7 @@ interface Grade {
     teacher: { _id: string; firstName: string; lastName: string; };
     gradeType: string;
     assignmentName?: string;
+    category?: string; // ✨ Added category
     score: number;
     maxScore: number;
     weight: number;
@@ -232,7 +233,7 @@ const TeacherGradebookPage: React.FC = () => {
                                                     Student
                                                 </th>
                                                 <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                                    Type / Assignment
+                                                    Type / Assignment / Category {/* ✨ Updated Table Header */}
                                                 </th>
                                                 <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                                     Score
@@ -281,6 +282,12 @@ const TeacherGradebookPage: React.FC = () => {
                                                         <span className="font-semibold text-indigo-700">{grade.gradeType}</span>
                                                         {grade.assignmentName && (
                                                             <p className="text-xs text-gray-500 italic mt-1">({grade.assignmentName})</p>
+                                                        )}
+                                                        {/* ✨ NEW: Display category if available */}
+                                                        {grade.category && (
+                                                            <p className="text-xs text-purple-600 font-medium mt-1">
+                                                                Category: {grade.category}
+                                                            </p>
                                                         )}
                                                     </td>
                                                     <td className="px-5 py-4 whitespace-nowrap text-sm">
