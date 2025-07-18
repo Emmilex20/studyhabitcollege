@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // src/pages/dashboard/AdminEventsPage.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-import { motion, AnimatePresence, easeOut } from 'framer-motion'; // Import AnimatePresence and easeOut
+import { motion, AnimatePresence, type Variants } from 'framer-motion'; // Import Variants
 import EventFormModal from '../../components/modals/EventFormModal'; // Import the modal
 
 interface Event {
@@ -27,15 +27,30 @@ const AdminEventsPage: React.FC = () => {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null); // For editing
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
 
-  const fetchEvents = async () => {
-    if (!userInfo?.token) {
-      setError('Authentication required: Please log in to manage events.');
+  // Framer Motion Variants for page entry
+  const pageVariants: Variants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] } }, // Using easeOut cubic-bezier
+  };
+
+  // Framer Motion Variants for table rows (for enter/exit animations)
+  const itemVariants: Variants = {
+    hidden: { opacity: 0, x: -20 },
+    visible: { opacity: 1, x: 0, transition: { duration: 0.3 } },
+    exit: { opacity: 0, x: 20, transition: { duration: 0.2 } },
+  };
+
+  const fetchEvents = useCallback(async () => {
+    // Ensure only admins can access this page
+    if (!userInfo?.token || userInfo.role !== 'admin') {
+      setError('You are not authorized to view this page. Admin access required.');
       setLoading(false);
       return;
     }
 
     try {
       setLoading(true);
+      setError(null); // Clear previous errors
       const config = {
         headers: {
           Authorization: `Bearer ${userInfo.token}`,
@@ -45,19 +60,17 @@ const AdminEventsPage: React.FC = () => {
       // Ensure data is an array or handle nested array if API sends it that way
       const eventsData = Array.isArray(data) ? data : (data && Array.isArray(data.events) ? data.events : []);
       setEvents(eventsData);
-      setError(null);
     } catch (err: any) {
       console.error('Error fetching events:', err);
       setError(err.response?.data?.message || 'Failed to fetch events. Please try again.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [userInfo?.token, userInfo?.role]); // Depend on userInfo.token and role
 
   useEffect(() => {
     fetchEvents();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userInfo?.token]); // Depend on userInfo.token to refetch when authentication state changes
+  }, [fetchEvents]); // Dependency on useCallback memoized fetchEvents
 
   const handleAddEventClick = () => {
     setSelectedEvent(null); // Clear selected event for a new creation
@@ -72,15 +85,16 @@ const AdminEventsPage: React.FC = () => {
   const handleSaveEvent = async () => {
     setIsModalOpen(false); // Close modal after saving
     await fetchEvents(); // Re-fetch events to update the list
+    alert('Event saved successfully!'); // Provide user feedback
   };
 
   const handleDeleteEvent = async (eventId: string, eventTitle: string) => {
-    if (!userInfo?.token) {
-      setError('Authentication required to delete events.');
+    if (!userInfo?.token || userInfo.role !== 'admin') {
+      alert('You are not authorized to delete events.');
       return;
     }
     if (window.confirm(`Are you sure you want to delete the event: "${eventTitle}"? This action cannot be undone.`)) {
-      setDeleteLoading(eventId);
+      setDeleteLoading(eventId); // Set loading state for the specific event's delete button
       try {
         const config = {
           headers: {
@@ -89,197 +103,204 @@ const AdminEventsPage: React.FC = () => {
         };
         await axios.delete(`https://studyhabitcollege.onrender.com/api/events/${eventId}`, config);
         await fetchEvents(); // Refresh the list
+        alert('Event deleted successfully!'); // User feedback
       } catch (err: any) {
+        console.error('Error deleting event:', err);
         setError(err.response?.data?.message || 'Failed to delete event.');
-        console.error(err);
+        alert(`Error deleting event: ${err.response?.data?.message || 'Please try again.'}`);
       } finally {
-        setDeleteLoading(null);
+        setDeleteLoading(null); // Clear loading state
       }
     }
   };
 
-  // Framer Motion variants
-  const pageVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: easeOut } },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 10 },
-    visible: { opacity: 1, y: 0 },
-  };
-
   // Determine if the current user is an admin
   const isAdmin = userInfo?.role === 'admin';
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-48">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
-        <p className="ml-4 text-lg text-gray-600">Loading events... <span className="italic">Please wait.</span></p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={pageVariants}
-        className="text-center py-10 px-4 bg-red-50 border border-red-200 text-red-700 rounded-lg shadow-sm"
-      >
-        <p className="text-xl font-semibold mb-2 flex items-center justify-center">
-          <i className="fas fa-exclamation-circle mr-3 text-red-500"></i> Error Loading Events!
-        </p>
-        <p>{error}</p>
-        <p className="text-sm mt-3 text-red-500">Please ensure you are logged in and have administrator privileges.</p>
-      </motion.div>
-    );
-  }
 
   return (
     <motion.div
       initial="hidden"
       animate="visible"
       variants={pageVariants}
-      className="admin-events-page p-4 sm:p-6" // Add responsive padding
+      className="admin-events-page p-4 sm:p-6 md:p-8 bg-gray-50 min-h-screen font-sans antialiased text-gray-800 rounded-lg shadow-inner"
     >
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl sm:text-4xl font-extrabold text-blue-800 flex items-center">
-          <i className="fas fa-calendar-alt mr-3 text-yellow-500"></i> Events
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
+        <h2 className="text-3xl sm:text-4xl font-extrabold text-blue-800 mb-4 sm:mb-0 flex items-center">
+          <i className="fas fa-calendar-alt mr-3 text-yellow-500"></i> Manage Events
         </h2>
         {isAdmin && (
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={handleAddEventClick}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg shadow-lg hover:bg-blue-700 transition-colors duration-200 flex items-center text-lg font-semibold"
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-50 flex items-center justify-center font-semibold text-lg"
           >
-            <i className="fas fa-plus mr-2"></i> Create New Event
+            <i className="fas fa-plus mr-2 text-white"></i> Create New Event
           </motion.button>
         )}
       </div>
 
-      <p className="text-gray-700 mb-8 text-lg">
+      <p className="text-gray-600 mb-8 text-base sm:text-lg max-w-3xl">
         Oversee and manage all school events and activities. As an administrator, you can create, edit, and delete events.
       </p>
 
-      {events.length === 0 && !loading ? (
+      {/* Loading State */}
+      {loading && (
+        <div className="flex flex-col items-center justify-center h-64 bg-white rounded-lg shadow-lg border border-blue-100 animate-pulse-fade">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent mb-4"></div>
+          <p className="text-xl font-medium text-gray-700">Loading events... Please wait. 🗓️</p>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <div className="text-center py-12 px-6 bg-red-50 border-2 border-red-300 text-red-800 rounded-xl shadow-md">
+          <p className="text-2xl font-bold mb-3 flex items-center justify-center">
+            <i className="fas fa-exclamation-triangle mr-3 text-red-600"></i> Error Loading Events!
+          </p>
+          <p className="text-lg mb-4">{error}</p>
+          <p className="text-md text-red-700 font-semibold">
+            Please check your network connection or ensure you have administrative privileges.
+          </p>
+          <button
+            onClick={fetchEvents}
+            className="mt-6 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-300 shadow-md flex items-center justify-center mx-auto"
+          >
+            <i className="fas fa-redo-alt mr-2"></i> Retry Fetching Events
+          </button>
+        </div>
+      )}
+
+      {/* No Events Found State */}
+      {!loading && !error && events.length === 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="text-center py-12 bg-blue-50 rounded-lg shadow-inner border border-blue-200"
+          className="text-center py-12 px-6 bg-blue-50 rounded-xl shadow-inner border-2 border-blue-200"
         >
-          <p className="text-xl font-semibold text-blue-600 mb-3 flex items-center justify-center">
+          <p className="text-2xl font-bold text-blue-700 mb-4 flex items-center justify-center">
             <i className="fas fa-calendar-times mr-3 text-blue-500"></i> No Events Scheduled Yet!
           </p>
-          <p className="text-gray-600">
-            There are no events in the system. {isAdmin && 'Click "Create New Event" to add the first one!'}
+          <p className="text-lg text-gray-700 leading-relaxed">
+            There are currently no events in the system.
+            <br /> {isAdmin && 'Click the "Create New Event" button above to add the first one! 🎉'}
           </p>
         </motion.div>
-      ) : (
-        <div className="overflow-x-auto bg-white rounded-xl shadow-xl border border-gray-100">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="py-3 px-6 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  <i className="fas fa-heading mr-2"></i> Title
-                </th>
-                <th scope="col" className="py-3 px-6 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  <i className="fas fa-calendar-alt mr-2"></i> Dates
-                </th>
-                <th scope="col" className="py-3 px-6 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  <i className="fas fa-map-marker-alt mr-2"></i> Location
-                </th>
-                <th scope="col" className="py-3 px-6 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  <i className="fas fa-users mr-2"></i> Audience
-                </th>
-                <th scope="col" className="py-3 px-6 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  <i className="fas fa-user-tie mr-2"></i> Organizer
-                </th>
-                {isAdmin && (
-                  <th scope="col" className="py-3 px-6 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    <i className="fas fa-cogs mr-2"></i> Actions
+      )}
+
+      {/* Events Table */}
+      {!loading && !error && events.length > 0 && (
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+          {/* Responsive Table Wrapper */}
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th scope="col" className="py-4 px-6 text-left text-xs font-bold text-gray-700 uppercase tracking-wider whitespace-nowrap">
+                    <i className="fas fa-heading mr-2 text-indigo-500"></i> Title
                   </th>
-                )}
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-100">
-              <AnimatePresence> {/* For exit animations when items are deleted */}
-                {events.map((event) => (
-                  <motion.tr
-                    key={event._id}
-                    layout // Animate position changes
-                    initial="hidden"
-                    animate="visible"
-                    exit={{ opacity: 0, x: -50 }} // Animation when an item is removed
-                    variants={itemVariants}
-                    transition={{ duration: 0.3 }}
-                    whileHover={{ backgroundColor: '#f3f4f6', scale: 1.005 }}
-                    className="hover:shadow-sm"
-                  >
-                    <td className="px-5 py-4 border-b border-gray-200 bg-white text-sm">
-                      <span className="font-bold text-blue-700">{event.title}</span>
-                      {event.description && <p className="text-xs text-gray-500 italic mt-1 max-w-sm truncate">{event.description}</p>}
-                    </td>
-                    <td className="px-5 py-4 border-b border-gray-200 bg-white text-sm">
-                      {new Date(event.startDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })} -{' '}
-                      {new Date(event.endDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
-                    </td>
-                    <td className="px-5 py-4 border-b border-gray-200 bg-white text-sm">
-                      <span className="inline-flex items-center">
-                        {event.location || 'N/A'}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4 border-b border-gray-200 bg-white text-sm">
-                      {event.targetAudience.length > 0 ? (
-                        event.targetAudience.map((aud) => (
-                          <span key={aud} className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mr-1 mb-1 font-medium">
-                            {aud.charAt(0).toUpperCase() + aud.slice(1)}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full font-medium">All</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-4 border-b border-gray-200 bg-white text-sm">
-                      <span className="font-semibold text-gray-800">{event.organizer?.firstName} {event.organizer?.lastName}</span>
-                      <p className="text-xs text-gray-500">
-                        <i className="fas fa-calendar-plus mr-1"></i> Posted: {new Date(event.createdAt).toLocaleDateString()}
-                      </p>
-                    </td>
-                    {isAdmin && (
-                      <td className="px-5 py-4 border-b border-gray-200 bg-white text-sm">
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => handleEditEventClick(event)}
-                            className="text-indigo-600 hover:text-indigo-900 transition-colors duration-200 p-1 rounded-full hover:bg-indigo-50"
-                            title="Edit Event"
-                          >
-                            <i className="fas fa-edit"></i>
-                          </button>
-                          <button
-                            onClick={() => handleDeleteEvent(event._id, event.title)}
-                            className="text-red-600 hover:text-red-900 transition-colors duration-200 p-1 rounded-full hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                            disabled={deleteLoading === event._id}
-                            title="Delete Event"
-                          >
-                            {deleteLoading === event._id ? (
-                              <i className="fas fa-spinner fa-spin"></i> // Spinner for deleting state
-                            ) : (
-                              <i className="fas fa-trash-alt"></i>
-                            )}
-                          </button>
-                        </div>
+                  <th scope="col" className="py-4 px-6 text-left text-xs font-bold text-gray-700 uppercase tracking-wider whitespace-nowrap">
+                    <i className="fas fa-calendar-alt mr-2 text-purple-500"></i> Dates
+                  </th>
+                  <th scope="col" className="py-4 px-6 text-left text-xs font-bold text-gray-700 uppercase tracking-wider whitespace-nowrap">
+                    <i className="fas fa-map-marker-alt mr-2 text-green-500"></i> Location
+                  </th>
+                  <th scope="col" className="py-4 px-6 text-left text-xs font-bold text-gray-700 uppercase tracking-wider whitespace-nowrap">
+                    <i className="fas fa-users mr-2 text-orange-500"></i> Audience
+                  </th>
+                  <th scope="col" className="py-4 px-6 text-left text-xs font-bold text-gray-700 uppercase tracking-wider whitespace-nowrap">
+                    <i className="fas fa-user-tie mr-2 text-blue-500"></i> Organizer
+                  </th>
+                  {isAdmin && (
+                    <th scope="col" className="py-4 px-6 text-left text-xs font-bold text-gray-700 uppercase tracking-wider whitespace-nowrap">
+                      <i className="fas fa-cogs mr-2 text-gray-500"></i> Actions
+                    </th>
+                  )}
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-100">
+                <AnimatePresence> {/* For exit animations when items are deleted */}
+                  {events.map((event) => (
+                    <motion.tr
+                      key={event._id}
+                      layout // Animate position changes
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit" // Apply exit variant
+                      variants={itemVariants}
+                      transition={{ duration: 0.3 }}
+                      whileHover={{ backgroundColor: '#f3f4f6', scale: 1.005, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)' }}
+                      className="hover:shadow-sm" // Tailwind for hover shadow
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        <span className="font-bold text-blue-700">{event.title}</span>
+                        {event.description && <p className="text-xs text-gray-500 italic mt-1 max-w-xs overflow-hidden text-ellipsis whitespace-nowrap" title={event.description}>{event.description}</p>}
                       </td>
-                    )}
-                  </motion.tr>
-                ))}
-              </AnimatePresence>
-            </tbody>
-          </table>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        <p>
+                          {new Date(event.startDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          to {new Date(event.endDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                        </p>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        <span className="inline-flex items-center bg-gray-100 text-gray-800 px-2.5 py-0.5 rounded-full text-xs font-medium">
+                          {event.location || 'Online / To be announced'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        {event.targetAudience.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {event.targetAudience.map((aud) => (
+                              <span key={aud} className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">
+                                {aud.charAt(0).toUpperCase() + aud.slice(1)}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full font-medium">All Stakeholders</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        <span className="font-semibold text-green-700">{event.organizer?.firstName} {event.organizer?.lastName}</span>
+                        <p className="text-xs text-gray-500 mt-1">
+                          <i className="fas fa-calendar-plus mr-1"></i> Created: {new Date(event.createdAt).toLocaleDateString()}
+                        </p>
+                      </td>
+                      {isAdmin && (
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => handleEditEventClick(event)}
+                              className="text-indigo-600 hover:text-indigo-900 transition-colors duration-200 p-2 rounded-full hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                              title="Edit Event"
+                            >
+                              <i className="fas fa-edit text-lg"></i>
+                            </button>
+                            <button
+                              onClick={() => handleDeleteEvent(event._id, event.title)}
+                              className="text-red-600 hover:text-red-900 transition-colors duration-200 p-2 rounded-full hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                              disabled={deleteLoading === event._id}
+                              title="Delete Event"
+                            >
+                              {deleteLoading === event._id ? (
+                                <i className="fas fa-spinner fa-spin text-lg"></i> // Spinner for deleting state
+                              ) : (
+                                <i className="fas fa-trash-alt text-lg"></i>
+                              )}
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </motion.tr>
+                  ))}
+                </AnimatePresence>
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
