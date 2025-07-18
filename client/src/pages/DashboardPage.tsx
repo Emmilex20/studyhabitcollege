@@ -1,36 +1,45 @@
 // src/pages/DashboardPage.tsx
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence, easeOut } from 'framer-motion';
+import { motion, AnimatePresence, easeOut, type Variants, type Transition } from 'framer-motion'; // Import Variants and Transition types
 import { useAuth } from '../context/AuthContext';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 
 const DashboardPage: React.FC = () => {
-  // Destructure userInfo and the new loading state from AuthContext
   const { userInfo, loading: authLoading } = useAuth();
-  const location = useLocation(); // To highlight the active sidebar link
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // State for mobile sidebar toggle
+  const location = useLocation();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Close the sidebar automatically when the route changes on mobile
   useEffect(() => {
-    if (isSidebarOpen) {
+    const handleResize = () => {
+      const mobileView = window.innerWidth < 768;
+      setIsMobile(mobileView);
+      setIsSidebarOpen(!mobileView);
+    };
+
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    if (isMobile && isSidebarOpen) {
       setIsSidebarOpen(false);
     }
-  }, [location.pathname, isSidebarOpen]); // Added isSidebarOpen to dependencies
+  }, [location.pathname, isMobile, isSidebarOpen]); // Added isSidebarOpen to dependencies for accuracy
 
-  // --- Initial Loading / Authentication Checks ---
-  // Show a general loading state if authentication data is still being fetched
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-100 p-6">
         <div className="text-center text-xl text-gray-600 bg-white p-8 rounded-lg shadow-md animate-pulse">
-          <i className="fas fa-spinner fa-spin text-4xl mb-4 text-blue-500"></i>
+          <i className="fas fa-spinner fa-spin text-4xl mb-4 text-indigo-600"></i>
           <p>Loading user information... Please wait.</p>
         </div>
       </div>
     );
   }
 
-  // If loading is complete but no user information, display an authentication required message
   if (!userInfo) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-100 p-6">
@@ -40,33 +49,32 @@ const DashboardPage: React.FC = () => {
           transition={{ duration: 0.5 }}
           className="text-center p-8 bg-white rounded-lg shadow-lg"
         >
-          <i className="fas fa-exclamation-triangle text-yellow-500 text-4xl mb-4"></i>
+          <i className="fas fa-exclamation-triangle text-orange-500 text-4xl mb-4"></i>
           <p className="text-xl font-semibold text-gray-700 mb-2">Authentication Required</p>
-          <p className="text-gray-500">Please log in to access the dashboard functionalities.</p>
+          <p className="text-gray-500">Please log in to access the dashboard.</p>
         </motion.div>
       </div>
     );
   }
 
-  // --- Sidebar Links Definition (based on user role) ---
   const getSidebarLinks = (role: string) => {
     switch (role) {
       case 'admin':
         return [
-          { name: 'Overview', path: '/dashboard', icon: 'fas fa-tachometer-alt' },
-          { name: 'Manage Users', path: '/dashboard/users', icon: 'fas fa-users' },
-          { name: 'Manage Courses', path: '/dashboard/courses', icon: 'fas fa-book-open' },
-          { name: 'Manage Students', path: '/dashboard/students', icon: 'fas fa-user-graduate' },
-          { name: 'Manage Grades', path: '/dashboard/grades', icon: 'fas fa-chart-line' },
-          { name: 'Manage Attendance', path: '/dashboard/attendance', icon: 'fas fa-user-check' },
-          { name: 'Manage Events', path: '/dashboard/events', icon: 'fas fa-calendar-alt' },
-          { name: 'Manage Gallery', path: '/dashboard/gallery', icon: 'fas fa-images' },
+          { name: 'Dashboard', path: '/dashboard', icon: 'fas fa-home' },
+          { name: 'Users', path: '/dashboard/users', icon: 'fas fa-users' },
+          { name: 'Courses', path: '/dashboard/courses', icon: 'fas fa-book-open' },
+          { name: 'Students', path: '/dashboard/students', icon: 'fas fa-user-graduate' },
+          { name: 'Grades', path: '/dashboard/grades', icon: 'fas fa-chart-line' },
+          { name: 'Attendance', path: '/dashboard/attendance', icon: 'fas fa-user-check' },
+          { name: 'Events', path: '/dashboard/events', icon: 'fas fa-calendar-alt' },
+          { name: 'Gallery', path: '/dashboard/gallery', icon: 'fas fa-images' },
           { name: 'Announcements', path: '/dashboard/announcements', icon: 'fas fa-bullhorn' },
           { name: 'Settings', path: '/dashboard/settings', icon: 'fas fa-cog' },
         ];
       case 'teacher':
         return [
-          { name: 'Overview', path: '/dashboard', icon: 'fas fa-tachometer-alt' },
+          { name: 'Dashboard', path: '/dashboard', icon: 'fas fa-home' },
           { name: 'My Courses', path: '/dashboard/teacher-courses', icon: 'fas fa-book' },
           { name: 'My Students', path: '/dashboard/teacher-students', icon: 'fas fa-user-graduate' },
           { name: 'Gradebook', path: '/dashboard/teacher-gradebook', icon: 'fas fa-clipboard-list' },
@@ -77,7 +85,7 @@ const DashboardPage: React.FC = () => {
         ];
       case 'student':
         return [
-          { name: 'Overview', path: '/dashboard', icon: 'fas fa-tachometer-alt' },
+          { name: 'Dashboard', path: '/dashboard', icon: 'fas fa-home' },
           { name: 'My Courses', path: '/dashboard/student-course', icon: 'fas fa-book' },
           { name: 'My Grades', path: '/dashboard/student-grades', icon: 'fas fa-award' },
           { name: 'Attendance', path: '/dashboard/student-attendance', icon: 'fas fa-user-check' },
@@ -87,88 +95,109 @@ const DashboardPage: React.FC = () => {
         ];
       case 'parent':
         return [
-          { name: 'Overview', path: '/dashboard', icon: 'fas fa-tachometer-alt' },
+          { name: 'Dashboard', path: '/dashboard', icon: 'fas fa-home' },
           { name: 'My Children', path: '/dashboard/child', icon: 'fas fa-child' },
           { name: 'Announcements', path: '/dashboard/announcements', icon: 'fas fa-bullhorn' },
           { name: 'Events', path: '/dashboard/events', icon: 'fas fa-calendar-alt' },
           { name: 'Settings', path: '/dashboard/settings', icon: 'fas fa-cog' },
         ];
       default:
-        return [{ name: 'Overview', path: '/dashboard', icon: 'fas fa-tachometer-alt' }];
+        return [{ name: 'Dashboard', path: '/dashboard', icon: 'fas fa-home' }];
     }
   };
 
   const sidebarLinks = getSidebarLinks(userInfo.role);
 
-  // --- Framer Motion Variants ---
-  const contentVariants = {
+  const contentVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: easeOut } },
     exit: { opacity: 0, y: -20, transition: { duration: 0.4, ease: easeOut } },
   };
 
-  const sidebarVariants = {
-    open: { x: '0%', opacity: 1, transition: { duration: 0.3, ease: easeOut } },
-    closed: { x: '-100%', opacity: 0, transition: { duration: 0.3, ease: easeOut } },
+  const sidebarVariants: Variants = {
+    open: (isMobile: boolean) => ({
+      x: 0,
+      width: isMobile ? '75vw' : '18rem', // 75vw on mobile, 18rem (288px) on desktop
+      opacity: 1,
+      transition: {
+        type: 'spring',
+        stiffness: 200,
+        damping: 30,
+        when: 'beforeChildren', // Orchestrates child animations
+        // No 'delayChildren' here directly if using 'when' in this specific way
+      } as Transition, // Explicitly cast to Transition
+    }),
+    closed: (isMobile: boolean) => ({
+      x: isMobile ? '-100%' : 0, // Slide off-screen on mobile, collapse on desktop
+      width: isMobile ? 0 : '4rem', // Hide on mobile, collapse to icon-only on desktop
+      opacity: isMobile ? 0 : 1, // Hide opacity on mobile when sliding off
+      transition: {
+        type: 'spring',
+        stiffness: 200,
+        damping: 30,
+        when: 'afterChildren', // Orchestrates child animations
+      } as Transition, // Explicitly cast to Transition
+    }),
   };
 
-  const overlayVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 0.7, transition: { duration: 0.3 } }, // Darker overlay for a professional look
+  const overlayVariants: Variants = {
+    visible: { opacity: 0.5, pointerEvents: 'auto' },
+    hidden: { opacity: 0, pointerEvents: 'none' },
+  };
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
   };
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 font-sans antialiased">
-      {/* Mobile Header (visible only on small screens) */}
-      <header className="md:hidden sticky top-0 bg-white shadow-lg p-4 flex items-center justify-between z-50">
-        <h1 className="text-xl font-bold text-blue-900">
-          <i className="fas fa-cubes text-blue-600 mr-2"></i>
-          {userInfo.role.charAt(0).toUpperCase() + userInfo.role.slice(1)} Dashboard
-        </h1>
-        <button
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="text-blue-800 text-2xl focus:outline-none p-2 rounded-md hover:bg-gray-100 transition-colors"
-          aria-label="Toggle sidebar"
-        >
-          <i className={isSidebarOpen ? 'fas fa-times' : 'fas fa-bars'}></i>
-        </button>
-      </header>
+    <div className="flex min-h-screen bg-gray-50 font-sans antialiased text-gray-800">
+      {/* Mobile Sidebar Overlay (visible only when sidebar is open on mobile) */}
+      <AnimatePresence>
+        {isMobile && isSidebarOpen && (
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            variants={overlayVariants}
+            className="fixed inset-0 bg-black z-40"
+            onClick={toggleSidebar}
+          />
+        )}
+      </AnimatePresence>
 
-      {/* Main layout container for sidebar + content */}
-      <div className="flex flex-col md:flex-row md:min-h-screen">
-        {/* Mobile Sidebar Overlay */}
-        <AnimatePresence>
-          {isSidebarOpen && (
-            <motion.div
-              initial="hidden"
-              animate="visible"
-              exit="hidden"
-              variants={overlayVariants}
-              className="fixed inset-0 bg-black z-30 md:hidden"
-              onClick={() => setIsSidebarOpen(false)}
-            />
-          )}
-        </AnimatePresence>
+      {/* Sidebar */}
+      <motion.aside
+        initial={false}
+        animate={isSidebarOpen ? 'open' : 'closed'}
+        custom={isMobile}
+        variants={sidebarVariants}
+        className={`relative z-50 flex-shrink-0 bg-indigo-800 text-white shadow-2xl overflow-hidden
+                    ${isMobile ? 'fixed h-full' : 'h-screen'}`}
+      >
+        <div className="p-6 flex flex-col h-full">
+          {/* Logo/Title */}
+          <div className="flex items-center justify-between pb-6 mb-6 border-b border-indigo-700">
+            <motion.h2
+              className="text-2xl font-extrabold text-indigo-100 whitespace-nowrap"
+              // Only animate opacity if sidebar is collapsing/expanding
+              animate={{ opacity: isSidebarOpen ? 1 : 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <i className="fas fa-graduation-cap mr-3 text-yellow-400"></i>
+              StudyHub
+            </motion.h2>
+            {/* Toggle Button for Sidebar */}
+            <button
+              onClick={toggleSidebar}
+              className="text-white text-2xl focus:outline-none p-2 rounded-md hover:bg-indigo-700 transition-colors"
+              aria-label={isSidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+            >
+              <i className={isSidebarOpen ? 'fas fa-times' : 'fas fa-bars'}></i>
+            </button>
+          </div>
 
-        {/* Sidebar */}
-        <motion.aside
-          initial={false} // Disable initial animation for re-renders on desktop
-          animate={isSidebarOpen ? 'open' : 'closed'}
-          variants={sidebarVariants}
-          // Tailwind classes for responsiveness:
-          // Fixed positioning & full height for mobile (when open)
-          // `md:relative` to remove fixed positioning on md+ screens
-          // `md:translate-x-0` & `md:opacity-100` to always show on md+ screens
-          className={`fixed top-0 left-0 h-full w-64 lg:w-72 bg-blue-900 text-white shadow-2xl p-6 md:p-8 flex flex-col z-40
-                      md:relative md:translate-x-0 md:opacity-100`}
-        >
-          <h2 className="text-2xl lg:text-3xl font-extrabold mb-6 mt-2 border-b border-blue-700 pb-4 text-blue-100">
-            <i className="fas fa-cubes mr-3 text-yellow-500"></i>
-            {userInfo.role.charAt(0).toUpperCase() + userInfo.role.slice(1)} Hub
-          </h2>
+          {/* Navigation Links */}
           <nav className="flex-grow overflow-y-auto custom-scrollbar pr-2">
-            {' '}
-            {/* Added pr-2 for scrollbar spacing */}
             <ul>
               {sidebarLinks.map((link) => (
                 <motion.li
@@ -179,74 +208,93 @@ const DashboardPage: React.FC = () => {
                 >
                   <Link
                     to={link.path}
-                    className={`flex items-center p-3 rounded-xl transition-all duration-300 text-lg hover:bg-blue-700 hover:shadow-md ${
-                      location.pathname === link.path ||
-                      (link.path !== '/dashboard' && location.pathname.startsWith(link.path))
-                        ? 'bg-blue-700 font-semibold text-yellow-300 shadow-inner'
-                        : 'text-blue-200'
-                    }`}
-                    onClick={() => setIsSidebarOpen(false)} // Close sidebar on link click for mobile
+                    className={`flex items-center p-3 rounded-lg transition-all duration-300 text-lg
+                                ${
+                                  location.pathname === link.path ||
+                                  (link.path !== '/dashboard' &&
+                                    location.pathname.startsWith(link.path))
+                                    ? 'bg-indigo-700 font-semibold text-yellow-300 shadow-inner'
+                                    : 'text-indigo-200 hover:bg-indigo-700 hover:text-white'
+                                }`}
+                    onClick={() => {
+                      if (isMobile) setIsSidebarOpen(false);
+                    }}
                   >
                     <i
-                      className={`${link.icon} mr-4 text-xl ${
+                      className={`${link.icon} ${isSidebarOpen ? 'mr-4' : 'mr-0'} text-xl ${
                         location.pathname === link.path ||
-                        (link.path !== '/dashboard' && location.pathname.startsWith(link.path))
+                        (link.path !== '/dashboard' &&
+                          location.pathname.startsWith(link.path))
                           ? 'text-yellow-400'
-                          : 'text-blue-300'
+                          : 'text-indigo-300'
                       }`}
                     ></i>
-                    {link.name}
+                    <motion.span
+                      className="whitespace-nowrap"
+                      animate={{ opacity: isSidebarOpen ? 1 : 0 }}
+                      transition={{ delay: isSidebarOpen ? 0.1 : 0 }} // Faster hide animation
+                      style={{ display: isSidebarOpen ? 'inline-block' : 'none' }} // Use inline-block
+                    >
+                      {link.name}
+                    </motion.span>
                   </Link>
                 </motion.li>
               ))}
             </ul>
           </nav>
+
           {/* User Info in Sidebar */}
-          <div className="mt-auto pt-6 border-t border-blue-700 text-blue-200">
-            <p className="text-sm">Logged in as:</p>
-            <p className="font-bold text-xl mb-1 text-white">
-              {userInfo.firstName} {userInfo.lastName}
-            </p>
-            <p className="text-xs text-blue-300 truncate">{userInfo.email}</p>
-          </div>
-        </motion.aside>
-
-        {/* Main Content Area */}
-        <main className="flex-1 p-4 md:p-8 lg:p-10 flex flex-col">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-blue-900 mb-6 md:mb-8 text-center md:text-left">
-            Welcome, {userInfo.firstName}!
-            <span className="block w-20 h-1.5 bg-yellow-500 rounded-full mt-2 mx-auto md:mx-0"></span>
-          </h1>
-          <AnimatePresence mode="wait">
+          <div className="mt-auto pt-6 border-t border-indigo-700 text-indigo-200">
             <motion.div
-              key={location.pathname}
-              variants={contentVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              className="bg-white p-6 md:p-8 lg:p-10 rounded-2xl shadow-xl border border-gray-200 flex-grow overflow-x-auto"
+              animate={{ opacity: isSidebarOpen ? 1 : 0 }}
+              transition={{ delay: isSidebarOpen ? 0.1 : 0 }}
+              style={{ display: isSidebarOpen ? 'block' : 'none' }}
             >
-              <Outlet /> {/* This is where the nested route components will render */}
+              <p className="text-sm">Logged in as:</p>
+              <p className="font-bold text-xl mb-1 text-white">
+                {userInfo.firstName} {userInfo.lastName}
+              </p>
+              <p className="text-xs text-indigo-300 truncate">{userInfo.email}</p>
             </motion.div>
-          </AnimatePresence>
-        </main>
-      </div>
+          </div>
+        </div>
+      </motion.aside>
 
-      {/* Custom Scrollbar Styles - **Consider moving to global CSS (e.g., index.css)** */}
+      {/* Main Content Area */}
+      <main className="flex-1 p-4 md:p-8 lg:p-10 flex flex-col bg-gray-50">
+        <h1 className="text-3xl md:text-4xl font-extrabold text-indigo-900 mb-6 md:mb-8 text-center md:text-left">
+          Welcome, {userInfo.firstName}!
+          <span className="block w-20 h-1.5 bg-yellow-500 rounded-full mt-2 mx-auto md:mx-0"></span>
+        </h1>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location.pathname}
+            variants={contentVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="bg-white p-6 md:p-8 lg:p-10 rounded-2xl shadow-xl border border-gray-200 flex-grow overflow-x-auto"
+          >
+            <Outlet />
+          </motion.div>
+        </AnimatePresence>
+      </main>
+
+      {/* Custom Scrollbar Styles - IMPORTANT: Move this to your global CSS file (e.g., index.css or App.css) */}
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 8px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-          background: #3b82f6; /* blue-500 */
+          background: #5A67D8; /* indigo-500 */
           border-radius: 10px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #a78bfa; /* purple-400 */
+          background: #8B5CF6; /* purple-500 */
           border-radius: 10px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #8b5cf6; /* purple-500 */
+          background: #7C3AED; /* purple-600 */
         }
       `}</style>
     </div>
