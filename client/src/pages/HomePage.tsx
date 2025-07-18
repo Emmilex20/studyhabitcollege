@@ -524,7 +524,7 @@ const HomePage: React.FC = () => {
             ))}
           </div>
           <div className="text-center mt-12 md:mt-16">
-            <Link to="/news-events">
+            <Link to="/news">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
