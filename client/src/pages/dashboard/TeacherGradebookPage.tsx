@@ -35,6 +35,17 @@ interface GroupedGrades {
 // Updated list of predefined grade types for the filter dropdown
 const GRADE_TYPES_FILTER_OPTIONS = ['All Types', 'Test', 'Exam', 'Quiz', 'Assignment', 'Project', 'Midterm', 'Final'];
 
+// New: Sorting options for the dropdown
+const SORT_OPTIONS = [
+    { value: 'studentName', label: 'Student Name (A-Z)' },
+    { value: 'currentClass', label: 'Current Class (A-Z)' },
+    { value: 'scoreDesc', label: 'Score (High to Low)' },
+    { value: 'scoreAsc', label: 'Score (Low to High)' },
+    { value: 'dateGradedDesc', label: 'Date Graded (Newest First)' },
+    { value: 'dateGradedAsc', label: 'Date Graded (Oldest First)' },
+];
+
+
 const TeacherGradebookPage: React.FC = () => {
     const { userInfo } = useAuth();
     const [grades, setGrades] = useState<Grade[]>([]);
@@ -43,8 +54,9 @@ const TeacherGradebookPage: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedGrade, setSelectedGrade] = useState<Grade | null>(null);
     const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
-    // Renamed state for clarity to reflect filtering by gradeType
     const [selectedGradeTypeFilter, setSelectedGradeTypeFilter] = useState<string>('All Types');
+    // New: State for sorting option
+    const [selectedSortOption, setSelectedSortOption] = useState<string>('studentName'); // Default sort by student name
 
     const fetchGrades = async () => {
         if (!userInfo?.token || userInfo.role !== 'teacher') {
@@ -77,14 +89,16 @@ const TeacherGradebookPage: React.FC = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userInfo]);
 
-    // Group and filter grades by course and then sort grades within each group by score (descending)
+    // Group and filter grades by course, then sort grades within each group
     const groupedAndFilteredGrades = useMemo(() => {
         const groups: GroupedGrades = {};
-        // Apply gradeType filter
+        
+        // 1. Apply gradeType filter
         const filteredGrades = selectedGradeTypeFilter === 'All Types'
             ? grades
             : grades.filter(grade => grade.gradeType === selectedGradeTypeFilter);
 
+        // 2. Group grades by course
         filteredGrades.forEach(grade => {
             if (grade.course) {
                 if (!groups[grade.course._id]) {
@@ -97,13 +111,34 @@ const TeacherGradebookPage: React.FC = () => {
             }
         });
 
-        // Sort grades within each group by score in descending order
+        // 3. Sort grades within each group based on selectedSortOption
         for (const courseId in groups) {
-            groups[courseId].grades.sort((a, b) => b.score - a.score);
+            groups[courseId].grades.sort((a, b) => {
+                switch (selectedSortOption) {
+                    case 'studentName':
+                        { const nameA = `${a.student?.user?.firstName || ''} ${a.student?.user?.lastName || ''}`.toLowerCase();
+                        const nameB = `${b.student?.user?.firstName || ''} ${b.student?.user?.lastName || ''}`.toLowerCase();
+                        return nameA.localeCompare(nameB); }
+                    case 'currentClass':
+                        { const classA = (a.student?.currentClass || '').toLowerCase();
+                        const classB = (b.student?.currentClass || '').toLowerCase();
+                        return classA.localeCompare(classB); }
+                    case 'scoreDesc':
+                        return b.score - a.score;
+                    case 'scoreAsc':
+                        return a.score - b.score;
+                    case 'dateGradedDesc':
+                        return new Date(b.dateGraded).getTime() - new Date(a.dateGraded).getTime();
+                    case 'dateGradedAsc':
+                        return new Date(a.dateGraded).getTime() - new Date(b.dateGraded).getTime();
+                    default:
+                        return 0; // No specific sort
+                }
+            });
         }
 
         return groups;
-    }, [grades, selectedGradeTypeFilter]); // Re-run memoization when grade type filter changes
+    }, [grades, selectedGradeTypeFilter, selectedSortOption]); // Re-run memoization when sort option changes too
 
     const handleAddGradeClick = () => {
         setSelectedGrade(null);
@@ -197,20 +232,39 @@ const TeacherGradebookPage: React.FC = () => {
                     <i className="fas fa-plus mr-2"></i> Add New Grade
                 </button>
 
-                {/* Updated: Grade Type Filter Dropdown */}
-                <div className="flex items-center space-x-2">
-                    <label htmlFor="gradeTypeFilter" className="text-gray-700 font-medium">Filter by Grade Type:</label>
-                    <select
-                        id="gradeTypeFilter"
-                        name="gradeTypeFilter"
-                        value={selectedGradeTypeFilter}
-                        onChange={(e) => setSelectedGradeTypeFilter(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    >
-                        {GRADE_TYPES_FILTER_OPTIONS.map(type => (
-                            <option key={type} value={type}>{type}</option>
-                        ))}
-                    </select>
+                {/* Filter and Sort Dropdowns */}
+                <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+                    {/* Grade Type Filter Dropdown */}
+                    <div className="flex items-center space-x-2">
+                        <label htmlFor="gradeTypeFilter" className="text-gray-700 font-medium whitespace-nowrap">Filter by Type:</label>
+                        <select
+                            id="gradeTypeFilter"
+                            name="gradeTypeFilter"
+                            value={selectedGradeTypeFilter}
+                            onChange={(e) => setSelectedGradeTypeFilter(e.target.value)}
+                            className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm flex-grow"
+                        >
+                            {GRADE_TYPES_FILTER_OPTIONS.map(type => (
+                                <option key={type} value={type}>{type}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* New: Sorting Dropdown */}
+                    <div className="flex items-center space-x-2">
+                        <label htmlFor="sortOption" className="text-gray-700 font-medium whitespace-nowrap">Sort by:</label>
+                        <select
+                            id="sortOption"
+                            name="sortOption"
+                            value={selectedSortOption}
+                            onChange={(e) => setSelectedSortOption(e.target.value)}
+                            className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm flex-grow"
+                        >
+                            {SORT_OPTIONS.map(option => (
+                                <option key={option.value} value={option.value}>{option.label}</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -266,8 +320,6 @@ const TeacherGradebookPage: React.FC = () => {
                                                 <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                                     Type
                                                 </th>
-                                                {/* Removed: Category Header */}
-                                                {/* Removed: Assignment Name Header */}
                                                 <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                                     Score
                                                 </th>
@@ -275,7 +327,7 @@ const TeacherGradebookPage: React.FC = () => {
                                                     Max Score
                                                 </th>
                                                 <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                                    Current Class {/* Changed from Weight (%) */}
+                                                    Current Class
                                                 </th>
                                                 <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                                     Term
@@ -314,8 +366,6 @@ const TeacherGradebookPage: React.FC = () => {
                                                     <td className="px-5 py-4 text-sm text-gray-900">
                                                         <span className="font-semibold text-indigo-700">{grade.gradeType}</span>
                                                     </td>
-                                                    {/* Removed: Category Column */}
-                                                    {/* Removed: Assignment Name Column */}
                                                     <td className="px-5 py-4 whitespace-nowrap text-sm">
                                                         <span className="font-extrabold text-lg text-green-700">{grade.score}</span>
                                                     </td>
@@ -371,7 +421,7 @@ const TeacherGradebookPage: React.FC = () => {
                                     </table>
                                 </div>
                                 {group.grades.length === 0 && (
-                                    <p className="text-center text-gray-500 mt-4">No grades recorded for this course yet under the selected filter.</p>
+                                    <p className="text-center text-gray-500 mt-4">No grades recorded for this course yet under the selected filter and sort options.</p>
                                 )}
                             </motion.div>
                         ))}
