@@ -7,7 +7,7 @@ import { Pagination, Autoplay, EffectFade } from 'swiper/modules';
 
 // Import Swiper styles
 import 'swiper/css';
-import 'swiper/css/navigation';
+import 'swiper/css/navigation'; // Navigation is still useful for accessibility, even if not explicitly shown
 import 'swiper/css/pagination';
 import 'swiper/css/effect-fade';
 
@@ -84,7 +84,7 @@ const HomePage: React.FC = () => {
   };
 
   return (
-    <div className="bg-gradient-to-b from-gray-50 to-blue-50 text-gray-800 font-sans antialiased">
+    <div className="bg-gradient-to-b from-gray-50 to-blue-50 text-gray-800 font-sans antialiased overflow-x-hidden">
       {/* Hero Section */}
       <section className="relative h-screen md:h-[90vh] overflow-hidden">
         <Swiper
@@ -92,7 +92,7 @@ const HomePage: React.FC = () => {
           effect="fade"
           spaceBetween={0}
           slidesPerView={1}
-          // Removed navigation prop
+          // Removed navigation prop to simplify, but navigation styles are still imported for Swiper
           pagination={{ clickable: true }}
           autoplay={{ delay: 5000, disableOnInteraction: false }}
           loop
@@ -102,7 +102,7 @@ const HomePage: React.FC = () => {
             {heroSlides.map((slide) => (
               <SwiperSlide key={slide.id}>
                 <div
-                  className="w-full h-full bg-cover bg-center flex items-center justify-center relative p-4 sm:p-6 md:p-8"
+                  className="w-full h-full bg-cover bg-center flex items-center justify-center relative px-4 py-8 sm:px-6 md:px-8 lg:px-12"
                   style={{ backgroundImage: `url(${slide.image})` }}
                 >
                   <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
@@ -111,10 +111,10 @@ const HomePage: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -50 }}
                     transition={{ duration: 1.0, ease: easeOut }}
-                    className="relative z-10 text-center text-white max-w-xl lg:max-w-4xl mx-auto p-4 md:p-8 rounded-lg"
+                    className="relative z-10 text-center text-white max-w-2xl lg:max-w-5xl mx-auto p-4 md:p-8 rounded-lg"
                   >
                     <motion.h1
-                      className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-4 drop-shadow-lg leading-tight"
+                      className="text-4xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-extrabold mb-3 md:mb-5 drop-shadow-lg leading-tight md:leading-tight lg:leading-tight"
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.3, duration: 0.8, ease: easeOut }}
@@ -122,7 +122,7 @@ const HomePage: React.FC = () => {
                       {slide.title}
                     </motion.h1>
                     <motion.p
-                      className="text-lg sm:text-xl md:text-2xl lg:text-3xl mb-8 font-light italic"
+                      className="text-lg xs:text-xl sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl mb-6 md:mb-8 font-light italic opacity-90"
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.5, duration: 0.8, ease: easeOut }}
@@ -133,7 +133,7 @@ const HomePage: React.FC = () => {
                       <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        className="px-6 py-3 sm:px-8 sm:py-4 bg-yellow-500 text-blue-900 font-bold rounded-full shadow-2xl hover:bg-yellow-600 transition-all duration-300 transform hover:-translate-y-1 text-base sm:text-lg"
+                        className="px-6 py-3 sm:px-8 sm:py-4 bg-yellow-500 text-blue-900 font-bold rounded-full shadow-2xl hover:bg-yellow-600 transition-all duration-300 transform hover:-translate-y-1 text-base sm:text-lg md:text-xl"
                       >
                         {slide.buttonText} 🚀
                       </motion.button>
@@ -146,33 +146,32 @@ const HomePage: React.FC = () => {
         </Swiper>
       </section>
 
-
-      {/*---*/}
+      ---
 
       {/* Welcome & Mission Section */}
-      <section className="py-16 md:py-24 px-4 sm:px-6 bg-white relative">
+      <section className="py-16 md:py-24 px-4 sm:px-6 lg:px-8 bg-white relative">
         <div className="absolute inset-0 bg-blue-50 transform skew-y-2 origin-top-left -z-10"></div>
-        <div className="container mx-auto grid lg:grid-cols-2 gap-12 lg:gap-16 items-center relative z-10">
+        <div className="container mx-auto max-w-7xl grid lg:grid-cols-2 gap-12 lg:gap-16 items-center relative z-10">
           <motion.div
             {...slideInFromLeft}
             className="flex flex-col justify-center text-center lg:text-left"
           >
-            <h2 className="text-4xl sm:text-5xl font-extrabold text-blue-900 mb-6 leading-tight">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-blue-900 mb-4 md:mb-6 leading-tight">
               Welcome to Studyhabit College
             </h2>
-            <p className="text-gray-700 text-base sm:text-lg leading-relaxed mb-6">
+            <p className="text-gray-700 text-base sm:text-lg leading-relaxed mb-4 md:mb-6">
               At <strong>Studyhabit College</strong>, we are dedicated to fostering a vibrant learning environment
               where academic rigor meets innovative thinking. Our commitment is to nurture the next
               generation of leaders, innovators, and global citizens through a holistic educational approach.
             </p>
-            <p className="text-gray-600 text-sm sm:text-base leading-relaxed mb-8 italic">
+            <p className="text-gray-600 text-sm sm:text-base leading-relaxed mb-6 md:mb-8 italic">
               "Educating the mind without educating the heart is no education at all." - Aristotle
             </p>
             <Link to="/about">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-6 py-3 sm:px-8 sm:py-4 bg-blue-900 text-white font-semibold rounded-full shadow-lg hover:bg-blue-800 transition-all duration-300 text-base sm:text-lg"
+                className="px-6 py-3 sm:px-8 sm:py-4 bg-blue-900 text-white font-semibold rounded-full shadow-lg hover:bg-blue-800 transition-all duration-300 text-base sm:text-lg md:text-xl"
               >
                 Our Philosophy <span aria-hidden="true">&rarr;</span>
               </motion.button>
@@ -187,13 +186,13 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/*---*/}
+      ---
 
       {/* Core Values Section */}
-      <section className="py-16 md:py-20 bg-blue-100 px-4 sm:px-6">
+      <section className="py-16 md:py-20 lg:py-24 bg-blue-100 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">
           <motion.h2
-            className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-blue-900 mb-10 md:mb-12 relative"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-blue-900 mb-8 md:mb-12 relative"
             initial="initial"
             whileInView="animate"
             variants={fadeIn}
@@ -230,11 +229,11 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/*---*/}
+      ---
 
       {/* Academic Excellence Section */}
-      <section className="py-16 md:py-24 px-4 sm:px-6 bg-white">
-        <div className="container mx-auto grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+      <section className="py-16 md:py-24 px-4 sm:px-6 lg:px-8 bg-white">
+        <div className="container mx-auto max-w-7xl grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           <motion.img
             src={LabImg}
             alt="Cutting-edge science laboratory"
@@ -245,16 +244,16 @@ const HomePage: React.FC = () => {
             {...slideInFromRight}
             className="flex flex-col justify-center text-center lg:text-left"
           >
-            <h2 className="text-4xl sm:text-5xl font-extrabold text-blue-900 mb-6 leading-tight">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-blue-900 mb-4 md:mb-6 leading-tight">
               Dedicated to Academic Excellence
             </h2>
-            <p className="text-gray-700 text-base sm:text-lg leading-relaxed mb-6">
+            <p className="text-gray-700 text-base sm:text-lg leading-relaxed mb-4 md:mb-6">
               Our curriculum is designed to challenge students intellectually and foster a deep understanding
               of core subjects. With state-of-the-art <strong>science laboratories</strong> for Physics, Chemistry,
               and Biology, and modern <strong>computer suites</strong>, students gain hands-on experience and develop
               critical analytical skills essential for future success.
             </p>
-            <ul className="list-disc list-inside text-gray-600 text-sm sm:text-base mb-8 space-y-2 text-left mx-auto lg:mx-0">
+            <ul className="list-disc list-inside text-gray-600 text-sm sm:text-base mb-6 md:mb-8 space-y-2 text-left mx-auto lg:mx-0">
               <li>Experienced and passionate faculty members.</li>
               <li>Personalized learning pathways for every student.</li>
               <li>Strong emphasis on STEM and humanities.</li>
@@ -264,7 +263,7 @@ const HomePage: React.FC = () => {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-6 py-3 sm:px-8 sm:py-4 bg-yellow-500 text-blue-900 font-semibold rounded-full shadow-lg hover:bg-yellow-600 transition-all duration-300 text-base sm:text-lg"
+                className="px-6 py-3 sm:px-8 sm:py-4 bg-yellow-500 text-blue-900 font-semibold rounded-full shadow-lg hover:bg-yellow-600 transition-all duration-300 text-base sm:text-lg md:text-xl"
               >
                 Explore Our Programs 📚
               </motion.button>
@@ -273,13 +272,13 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/*---*/}
+      ---
 
       {/* Campus Life Carousel Section */}
-      <section className="bg-blue-50 py-16 md:py-20 px-4 sm:px-6">
+      <section className="bg-blue-50 py-16 md:py-20 lg:py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">
           <motion.h2
-            className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-blue-900 mb-10 md:mb-12 relative"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-blue-900 mb-8 md:mb-12 relative"
             initial="initial"
             whileInView="animate"
             variants={fadeIn}
@@ -293,13 +292,17 @@ const HomePage: React.FC = () => {
             spaceBetween={20}
             slidesPerView={1}
             breakpoints={{
+              480: { // Added an extra small breakpoint
+                slidesPerView: 1.2,
+                spaceBetween: 15,
+              },
               640: {
                 slidesPerView: 2,
-                spaceBetween: 30,
+                spaceBetween: 25,
               },
               1024: {
                 slidesPerView: 3,
-                spaceBetween: 40,
+                spaceBetween: 35,
               },
             }}
             pagination={{ clickable: true }}
@@ -310,7 +313,7 @@ const HomePage: React.FC = () => {
             {campusLifeImages.map((img) => (
               <SwiperSlide key={img.id}>
                 <motion.div
-                  className="bg-white rounded-2xl shadow-xl overflow-hidden group cursor-pointer transform hover:-translate-y-1 transition-transform duration-300"
+                  className="bg-white rounded-2xl shadow-xl overflow-hidden group cursor-pointer transform hover:-translate-y-1 transition-transform duration-300 h-full flex flex-col" /* Added flex-col and h-full for consistent card height */
                   initial={{ opacity: 0, scale: 0.9 }}
                   whileInView={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.5, ease: easeOut }}
@@ -321,10 +324,12 @@ const HomePage: React.FC = () => {
                     alt={img.alt}
                     className="w-full h-48 sm:h-56 md:h-64 object-cover transition-transform duration-500 group-hover:scale-105"
                   />
-                  <div className="p-4 sm:p-6">
-                    <span className="text-xs font-semibold text-blue-600 bg-blue-100 px-2 py-1 rounded-full mb-2 inline-block">{img.category}</span>
-                    <h3 className="text-lg sm:text-xl font-bold text-blue-800 mb-2 group-hover:text-yellow-600 transition-colors">{img.alt}</h3>
-                    <p className="text-gray-600 text-sm leading-relaxed">
+                  <div className="p-4 sm:p-6 flex-grow flex flex-col justify-between"> {/* Added flex-grow */}
+                    <span className="text-xs font-semibold text-blue-600 bg-blue-100 px-2.5 py-1 rounded-full mb-2 inline-block self-start">{img.category}</span>
+                    <h3 className="text-lg sm:text-xl font-bold text-blue-800 mb-2 group-hover:text-yellow-600 transition-colors leading-tight">
+                      {img.alt}
+                    </h3>
+                    <p className="text-gray-600 text-sm leading-relaxed mt-auto"> {/* mt-auto pushes to bottom */}
                       Engage in diverse clubs, sports, and activities that enrich your college journey.
                     </p>
                   </div>
@@ -336,7 +341,7 @@ const HomePage: React.FC = () => {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="mt-8 md:mt-12 px-8 py-4 bg-blue-900 text-white font-semibold rounded-full shadow-lg hover:bg-blue-800 transition-all duration-300 text-base sm:text-lg"
+              className="mt-8 md:mt-12 px-8 py-4 bg-blue-900 text-white font-semibold rounded-full shadow-lg hover:bg-blue-800 transition-all duration-300 text-base sm:text-lg md:text-xl"
             >
               Discover More Campus Life 🌟
             </motion.button>
@@ -344,24 +349,24 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/*---*/}
+      ---
 
       {/* Faculty Spotlight Section */}
-      <section className="py-16 md:py-24 px-4 sm:px-6 bg-white">
-        <div className="container mx-auto grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+      <section className="py-16 md:py-24 px-4 sm:px-6 lg:px-8 bg-white">
+        <div className="container mx-auto max-w-7xl grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           <motion.div
             {...slideInFromLeft}
             className="flex flex-col justify-center text-center lg:text-left"
           >
-            <h2 className="text-4xl sm:text-5xl font-extrabold text-blue-900 mb-6 leading-tight">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-blue-900 mb-4 md:mb-6 leading-tight">
               Meet Our Exceptional Faculty
             </h2>
-            <p className="text-gray-700 text-base sm:text-lg leading-relaxed mb-6">
+            <p className="text-gray-700 text-base sm:text-lg leading-relaxed mb-4 md:mb-6">
               Our dedicated <strong>faculty members</strong> are not just educators; they are mentors, innovators,
               and leaders in their respective fields. They bring a wealth of experience and a passion
               for teaching, inspiring students to achieve their academic and personal best.
             </p>
-            <ul className="list-disc list-inside text-gray-600 text-sm sm:text-base mb-8 space-y-2 text-left mx-auto lg:mx-0">
+            <ul className="list-disc list-inside text-gray-600 text-sm sm:text-base mb-6 md:mb-8 space-y-2 text-left mx-auto lg:mx-0">
               <li>Highly qualified and experienced professionals.</li>
               <li>Committed to student success and mentorship.</li>
               <li>Engaged in ongoing research and professional development.</li>
@@ -371,7 +376,7 @@ const HomePage: React.FC = () => {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-6 py-3 sm:px-8 sm:py-4 bg-yellow-500 text-blue-900 font-semibold rounded-full shadow-lg hover:bg-yellow-600 transition-all duration-300 text-base sm:text-lg"
+                className="px-6 py-3 sm:px-8 sm:py-4 bg-yellow-500 text-blue-900 font-semibold rounded-full shadow-lg hover:bg-yellow-600 transition-all duration-300 text-base sm:text-lg md:text-xl"
               >
                 Learn About Our Faculty 🧑‍🏫
               </motion.button>
@@ -386,14 +391,14 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/*---*/}
+      ---
 
       {/* Testimonials Section */}
-      <section className="bg-gradient-to-r from-blue-900 to-blue-700 py-16 md:py-20 px-4 sm:px-6 relative overflow-hidden">
+      <section className="bg-gradient-to-r from-blue-900 to-blue-700 py-16 md:py-20 lg:py-24 px-4 sm:px-6 relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-pattern-dots -z-10"></div>
         <div className="max-w-xl md:max-w-4xl mx-auto text-center relative z-10">
           <motion.h2
-            className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white mb-10 md:mb-12 drop-shadow-md"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-8 md:mb-12 drop-shadow-md"
             initial="initial"
             whileInView="animate"
             variants={fadeIn}
@@ -402,14 +407,14 @@ const HomePage: React.FC = () => {
             What Our Community Says
           </motion.h2>
           <motion.div
-            className="bg-white p-6 sm:p-10 rounded-3xl shadow-3xl transform skew-y-1 hover:skew-y-0 transition-transform duration-500"
+            className="bg-white p-6 sm:p-10 md:p-12 rounded-3xl shadow-3xl transform skew-y-1 hover:skew-y-0 transition-transform duration-500"
             initial={{ scale: 0.9, opacity: 0 }}
             whileInView={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.2, ease: easeOut }}
             viewport={{ once: true, amount: 0.4 }}
           >
             <img src={TestimonialImg} alt="Testimonial photo" className="w-20 h-20 sm:w-24 sm:h-24 rounded-full mx-auto mb-4 sm:mb-6 border-4 border-yellow-500 shadow-lg" />
-            <p className="italic text-gray-800 text-base sm:text-xl leading-relaxed mb-4 sm:mb-6">
+            <p className="italic text-gray-800 text-base sm:text-lg md:text-xl leading-relaxed mb-4 sm:mb-6">
               “Studyhabit College provided me with an unparalleled educational foundation. The support from
               faculty, the challenging curriculum, and the vibrant campus life truly shaped me into the
               person I am today. It's more than a school; it's a launchpad for future success.”
@@ -420,13 +425,13 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/*---*/}
+      ---
 
       {/* News & Events Section */}
-      <section className="py-16 md:py-24 px-4 sm:px-6 bg-blue-50">
+      <section className="py-16 md:py-24 lg:py-28 px-4 sm:px-6 lg:px-8 bg-blue-50">
         <div className="max-w-7xl mx-auto">
           <motion.h2
-            className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-blue-900 mb-10 md:mb-12 text-center relative"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-blue-900 mb-8 md:mb-12 text-center relative"
             initial="initial"
             whileInView="animate"
             variants={fadeIn}
@@ -462,13 +467,13 @@ const HomePage: React.FC = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: i * 0.1, ease: easeOut }}
                 viewport={{ once: true, amount: 0.3 }}
-                className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-shadow duration-300 group"
+                className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-shadow duration-300 group flex flex-col h-full" /* Added flex-col and h-full */
               >
                 <img src={item.image} alt={item.title} className="w-full h-48 sm:h-52 object-cover" />
-                <div className="p-5 sm:p-6">
-                  <h3 className="text-lg sm:text-xl font-bold text-blue-800 mb-2 group-hover:text-yellow-600 transition-colors">{item.title}</h3>
+                <div className="p-5 sm:p-6 flex-grow flex flex-col justify-between"> {/* Added flex-grow */}
+                  <h3 className="text-lg sm:text-xl font-bold text-blue-800 mb-2 group-hover:text-yellow-600 transition-colors leading-tight">{item.title}</h3>
                   <p className="text-xs sm:text-sm text-gray-500 mb-3">{item.date}</p>
-                  <p className="text-gray-700 text-sm sm:text-base mb-4">{item.description}</p>
+                  <p className="text-gray-700 text-sm sm:text-base mb-4 mt-auto">{item.description}</p> {/* mt-auto pushes read more down */}
                   <Link to="/news-events" className="text-blue-700 font-semibold hover:text-yellow-600 transition-colors flex items-center text-sm sm:text-base">
                     Read More <span aria-hidden="true" className="ml-1 group-hover:translate-x-1 transition-transform">&rarr;</span>
                   </Link>
@@ -481,7 +486,7 @@ const HomePage: React.FC = () => {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-8 py-3 sm:px-10 sm:py-4 bg-blue-900 text-white font-bold rounded-full shadow-lg hover:bg-blue-800 transition-all duration-300 text-base sm:text-lg"
+                className="px-8 py-3 sm:px-10 sm:py-4 bg-blue-900 text-white font-bold rounded-full shadow-lg hover:bg-blue-800 transition-all duration-300 text-base sm:text-lg md:text-xl"
               >
                 View All Updates 📰
               </motion.button>
@@ -490,13 +495,13 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/*---*/}
+      ---
 
       {/* Call to Action - Admissions */}
-      <section className="bg-blue-900 text-white py-16 md:py-24 text-center px-4 sm:px-6 relative overflow-hidden">
+      <section className="bg-blue-900 text-white py-16 md:py-24 lg:py-28 text-center px-4 sm:px-6 relative overflow-hidden">
         <div className="absolute inset-0 bg-yellow-500 opacity-5 transform skew-y-2 origin-bottom-right -z-10"></div>
         <motion.h2
-          className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-4 sm:mb-6 drop-shadow-lg leading-tight"
+          className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold mb-4 sm:mb-6 drop-shadow-lg leading-tight"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.1, ease: easeOut }}
@@ -522,7 +527,7 @@ const HomePage: React.FC = () => {
         >
           <Link
             to="/admissions"
-            className="inline-block px-8 py-3 sm:px-10 sm:py-4 bg-yellow-500 text-blue-900 font-bold text-base sm:text-lg rounded-full hover:bg-yellow-600 shadow-2xl transform hover:scale-105 transition-all duration-300"
+            className="inline-block px-8 py-3 sm:px-10 sm:py-4 bg-yellow-500 text-blue-900 font-bold text-base sm:text-lg md:text-xl rounded-full hover:bg-yellow-600 shadow-2xl transform hover:scale-105 transition-all duration-300"
           >
             Apply Now <span aria-hidden="true">&rarr;</span>
           </Link>
