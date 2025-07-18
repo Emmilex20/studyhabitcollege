@@ -35,7 +35,7 @@ const Chatbot: React.FC = () => {
             // Replace with your backend URL.
             // In a production environment, you'd likely use a relative path like '/api/chatbot/message'
             // or an environment variable for the full URL.
-            const response = await fetch('http://localhost:5000/api/chatbot/message', {
+            const response = await fetch('https://studyhabitcollege.onrender.com/api/chatbot/message', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
