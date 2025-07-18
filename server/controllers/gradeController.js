@@ -2,6 +2,7 @@
 import Grade from '../models/Grade.js';
 import Course from '../models/Course.js'; // Import Course model
 import Student from '../models/Student.js'; // Import Student model
+// import asyncHandler from 'express-async-handler'; // Assuming you use this for error handling, if not, adjust
 
 // Helper function to check if a teacher teaches a course
 const teacherTeachesCourse = async (teacherId, courseId) => {
@@ -70,11 +71,12 @@ const getGrades = async (req, res) => {
         const grades = await Grade.find(query)
             .populate({
                 path: 'student',
+                // ADD 'currentClass' to select here
+                select: 'studentId currentClass user',
                 populate: {
                     path: 'user',
                     select: 'firstName lastName email'
-                },
-                select: 'studentId'
+                }
             })
             .populate('course', 'name code')
             .populate('teacher', 'firstName lastName email')
@@ -94,11 +96,12 @@ const getGradeById = async (req, res) => {
         const grade = await Grade.findById(req.params.id)
             .populate({
                 path: 'student',
+                // ADD 'currentClass' to select here
+                select: 'studentId currentClass user',
                 populate: {
                     path: 'user',
                     select: 'firstName lastName email'
-                },
-                select: 'studentId'
+                }
             })
             .populate('course', 'name code')
             .populate('teacher', 'firstName lastName email');
@@ -136,16 +139,23 @@ const getGradeById = async (req, res) => {
 // @route   POST /api/grades
 // @access  Private/Admin, Teacher
 const createGrade = async (req, res) => {
-    const { student, course, gradeType, score, weight, term, academicYear, remarks } = req.body;
+    const { student, course, gradeType, score, weight, term, academicYear, remarks, assignmentName, maxScore } = req.body;
 
+    // Adjusted required fields based on your schema's `assignmentName` conditional requirement
     if (!student || !course || !gradeType || score === undefined || !term || !academicYear) {
         res.status(400);
         throw new Error('Please provide student, course, gradeType, score, term, and academicYear.');
     }
 
-    if (score < 0 || score > 100) {
+    if (score < 0 || score > (maxScore || 100)) { // Validate against maxScore if provided, else 100
         res.status(400);
-        throw new Error('Score must be between 0 and 100.');
+        throw new Error(`Score must be between 0 and ${maxScore || 100}.`);
+    }
+
+    // Conditional check for assignmentName based on gradeType
+    if ((gradeType === 'Assignment' || gradeType === 'Project') && !assignmentName) {
+        res.status(400);
+        throw new Error('Assignment Name is required for Assignment or Project grade types.');
     }
 
     try {
@@ -162,13 +172,20 @@ const createGrade = async (req, res) => {
         }
 
         // Check for duplicate grade for the same student, course, grade type, term, and academic year
-        const existingGrade = await Grade.findOne({
+        // Include assignmentName in the unique check if gradeType is Assignment or Project
+        const duplicateCheckQuery = {
             student,
             course,
             gradeType,
             term,
             academicYear
-        });
+        };
+
+        if (gradeType === 'Assignment' || gradeType === 'Project') {
+            duplicateCheckQuery.assignmentName = assignmentName;
+        }
+
+        const existingGrade = await Grade.findOne(duplicateCheckQuery);
 
         if (existingGrade) {
             return res.status(400).json({ message: 'A grade for this student, course, grade type, term, and academic year already exists. Please update it instead.' });
@@ -178,8 +195,10 @@ const createGrade = async (req, res) => {
             student,
             course,
             teacher: req.user._id, // Assign the logged-in user (admin or teacher) as the recorder
+            assignmentName: (gradeType === 'Assignment' || gradeType === 'Project') ? assignmentName : undefined, // Set only if relevant
             gradeType,
             score,
+            maxScore: maxScore !== undefined ? maxScore : 100, // Use provided maxScore or default to 100
             weight: weight !== undefined ? weight : 1, // Default weight to 1
             term,
             academicYear,
@@ -188,7 +207,8 @@ const createGrade = async (req, res) => {
 
         const createdGrade = await grade.save();
         await createdGrade.populate([
-            { path: 'student', populate: { path: 'user', select: 'firstName lastName email' }, select: 'studentId' },
+            // ADD 'currentClass' to select here
+            { path: 'student', populate: { path: 'user', select: 'firstName lastName email' }, select: 'studentId currentClass' },
             { path: 'course', select: 'name code' },
             { path: 'teacher', select: 'firstName lastName email' }
         ]);
@@ -203,7 +223,8 @@ const createGrade = async (req, res) => {
 // @route   PUT /api/grades/:id
 // @access  Private/Admin, Teacher
 const updateGrade = async (req, res) => {
-    const { score, remarks, gradeType, weight } = req.body; // Allow updating score, remarks, type, weight
+    // Also allow updating assignmentName and maxScore if necessary
+    const { score, remarks, gradeType, weight, assignmentName, maxScore } = req.body;
 
     try {
         const grade = await Grade.findById(req.params.id);
@@ -222,19 +243,24 @@ const updateGrade = async (req, res) => {
 
         // Admin can update anything.
         if (score !== undefined) {
-            if (score < 0 || score > 100) {
+            // Validate score against grade's current maxScore or new maxScore
+            const currentMaxScore = maxScore !== undefined ? maxScore : grade.maxScore;
+            if (score < 0 || score > currentMaxScore) {
                 res.status(400);
-                throw new Error('Score must be between 0 and 100.');
+                throw new Error(`Score must be between 0 and ${currentMaxScore}.`);
             }
             grade.score = score;
         }
         if (remarks !== undefined) grade.remarks = remarks;
         if (gradeType !== undefined) grade.gradeType = gradeType;
         if (weight !== undefined) grade.weight = weight;
+        if (assignmentName !== undefined) grade.assignmentName = assignmentName; // Update assignmentName
+        if (maxScore !== undefined) grade.maxScore = maxScore; // Update maxScore
 
         const updatedGrade = await grade.save();
         await updatedGrade.populate([
-            { path: 'student', populate: { path: 'user', select: 'firstName lastName email' }, select: 'studentId' },
+            // ADD 'currentClass' to select here
+            { path: 'student', populate: { path: 'user', select: 'firstName lastName email' }, select: 'studentId currentClass' },
             { path: 'course', select: 'name code' },
             { path: 'teacher', select: 'firstName lastName email' }
         ]);
@@ -276,36 +302,35 @@ const deleteGrade = async (req, res) => {
 // @route   GET /api/students/me/grades
 // @access  Private/Student
 const getMyGrades = async (req, res) => {
-  try {
-    const student = await Student.findOne({ user: req.user._id });
+    try {
+        const student = await Student.findOne({ user: req.user._id });
 
-    if (!student) {
-      return res.status(404).json({ message: 'Student profile not found.' });
+        if (!student) {
+            return res.status(404).json({ message: 'Student profile not found.' });
+        }
+
+        const grades = await Grade.find({ student: student._id })
+            .populate('course', 'name code')
+            .sort({ dateGraded: -1 });
+
+        const formattedGrades = grades.map((grade) => ({
+            _id: grade._id,
+            courseName: grade.course.name,
+            courseCode: grade.course.code,
+            assignmentName: grade.gradeType, // This might need to be grade.assignmentName if you use that for specific assignments
+            score: grade.score,
+            maxScore: grade.maxScore, // Use the actual maxScore from the grade document
+            percentage: `${((grade.score / grade.maxScore) * 100).toFixed(2)}%`, // Calculate percentage based on maxScore
+            dateGraded: grade.dateGraded.toISOString(),
+            feedback: grade.remarks || '',
+        }));
+
+        res.status(200).json(formattedGrades);
+    } catch (error) {
+        console.error('Error fetching student grades:', error);
+        res.status(500).json({ message: 'Server error' });
     }
-
-    const grades = await Grade.find({ student: student._id })
-      .populate('course', 'name code')
-      .sort({ dateGraded: -1 });
-
-    const formattedGrades = grades.map((grade) => ({
-      _id: grade._id,
-      courseName: grade.course.name,
-      courseCode: grade.course.code,
-      assignmentName: grade.gradeType,
-      score: grade.score,
-      maxScore: 100, // or replace if using a custom max
-      percentage: `${((grade.score / 100) * 100).toFixed(2)}%`,
-      dateGraded: grade.dateGraded.toISOString(),
-      feedback: grade.remarks || '',
-    }));
-
-    res.status(200).json(formattedGrades);
-  } catch (error) {
-    console.error('Error fetching student grades:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
 };
-
 
 export {
     getGrades,
