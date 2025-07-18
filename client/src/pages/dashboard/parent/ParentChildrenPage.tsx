@@ -1,115 +1,101 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// src/pages/dashboard/AdminAnnouncementsPage.tsx
+// src/pages/dashboard/parent/ParentChildrenPage.tsx
 import React, { useState, useEffect } from 'react';
+import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { motion, AnimatePresence, easeOut } from 'framer-motion'; // Import motion, AnimatePresence, and easeOut
 import { useAuth } from '../../../context/AuthContext';
-import { motion, AnimatePresence, easeOut } from 'framer-motion'; // Import AnimatePresence and easeOut
-import AnnouncementFormModal from '../../../components/modals/AnnouncementFormModal'; // Assuming this modal handles create/edit
 
-interface Announcement {
+interface CourseSummary {
   _id: string;
-  title: string;
-  content: string;
-  author: { _id: string; firstName: string; lastName: string };
-  datePublished: string;
-  targetAudience: string[];
-  expiryDate?: string;
-  createdAt: string;
+  name: string;
+  code: string;
 }
 
-const AdminAnnouncementsPage: React.FC = () => {
-  const { userInfo } = useAuth();
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [loading, setLoading] = useState(true);
+interface Child {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  studentId: string;
+  currentClass?: string;
+  enrolledCourses: CourseSummary[];
+  gradeAverage?: number;
+  attendancePercentage?: number;
+  avatarUrl?: string;
+}
+
+const ParentChildrenPage: React.FC = () => {
+  const [children, setChildren] = useState<Child[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null); // For editing
-  const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
+  const [activeChildId, setActiveChildId] = useState<string | null>(null);
 
-  // Determine if the current user is an admin
-  const isAdmin = userInfo?.role === 'admin';
-
-  const fetchAnnouncements = async () => {
-    if (!userInfo?.token) {
-      setError('Authentication required: Please log in to manage announcements.');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const config = {
-        headers: {
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      };
-      const { data } = await axios.get('https://studyhabitcollege.onrender.com/api/announcements', config);
-      // Ensure data is an array or handle nested array if API sends it that way
-      const announcementsData = Array.isArray(data) ? data : (data && Array.isArray(data.announcements) ? data.announcements : []);
-      setAnnouncements(announcementsData);
-      setError(null);
-    } catch (err: any) {
-      console.error('Error fetching announcements:', err.response?.data?.message || err.message, err);
-      setError(err.response?.data?.message || 'Failed to fetch announcements. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { userInfo } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    fetchAnnouncements();
-    // userInfo.token is in the dependency array to refetch if user logs in/out
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userInfo?.token]);
+    const fetchChildren = async () => {
+      if (!userInfo?.token) {
+        setError('Authentication token missing. Please log in.');
+        setLoading(false);
+        return;
+      }
 
-  const handleAddAnnouncementClick = () => {
-    setSelectedAnnouncement(null); // Clear selected announcement for a new creation
-    setIsModalOpen(true);
-  };
-
-  const handleEditAnnouncementClick = (announcement: Announcement) => {
-    setSelectedAnnouncement(announcement);
-    setIsModalOpen(true);
-  };
-
-  const handleSaveAnnouncement = async () => {
-    setIsModalOpen(false); // Close modal after saving
-    await fetchAnnouncements(); // Re-fetch announcements to update the list
-  };
-
-  const handleDeleteAnnouncement = async (announcementId: string, announcementTitle: string) => {
-    if (!userInfo?.token) {
-      setError('Authentication required to delete announcements.');
-      return;
-    }
-    if (window.confirm(`Are you sure you want to delete the announcement: "${announcementTitle}"? This action cannot be undone.`)) {
-      setDeleteLoading(announcementId);
       try {
+        setLoading(true);
         const config = {
           headers: {
             Authorization: `Bearer ${userInfo.token}`,
           },
+          withCredentials: true,
         };
-        await axios.delete(`https://studyhabitcollege.onrender.com/api/announcements/${announcementId}`, config);
-        await fetchAnnouncements(); // Refresh the list after deletion
-      } catch (err: any) {
-        console.error('Failed to delete announcement:', err.response?.data?.message || err.message, err);
-        setError(err.response?.data?.message || 'Failed to delete announcement.');
-      } finally {
-        setDeleteLoading(null);
-      }
-    }
-  };
+        const response = await axios.get('https://studyhabitcollege.onrender.com/api/parents/me/children', config);
+        setChildren(response.data);
 
-  const isExpired = (expiryDate?: string) => {
-    if (!expiryDate) return false; // Announcements without an expiry date never expire
-    // Compare the expiry date to the current date, ignoring time for a simple check
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Normalize to start of day
-    const expDate = new Date(expiryDate);
-    expDate.setHours(0, 0, 0, 0); // Normalize to start of day
-    return expDate < today;
-  };
+        if (response.data.length > 0) {
+          const firstChildId = response.data[0]._id;
+          const pathParts = location.pathname.split('/');
+          // Attempt to extract studentId from the URL (e.g., /dashboard/child/STUDENT_ID/grades)
+          // Ensure we get the correct part after '/child/'
+          const childPathIndex = pathParts.indexOf('child');
+          const studentIdInUrl = childPathIndex > -1 ? pathParts[childPathIndex + 1] : undefined;
+
+          // Check if the studentId in URL is one of the fetched children
+          const isUrlIdValid = response.data.some((child: Child) => child._id === studentIdInUrl);
+
+          const idToActivate = isUrlIdValid ? studentIdInUrl : firstChildId;
+          setActiveChildId(idToActivate);
+
+          // Only navigate if the current path is NOT already showing details for the active child
+          // This prevents unnecessary re-navigations and history stack issues.
+          if (!location.pathname.startsWith(`/dashboard/child/${idToActivate}/`)) {
+            navigate(`/dashboard/child/${idToActivate}/grades`, { replace: true });
+          }
+        } else {
+          // If no children found, clear active child and ensure no sub-route is active
+          setActiveChildId(null);
+          if (location.pathname.startsWith('/dashboard/child/')) {
+            navigate('/dashboard', { replace: true }); // Or a more appropriate "no children" page
+          }
+        }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (err: any) {
+        console.error('Error fetching children:', err.response?.data?.message || err.message, err);
+        setError(err.response?.data?.message || 'Failed to load children. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (userInfo?.token) {
+      fetchChildren();
+    } else {
+      // If no userInfo or token, set loading false and error, but also clear children
+      setLoading(false);
+      setError('You must be logged in to view your children\'s profiles.');
+      setChildren([]);
+    }
+  }, [userInfo, location.pathname, navigate]);
 
   // Framer Motion variants
   const pageVariants = {
@@ -117,17 +103,23 @@ const AdminAnnouncementsPage: React.FC = () => {
     visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: easeOut } },
   };
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 10 },
-    visible: { opacity: 1, y: 0 },
+  const childCardVariants = {
+    hidden: { opacity: 0, scale: 0.9, y: 20 },
+    visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.4, ease: easeOut } },
+    hover: { scale: 1.03, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)' } // Tailwind shadow-md and shadow-lg
   };
 
-  // --- CONDITIONAL RENDERING FOR LOADING/ERROR STATES ---
+  const navLinkVariants = {
+    active: { backgroundColor: '#3b82f6', color: '#ffffff', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' },
+    inactive: { backgroundColor: '#e5e7eb', color: '#4b5563' },
+    hover: { scale: 1.05, boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-48">
+      <div className="flex items-center justify-center h-full py-10">
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
-        <p className="ml-4 text-lg text-gray-600">Loading announcements... <span className="italic">Getting the latest news!</span></p>
+        <p className="ml-4 text-lg text-gray-600">Loading your children's data...</p>
       </div>
     );
   }
@@ -141,10 +133,10 @@ const AdminAnnouncementsPage: React.FC = () => {
         className="text-center py-10 px-4 bg-red-50 border border-red-200 text-red-700 rounded-lg shadow-sm"
       >
         <p className="text-xl font-semibold mb-2 flex items-center justify-center">
-          <i className="fas fa-exclamation-circle mr-3 text-red-500"></i> Error Loading Announcements!
+          <i className="fas fa-exclamation-circle mr-3 text-red-500"></i> Error Loading Data!
         </p>
         <p>{error}</p>
-        <p className="text-sm mt-3 text-red-500">Please ensure you are logged in and have administrator privileges.</p>
+        <p className="text-sm mt-3 text-red-500">Please try refreshing the page or contact support.</p>
       </motion.div>
     );
   }
@@ -154,29 +146,13 @@ const AdminAnnouncementsPage: React.FC = () => {
       initial="hidden"
       animate="visible"
       variants={pageVariants}
-      className="admin-announcements-page p-4 sm:p-6" // Add responsive padding
+      className="parent-children-page p-4 sm:p-6 bg-gray-50 min-h-screen"
     >
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl sm:text-4xl font-extrabold text-blue-800 flex items-center">
-          <i className="fas fa-bullhorn mr-3 text-yellow-500"></i> Manage Announcements
-        </h2>
-        {isAdmin && (
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleAddAnnouncementClick}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg shadow-lg hover:bg-blue-700 transition-colors duration-200 flex items-center text-lg font-semibold"
-          >
-            <i className="fas fa-plus mr-2"></i> Create New Announcement
-          </motion.button>
-        )}
-      </div>
+      <h2 className="text-3xl sm:text-4xl font-extrabold text-blue-800 mb-6 flex items-center">
+        <i className="fas fa-users mr-3 text-purple-500"></i> My Children
+      </h2>
 
-      <p className="text-gray-700 mb-8 text-lg">
-        Oversee and manage all official school announcements. As an administrator, you can create, edit, and delete announcements.
-      </p>
-
-      {announcements.length === 0 && !loading ? (
+      {children.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -184,145 +160,125 @@ const AdminAnnouncementsPage: React.FC = () => {
           className="text-center py-12 bg-blue-50 rounded-lg shadow-inner border border-blue-200"
         >
           <p className="text-xl font-semibold text-blue-600 mb-3 flex items-center justify-center">
-            <i className="fas fa-info-circle mr-3 text-blue-500"></i> No Announcements Found!
+            <i className="fas fa-info-circle mr-3 text-blue-500"></i> No Children Found!
           </p>
           <p className="text-gray-600">
-            There are no announcements in the system. {isAdmin && 'Click "Create New Announcement" to add the first one!'}
+            It seems no children are linked to your account. Please contact the school administration to link your child's profile.
           </p>
         </motion.div>
       ) : (
-        <div className="overflow-x-auto bg-white rounded-xl shadow-xl border border-gray-100">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="py-3 px-6 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  <i className="fas fa-bullhorn mr-2"></i> Title
-                </th>
-                <th scope="col" className="py-3 px-6 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  <i className="fas fa-align-left mr-2"></i> Content
-                </th>
-                <th scope="col" className="py-3 px-6 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  <i className="fas fa-users mr-2"></i> Audience
-                </th>
-                <th scope="col" className="py-3 px-6 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  <i className="fas fa-calendar-plus mr-2"></i> Published On
-                </th>
-                <th scope="col" className="py-3 px-6 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  <i className="fas fa-calendar-times mr-2"></i> Expires On
-                </th>
-                <th scope="col" className="py-3 px-6 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  <i className="fas fa-user-tie mr-2"></i> Author
-                </th>
-                {isAdmin && (
-                  <th scope="col" className="py-3 px-6 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    <i className="fas fa-cogs mr-2"></i> Actions
-                  </th>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+          <AnimatePresence>
+            {children.map((child, index) => (
+              <motion.div
+                key={child._id}
+                variants={childCardVariants}
+                initial="hidden"
+                animate="visible"
+                whileHover="hover"
+                custom={index} // Stagger animation
+                onClick={() => {
+                  setActiveChildId(child._id);
+                  navigate(`/dashboard/child/${child._id}/grades`); // Navigate to grades by default
+                }}
+                className={`relative bg-white p-6 rounded-xl shadow-md border cursor-pointer transition-all duration-300 ease-in-out transform
+                  ${activeChildId === child._id ? 'border-blue-600 ring-4 ring-blue-200 shadow-xl' : 'border-gray-200 hover:border-blue-300'}`}
+              >
+                {child.avatarUrl ? (
+                  <img src={child.avatarUrl} alt={`${child.firstName}'s avatar`} className="w-16 h-16 rounded-full mx-auto mb-4 object-cover border-2 border-blue-400" />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4 border-2 border-blue-400">
+                    <i className="fas fa-user-graduate text-blue-500 text-3xl"></i>
+                  </div>
                 )}
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-100">
-              <AnimatePresence> {/* For exit animations when items are deleted */}
-                {announcements.map((announcement) => (
-                  <motion.tr
-                    key={announcement._id}
-                    layout // Animate position changes
-                    initial="hidden"
-                    animate="visible"
-                    exit={{ opacity: 0, x: -50 }} // Animation when an item is removed
-                    variants={itemVariants}
-                    transition={{ duration: 0.3 }}
-                    whileHover={{ backgroundColor: '#f3f4f6', scale: 1.005 }}
-                    className={`hover:shadow-sm ${isExpired(announcement.expiryDate) ? 'bg-gray-50 text-gray-500 opacity-80 italic' : ''}`}
-                  >
-                    <td className="px-5 py-4 border-b border-gray-200 text-sm">
-                      <span className={`font-bold ${isExpired(announcement.expiryDate) ? 'text-gray-600' : 'text-blue-700'}`}>{announcement.title}</span>
-                      {isExpired(announcement.expiryDate) && (
-                        <span className="ml-2 text-xs text-red-500 font-semibold">(Expired)</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-4 border-b border-gray-200 text-sm max-w-xs overflow-hidden text-ellipsis whitespace-nowrap">
-                      {announcement.content}
-                    </td>
-                    <td className="px-5 py-4 border-b border-gray-200 text-sm">
-                      {announcement.targetAudience.length > 0 ? (
-                        announcement.targetAudience.map((aud) => (
-                          <span key={aud} className="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full mr-1 mb-1 font-medium">
-                            {aud.charAt(0).toUpperCase() + aud.slice(1)}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full font-medium">All</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-4 border-b border-gray-200 text-sm">
-                      <span className="font-semibold">{new Date(announcement.datePublished).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
-                      <p className="text-xs text-gray-500">
-                        {new Date(announcement.datePublished).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                    </td>
-                    <td className="px-5 py-4 border-b border-gray-200 text-sm">
-                      {announcement.expiryDate ? (
-                        <span className={`font-semibold ${isExpired(announcement.expiryDate) ? 'text-red-600' : 'text-green-600'}`}>
-                          {new Date(announcement.expiryDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
-                        </span>
-                      ) : (
-                        <span className="text-gray-500">Never</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-4 border-b border-gray-200 text-sm">
-                      <span className="font-semibold text-gray-800">{announcement.author?.firstName} {announcement.author?.lastName}</span>
-                      <p className="text-xs text-gray-500">
-                        <i className="fas fa-calendar-check mr-1"></i> Created: {new Date(announcement.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
-                      </p>
-                    </td>
-                    {isAdmin && (
-                      <td className="px-5 py-4 border-b border-gray-200 text-sm">
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => handleEditAnnouncementClick(announcement)}
-                            className="text-indigo-600 hover:text-indigo-900 transition-colors duration-200 p-1 rounded-full hover:bg-indigo-50"
-                            title="Edit Announcement"
-                          >
-                            <i className="fas fa-edit"></i>
-                          </button>
-                          <button
-                            onClick={() => handleDeleteAnnouncement(announcement._id, announcement.title)}
-                            className="text-red-600 hover:text-red-900 transition-colors duration-200 p-1 rounded-full hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                            disabled={deleteLoading === announcement._id}
-                            title="Delete Announcement"
-                          >
-                            {deleteLoading === announcement._id ? (
-                              <i className="fas fa-spinner fa-spin"></i> // Spinner for deleting state
-                            ) : (
-                              <i className="fas fa-trash-alt"></i>
-                            )}
-                          </button>
-                        </div>
-                      </td>
-                    )}
-                  </motion.tr>
-                ))}
-              </AnimatePresence>
-            </tbody>
-          </table>
+                <h3 className="text-xl font-extrabold text-gray-800 text-center mb-1">
+                  {child.firstName} {child.lastName}
+                </h3>
+                <p className="text-sm text-gray-500 text-center mb-3">ID: {child.studentId}</p>
+
+                <div className="space-y-1">
+                  <p className="text-base text-gray-700 flex items-center">
+                    <i className="fas fa-school text-blue-500 mr-2"></i> Class: <span className="font-semibold ml-auto">{child.currentClass || 'N/A'}</span>
+                  </p>
+                  <p className="text-base text-gray-700 flex items-center">
+                    <i className="fas fa-book-open text-green-500 mr-2"></i> Courses: <span className="font-semibold ml-auto">{child.enrolledCourses.length > 0 ? child.enrolledCourses.length : '0'}</span>
+                  </p>
+                  {typeof child.gradeAverage === 'number' && (
+                    <p className="text-base text-gray-700 flex items-center">
+                      <i className="fas fa-percent text-yellow-500 mr-2"></i> Grade Avg: <span className="font-bold ml-auto text-yellow-700">{child.gradeAverage.toFixed(1)}%</span>
+                    </p>
+                  )}
+                  {typeof child.attendancePercentage === 'number' && (
+                    <p className="text-base text-gray-700 flex items-center">
+                      <i className="fas fa-calendar-check text-indigo-500 mr-2"></i> Attendance: <span className="font-bold ml-auto text-indigo-700">{child.attendancePercentage.toFixed(1)}%</span>
+                    </p>
+                  )}
+                </div>
+
+                {activeChildId === child._id && (
+                  <div className="absolute inset-x-0 bottom-0 bg-blue-100 text-blue-800 text-center py-2 text-sm font-semibold rounded-b-xl">
+                    Selected
+                  </div>
+                )}
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       )}
 
-      {/* Modal for admin only */}
-      {isAdmin && (
-        <AnimatePresence>
-          {isModalOpen && (
-            <AnnouncementFormModal
-              isOpen={isModalOpen}
-              onClose={() => setIsModalOpen(false)}
-              announcementToEdit={selectedAnnouncement}
-              onSave={handleSaveAnnouncement}
-            />
-          )}
-        </AnimatePresence>
+      {activeChildId && children.length > 0 && (
+        <div className="mt-8 p-6 bg-white rounded-xl shadow-lg border border-gray-100">
+          <h3 className="text-2xl font-bold text-gray-800 mb-5 flex items-center">
+            <i className="fas fa-chart-line mr-3 text-green-600"></i>
+            {`Details for ${children.find(c => c._id === activeChildId)?.firstName} ${children.find(c => c._id === activeChildId)?.lastName}`}
+          </h3>
+          <div className="flex space-x-4 mb-6 border-b border-gray-200 pb-4">
+            <Link
+              to={`/dashboard/child/${activeChildId}/grades`}
+              className="group" // Add group for child hover effects
+            >
+              <motion.button
+                variants={navLinkVariants}
+                initial="inactive"
+                animate={location.pathname.includes(`/child/${activeChildId}/grades`) ? 'active' : 'inactive'}
+                whileHover="hover"
+                className="py-3 px-6 rounded-lg text-base font-semibold transition-colors duration-200 flex items-center"
+              >
+                <i className="fas fa-chart-pie mr-2 group-hover:scale-110 transition-transform"></i> Grades
+              </motion.button>
+            </Link>
+            <Link
+              to={`/dashboard/child/${activeChildId}/attendance`}
+              className="group" // Add group for child hover effects
+            >
+              <motion.button
+                variants={navLinkVariants}
+                initial="inactive"
+                animate={location.pathname.includes(`/child/${activeChildId}/attendance`) ? 'active' : 'inactive'}
+                whileHover="hover"
+                className="py-3 px-6 rounded-lg text-base font-semibold transition-colors duration-200 flex items-center"
+              >
+                <i className="fas fa-calendar-alt mr-2 group-hover:scale-110 transition-transform"></i> Attendance
+              </motion.button>
+            </Link>
+            {/* Add more detail navigation links here */}
+            {/* Example: Health records, schedules, etc. */}
+          </div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname} // Key for animating Outlet content
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3, ease: easeOut }}
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
+        </div>
       )}
     </motion.div>
   );
 };
 
-export default AdminAnnouncementsPage;
+export default ParentChildrenPage;
