@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // src/pages/dashboard/TeacherGradebookPage.tsx
-import React, { useState, useEffect, useMemo } from 'react'; // Added useMemo
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import { motion, AnimatePresence, easeOut } from 'framer-motion';
@@ -71,11 +71,11 @@ const TeacherGradebookPage: React.FC = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userInfo]);
 
-    // Group grades by course whenever the grades state changes
+    // Group grades by course and then sort grades within each group by score (descending)
     const groupedGrades = useMemo(() => {
         const groups: GroupedGrades = {};
         grades.forEach(grade => {
-            if (grade.course) { // Ensure course exists
+            if (grade.course) {
                 if (!groups[grade.course._id]) {
                     groups[grade.course._id] = {
                         courseInfo: grade.course,
@@ -85,6 +85,12 @@ const TeacherGradebookPage: React.FC = () => {
                 groups[grade.course._id].grades.push(grade);
             }
         });
+
+        // Sort grades within each group by score in descending order
+        for (const courseId in groups) {
+            groups[courseId].grades.sort((a, b) => b.score - a.score);
+        }
+
         return groups;
     }, [grades]);
 
@@ -135,16 +141,16 @@ const TeacherGradebookPage: React.FC = () => {
 
     const courseSectionVariants = {
         hidden: { opacity: 0, y: 20 },
-        visible: { 
-            opacity: 1, 
-            y: 0, 
-            transition: { 
-                duration: 0.5, 
-                ease: easeOut 
-            } 
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: {
+                duration: 0.5,
+                ease: easeOut
+            }
         },
     };
-   
+
     const tableRowVariants = {
       hidden: { opacity: 0, y: 10 },
       visible: (i: number) => ({
@@ -202,10 +208,10 @@ const TeacherGradebookPage: React.FC = () => {
                     </p>
                 </div>
             ) : (
-                <div className="space-y-8"> {/* Container for course sections */}
+                <div className="space-y-8">
                     <AnimatePresence>
                         {Object.values(groupedGrades).map((group, groupIndex) => (
-                            <motion.div 
+                            <motion.div
                                 key={group.courseInfo._id}
                                 variants={courseSectionVariants}
                                 initial="hidden"
@@ -215,7 +221,7 @@ const TeacherGradebookPage: React.FC = () => {
                                 className="bg-white rounded-lg shadow-xl border border-gray-200 p-6"
                             >
                                 <h3 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-                                    <i className="fas fa-chalkboard-teacher mr-3 text-green-600"></i> 
+                                    <i className="fas fa-chalkboard-teacher mr-3 text-green-600"></i>
                                     {group.courseInfo.name} ({group.courseInfo.code})
                                 </h3>
                                 <div className="overflow-x-auto">
