@@ -23,7 +23,7 @@ router.route('/profile')
 router.put('/change-password', protect, changePassword);
 
 // Admin-only routes
-router.get('/', protect, authorizeRoles('admin'), getAllUsers);
+router.get('/', protect, authorizeRoles('admin', 'teacher'), getAllUsers);
 router.route('/count').get(protect, authorizeRoles('admin'), getUserCount);
 
 // 🚨 DASHBOARD ROUTES FOR TEACHERS 🚨
