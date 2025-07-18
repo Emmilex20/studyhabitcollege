@@ -11,6 +11,9 @@ interface Course {
   code: string;
   description?: string;
   yearLevel: string;
+  // ✨ ADDED: academicYear and term properties
+  academicYear?: string;
+  term?: string;
   teacher?: { _id: string; firstName: string; lastName: string };
 }
 
@@ -41,12 +44,20 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
     code: '',
     description: '',
     yearLevel: '',
+    academicYear: '', // ✨ ADDED: Initialize academicYear
+    term: '',         // ✨ ADDED: Initialize term
     teacher: '',
   });
   const [teachers, setTeachers] = useState<TeacherOption[]>([]);
   const [loadingTeachers, setLoadingTeachers] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Define the academic years and terms. You can make this dynamic if needed.
+  const academicYears = ['2023/2024', '2024/2025', '2025/2026', '2026/2027', '2027/2028'];
+  const terms = ['First Term', 'Second Term', 'Third Term'];
+  const yearLevels = ['JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3', 'SSS1', 'SSS2', 'SSS3', 'Year 7', 'Freshman', 'Sophomore', 'Junior', 'Senior', 'Graduate'];
+
 
   useEffect(() => {
     if (courseToEdit) {
@@ -55,6 +66,8 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
         code: courseToEdit.code,
         description: courseToEdit.description || '',
         yearLevel: courseToEdit.yearLevel,
+        academicYear: courseToEdit.academicYear || '', // ✨ ADDED: Populate from courseToEdit
+        term: courseToEdit.term || '',                 // ✨ ADDED: Populate from courseToEdit
         teacher: courseToEdit.teacher?._id || '',
       });
     } else {
@@ -63,6 +76,8 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
         code: '',
         description: '',
         yearLevel: '',
+        academicYear: '',
+        term: '',
         teacher: '',
       });
     }
@@ -92,7 +107,7 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
     if (isOpen) {
       fetchTeachers();
     }
-  }, [isOpen, userInfo?.token]); // ✅ FIXED: avoid infinite fetch loop
+  }, [isOpen, userInfo?.token]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -122,7 +137,8 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
     try {
       const payload = {
         ...formData,
-        teacher: formData.teacher === '' ? null : formData.teacher,
+        teacher: formData.teacher === '' ? null : formData.teacher, // Handle unassigned teacher
+        // academicYear and term are already in formData, so they are included here
       };
 
       let response;
@@ -161,19 +177,25 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
           initial={{ y: -50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 50, opacity: 0 }}
-          className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md"
+          className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto" // Added max-h and overflow for long forms
           onClick={e => e.stopPropagation()}
         >
-          <h2 className="text-2xl font-bold text-blue-800 mb-6 border-b pb-3">
+          <h2 className="text-2xl font-bold text-blue-800 mb-6 border-b pb-3 flex items-center">
+            <i className="fas fa-book mr-3 text-indigo-600"></i>
             {courseToEdit ? 'Edit Course' : 'Create New Course'}
           </h2>
 
-          {error && <p className="text-red-500 mb-4">{error}</p>}
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+              <strong className="font-bold">Error!</strong>
+              <span className="block sm:inline ml-2">{error}</span>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Course Name
+                Course Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -187,7 +209,7 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
             </div>
             <div>
               <label htmlFor="code" className="block text-sm font-medium text-gray-700">
-                Course Code
+                Course Code <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -201,19 +223,61 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
             </div>
             <div>
               <label htmlFor="yearLevel" className="block text-sm font-medium text-gray-700">
-                Year Level
+                Year Level <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
+              <select
                 id="yearLevel"
                 name="yearLevel"
                 value={formData.yearLevel}
                 onChange={handleChange}
-                placeholder="e.g., JSS1, SS2, Year 7"
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 required
-              />
+              >
+                <option value="">Select Year Level</option>
+                {yearLevels.map(level => (
+                  <option key={level} value={level}>{level}</option>
+                ))}
+              </select>
             </div>
+
+            {/* ✨ ADDED: Academic Year Input */}
+            <div>
+              <label htmlFor="academicYear" className="block text-sm font-medium text-gray-700">
+                Academic Year
+              </label>
+              <select
+                id="academicYear"
+                name="academicYear"
+                value={formData.academicYear}
+                onChange={handleChange}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              >
+                <option value="">Select Academic Year</option>
+                {academicYears.map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* ✨ ADDED: Term Input */}
+            <div>
+              <label htmlFor="term" className="block text-sm font-medium text-gray-700">
+                Term
+              </label>
+              <select
+                id="term"
+                name="term"
+                value={formData.term}
+                onChange={handleChange}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              >
+                <option value="">Select Term</option>
+                {terms.map(termOption => (
+                  <option key={termOption} value={termOption}>{termOption}</option>
+                ))}
+              </select>
+            </div>
+
             <div>
               <label htmlFor="description" className="block text-sm font-medium text-gray-700">
                 Description (Optional)
@@ -250,20 +314,32 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
               </select>
             </div>
 
-            <div className="flex justify-end space-x-3 mt-6">
+            <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Saving...' : courseToEdit ? 'Save Changes' : 'Create Course'}
+                {isSubmitting ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin mr-2"></i>Saving...
+                  </>
+                ) : courseToEdit ? (
+                  <>
+                    <i className="fas fa-save mr-2"></i>Save Changes
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-plus-circle mr-2"></i>Create Course
+                  </>
+                )}
               </button>
             </div>
           </form>
