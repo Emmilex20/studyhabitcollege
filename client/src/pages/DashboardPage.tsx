@@ -1,34 +1,41 @@
 // src/pages/DashboardPage.tsx
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence, easeOut, type Variants, type Transition } from 'framer-motion'; // Import Variants and Transition types
+import { motion, AnimatePresence, easeOut, type Variants, type Transition } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 
 const DashboardPage: React.FC = () => {
   const { userInfo, loading: authLoading } = useAuth();
   const location = useLocation();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Default to open on larger screens
+  const [isMobile, setIsMobile] = useState(false); // State to detect mobile view
 
+  // Effect to determine if we are on a mobile device and adjust sidebar state
   useEffect(() => {
     const handleResize = () => {
+      // Tailwind's 'md' breakpoint is 768px.
       const mobileView = window.innerWidth < 768;
       setIsMobile(mobileView);
+      // On desktop, sidebar should be open by default. On mobile, it should be closed initially.
       setIsSidebarOpen(!mobileView);
     };
 
     window.addEventListener('resize', handleResize);
-    handleResize();
+    handleResize(); // Call once on mount to set initial state
 
+    // Clean up event listener
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Close sidebar on route change when in mobile view
   useEffect(() => {
+    // Only auto-close if it's mobile view AND the sidebar is currently open
     if (isMobile && isSidebarOpen) {
       setIsSidebarOpen(false);
     }
-  }, [location.pathname, isMobile, isSidebarOpen]); // Added isSidebarOpen to dependencies for accuracy
+  }, [location.pathname, isMobile, isSidebarOpen]);
 
+  // --- Initial Loading / Authentication Checks ---
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-100 p-6">
@@ -57,6 +64,7 @@ const DashboardPage: React.FC = () => {
     );
   }
 
+  // --- Sidebar Links Definition (based on user role) ---
   const getSidebarLinks = (role: string) => {
     switch (role) {
       case 'admin':
@@ -108,6 +116,7 @@ const DashboardPage: React.FC = () => {
 
   const sidebarLinks = getSidebarLinks(userInfo.role);
 
+  // --- Framer Motion Variants ---
   const contentVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: easeOut } },
@@ -124,7 +133,6 @@ const DashboardPage: React.FC = () => {
         stiffness: 200,
         damping: 30,
         when: 'beforeChildren', // Orchestrates child animations
-        // No 'delayChildren' here directly if using 'when' in this specific way
       } as Transition, // Explicitly cast to Transition
     }),
     closed: (isMobile: boolean) => ({
@@ -175,18 +183,17 @@ const DashboardPage: React.FC = () => {
                     ${isMobile ? 'fixed h-full' : 'h-screen'}`}
       >
         <div className="p-6 flex flex-col h-full">
-          {/* Logo/Title */}
+          {/* Logo/Title & Toggle Button */}
           <div className="flex items-center justify-between pb-6 mb-6 border-b border-indigo-700">
             <motion.h2
               className="text-2xl font-extrabold text-indigo-100 whitespace-nowrap"
-              // Only animate opacity if sidebar is collapsing/expanding
               animate={{ opacity: isSidebarOpen ? 1 : 0 }}
               transition={{ delay: 0.1 }}
             >
               <i className="fas fa-graduation-cap mr-3 text-yellow-400"></i>
               StudyHub
             </motion.h2>
-            {/* Toggle Button for Sidebar */}
+            {/* Toggle Button for Sidebar - ALWAYS VISIBLE IN SIDEBAR */}
             <button
               onClick={toggleSidebar}
               className="text-white text-2xl focus:outline-none p-2 rounded-md hover:bg-indigo-700 transition-colors"
@@ -217,7 +224,7 @@ const DashboardPage: React.FC = () => {
                                     : 'text-indigo-200 hover:bg-indigo-700 hover:text-white'
                                 }`}
                     onClick={() => {
-                      if (isMobile) setIsSidebarOpen(false);
+                      if (isMobile) setIsSidebarOpen(false); // Close sidebar on link click for mobile
                     }}
                   >
                     <i
@@ -232,8 +239,8 @@ const DashboardPage: React.FC = () => {
                     <motion.span
                       className="whitespace-nowrap"
                       animate={{ opacity: isSidebarOpen ? 1 : 0 }}
-                      transition={{ delay: isSidebarOpen ? 0.1 : 0 }} // Faster hide animation
-                      style={{ display: isSidebarOpen ? 'inline-block' : 'none' }} // Use inline-block
+                      transition={{ delay: isSidebarOpen ? 0.1 : 0 }}
+                      style={{ display: isSidebarOpen ? 'inline-block' : 'none' }}
                     >
                       {link.name}
                     </motion.span>
