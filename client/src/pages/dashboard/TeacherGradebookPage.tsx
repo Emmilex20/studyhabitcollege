@@ -9,7 +9,7 @@ import GradeFormModal from '../../components/modals/GradeFormModal';
 // Updated Grade interface to match the one in GradeFormModal.tsx
 interface Grade {
     _id: string;
-    student: { _id: string; user: { _id: string; firstName: string; lastName: string; }; studentId: string; };
+    student: { _id: string; user: { _id: string; firstName: string; lastName: string; }; studentId: string; currentClass: string; }; // Added currentClass here
     course: { _id: string; name: string; code: string; };
     teacher: { _id: string; firstName: string; lastName: string; };
     gradeType: string; // This will now be used for filtering
@@ -17,7 +17,7 @@ interface Grade {
     category?: string; // This field will be removed from display
     score: number;
     maxScore: number;
-    weight: number;
+    weight: number; // Keep if still used elsewhere, otherwise remove
     term: string;
     academicYear: string;
     dateGraded: string;
@@ -275,7 +275,7 @@ const TeacherGradebookPage: React.FC = () => {
                                                     Max Score
                                                 </th>
                                                 <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                                    Weight (%)
+                                                    Current Class {/* Changed from Weight (%) */}
                                                 </th>
                                                 <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                                     Term
@@ -323,7 +323,9 @@ const TeacherGradebookPage: React.FC = () => {
                                                         {grade.maxScore}
                                                     </td>
                                                     <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-700">
-                                                        {grade.weight}%
+                                                        <span className="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
+                                                            {grade.student?.currentClass}
+                                                        </span>
                                                     </td>
                                                     <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-700">
                                                         <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">{grade.term}</span>
