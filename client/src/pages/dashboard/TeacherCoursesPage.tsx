@@ -25,8 +25,8 @@ interface Course {
       email: string;
     };
   }[];
-  academicYear: string;
-  term: string;
+  academicYear: string; // Ensure this is definitely a string from API
+  term: string;         // Ensure this is definitely a string from API
 }
 
 const TeacherCoursesPage: React.FC = () => {
@@ -58,7 +58,15 @@ const TeacherCoursesPage: React.FC = () => {
         const teacherAssignedCourses = data.filter((course: Course) =>
           course.teacher && course.teacher._id === userInfo._id
         );
-        setCourses(teacherAssignedCourses);
+
+        // Ensure academicYear and term are not null/undefined strings
+        const cleanedCourses = teacherAssignedCourses.map((course: Course) => ({
+          ...course,
+          academicYear: course.academicYear ?? 'N/A', // Use nullish coalescing
+          term: course.term ?? 'N/A', // Use nullish coalescing
+        }));
+
+        setCourses(cleanedCourses);
         setError(null);
       } catch (err: any) {
         setError(err.response?.data?.message || 'Failed to fetch courses. Please try again.');
@@ -150,8 +158,8 @@ const TeacherCoursesPage: React.FC = () => {
                   </p>
                 </div>
                 <div className="text-sm text-gray-700 space-y-1 mt-auto">
-                  <p className="flex items-center"><span className="font-semibold w-28">Academic Year:</span> <span className="font-medium text-gray-800">{course.academicYear || 'N/A'}</span></p>
-                  <p className="flex items-center"><span className="font-semibold w-28">Term:</span> <span className="font-medium text-gray-800">{course.term || 'N/A'}</span></p>
+                  <p className="flex items-center"><span className="font-semibold w-28">Academic Year:</span> <span className="font-medium text-gray-800">{course.academicYear}</span></p>
+                  <p className="flex items-center"><span className="font-semibold w-28">Term:</span> <span className="font-medium text-gray-800">{course.term}</span></p>
                   <p className="flex items-center"><span className="font-semibold w-28">Students:</span> <span className="font-bold text-blue-700">{course.students.length} enrolled</span></p>
                 </div>
                 <div className="mt-5 text-right">
