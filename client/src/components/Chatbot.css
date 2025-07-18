@@ -258,7 +258,7 @@ body {
         right: 5%;
         left: 5%;
         bottom: 80px; /* Adjust for smaller icon */
-        max-height: 70vh; /* Don't cover too much of the screen */
+        max-height: 70vh; 
     }
 
     .chatbot-icon {
