@@ -12,13 +12,32 @@ const teacherTeachesCourse = async (teacherId, courseId) => {
 
 // Helper function to check if a teacher is associated with a student via a course
 const teacherAssociatedWithStudentInCourse = async (teacherId, studentId, courseId) => {
-    const course = await Course.findById(courseId);
-    if (!course || course.teacher.toString() !== teacherId.toString()) {
-        return false; // Teacher doesn't teach this course
+    try {
+        const course = await Course.findById(courseId).populate('students'); // Populate students if needed, or ensure it's loaded as IDs
+
+        if (!course) {
+            console.log(`Course with ID ${courseId} not found.`);
+            return false; // Course doesn't exist
+        }
+
+        // Check if the teacher is assigned to this course
+        if (!course.teacher || course.teacher.toString() !== teacherId.toString()) {
+            console.log(`Teacher ${teacherId} is not assigned to course ${courseId}.`);
+            return false; // Teacher is not the assigned teacher for this course
+        }
+
+        // Check if the student is enrolled in this course
+        // Ensure course.students is an array and contains the studentId
+        if (!Array.isArray(course.students) || !course.students.some(s => s.equals(studentId))) {
+             console.log(`Student ${studentId} is not enrolled in course ${courseId}.`);
+            return false; // Student is not in the course's student list
+        }
+
+        return true; // All checks pass
+    } catch (error) {
+        console.error("Error in teacherAssociatedWithStudentInCourse:", error);
+        return false;
     }
-    const student = await Student.findById(studentId);
-    // Check if the student is enrolled in this specific course
-    return student && student.courses.includes(courseId);
 };
 
 // @desc    Get all grades (Admin sees all, Teacher sees their courses' grades)
