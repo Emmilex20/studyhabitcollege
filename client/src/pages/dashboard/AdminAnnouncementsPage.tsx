@@ -158,7 +158,7 @@ const AdminAnnouncementsPage: React.FC = () => {
     >
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl sm:text-4xl font-extrabold text-blue-800 flex items-center">
-          <i className="fas fa-bullhorn mr-3 text-yellow-500"></i> Manage Announcements
+          <i className="fas fa-bullhorn mr-3 text-yellow-500"></i> Announcements
         </h2>
         {isAdmin && (
           <motion.button
