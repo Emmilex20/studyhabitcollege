@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // src/pages/dashboard/TeacherGradebookPage.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react'; // Added useMemo
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-import { motion, AnimatePresence, easeOut } from 'framer-motion'; // Added AnimatePresence, easeOut
+import { motion, AnimatePresence, easeOut } from 'framer-motion';
 import GradeFormModal from '../../components/modals/GradeFormModal';
 
 // Updated Grade interface to match the one in GradeFormModal.tsx
@@ -15,12 +15,20 @@ interface Grade {
     gradeType: string;
     assignmentName?: string;
     score: number;
-    maxScore: number; 
+    maxScore: number;
     weight: number;
     term: string;
     academicYear: string;
-    dateGraded: string; 
+    dateGraded: string;
     remarks?: string;
+}
+
+// Interface for grouped grades
+interface GroupedGrades {
+    [courseId: string]: {
+        courseInfo: { _id: string; name: string; code: string; };
+        grades: Grade[];
+    };
 }
 
 const TeacherGradebookPage: React.FC = () => {
@@ -45,9 +53,8 @@ const TeacherGradebookPage: React.FC = () => {
                 headers: {
                     Authorization: `Bearer ${userInfo.token}`,
                 },
-                withCredentials: true, // Ensure cookies are sent
+                withCredentials: true,
             };
-            // Backend should filter grades to only those for courses taught by this teacher
             const { data } = await axios.get('https://studyhabitcollege.onrender.com/api/grades', config);
             setGrades(data);
             setError(null);
@@ -62,20 +69,36 @@ const TeacherGradebookPage: React.FC = () => {
     useEffect(() => {
         fetchGrades();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [userInfo]); // Depend on userInfo to refetch if login state changes
+    }, [userInfo]);
+
+    // Group grades by course whenever the grades state changes
+    const groupedGrades = useMemo(() => {
+        const groups: GroupedGrades = {};
+        grades.forEach(grade => {
+            if (grade.course) { // Ensure course exists
+                if (!groups[grade.course._id]) {
+                    groups[grade.course._id] = {
+                        courseInfo: grade.course,
+                        grades: []
+                    };
+                }
+                groups[grade.course._id].grades.push(grade);
+            }
+        });
+        return groups;
+    }, [grades]);
 
     const handleAddGradeClick = () => {
-        setSelectedGrade(null); // Clear selected grade for 'add' mode
+        setSelectedGrade(null);
         setIsModalOpen(true);
     };
 
     const handleEditGradeClick = (grade: Grade) => {
-        setSelectedGrade(grade); // Set selected grade for 'edit' mode
+        setSelectedGrade(grade);
         setIsModalOpen(true);
     };
 
     const handleSaveGrade = async () => {
-        // Re-fetch all grades after save/update
         await fetchGrades();
     };
 
@@ -94,7 +117,7 @@ const TeacherGradebookPage: React.FC = () => {
                     withCredentials: true,
                 };
                 await axios.delete(`https://studyhabitcollege.onrender.com/api/grades/${gradeId}`, config);
-                await fetchGrades(); // Re-fetch grades after successful deletion
+                await fetchGrades();
             } catch (err: any) {
                 setError(err.response?.data?.message || 'Failed to delete grade.');
                 console.error('Error deleting grade:', err);
@@ -109,14 +132,26 @@ const TeacherGradebookPage: React.FC = () => {
       hidden: { opacity: 0, y: 20 },
       visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: easeOut } },
     };
-  
+
+    const courseSectionVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: { 
+            opacity: 1, 
+            y: 0, 
+            transition: { 
+                duration: 0.5, 
+                ease: easeOut 
+            } 
+        },
+    };
+   
     const tableRowVariants = {
       hidden: { opacity: 0, y: 10 },
       visible: (i: number) => ({
         opacity: 1,
         y: 0,
         transition: {
-          delay: i * 0.05, // Stagger effect
+          delay: i * 0.05,
           duration: 0.3,
           ease: easeOut,
         },
@@ -157,7 +192,7 @@ const TeacherGradebookPage: React.FC = () => {
                     <p>{error}</p>
                     <p className="text-sm mt-3 text-red-500">Please ensure you are logged in as a teacher. ⚠️</p>
                 </div>
-            ) : grades.length === 0 ? (
+            ) : Object.keys(groupedGrades).length === 0 ? (
                 <div className="text-center py-10 bg-blue-50 rounded-lg shadow-inner border border-blue-200">
                     <p className="text-xl font-semibold text-blue-600 mb-3 flex items-center justify-center">
                         <i className="fas fa-info-circle mr-3 text-blue-500"></i> No Grades Found!
@@ -167,130 +202,139 @@ const TeacherGradebookPage: React.FC = () => {
                     </p>
                 </div>
             ) : (
-                <div className="overflow-x-auto bg-white rounded-lg shadow-xl border border-gray-200">
-                    <table className="min-w-full leading-normal divide-y divide-gray-200">
-                        <thead className="bg-gray-100">
-                            <tr>
-                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Student
-                                </th>
-                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Course
-                                </th>
-                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Type / Assignment
-                                </th>
-                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Score
-                                </th>
-                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Max Score
-                                </th>
-                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Weight (%)
-                                </th>
-                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Term
-                                </th>
-                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Academic Year
-                                </th>
-                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Date Graded
-                                </th>
-                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Actions
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            <AnimatePresence>
-                                {grades.map((grade, index) => (
-                                    <motion.tr 
-                                        key={grade._id}
-                                        custom={index}
-                                        initial="hidden"
-                                        animate="visible"
-                                        exit="hidden"
-                                        variants={tableRowVariants}
-                                        className="hover:bg-gray-50 transition-colors duration-150"
-                                    >
-                                        <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            <div className="flex items-center">
-                                                <i className="fas fa-user-graduate text-blue-500 mr-2"></i>
-                                                <span className="font-medium">
-                                                    {grade.student?.user?.firstName} {grade.student?.user?.lastName}
-                                                </span>
-                                                <span className="text-gray-500 ml-1">({grade.student?.studentId})</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            <div className="flex items-center">
-                                                <i className="fas fa-book-open text-purple-500 mr-2"></i>
-                                                <span className="font-medium">
-                                                    {grade.course?.name}
-                                                </span>
-                                                <span className="text-gray-500 ml-1">({grade.course?.code})</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-5 py-4 text-sm text-gray-900">
-                                            <span className="font-semibold text-indigo-700">{grade.gradeType}</span>
-                                            {grade.assignmentName && (
-                                                <p className="text-xs text-gray-500 italic mt-1">({grade.assignmentName})</p>
-                                            )}
-                                        </td>
-                                        <td className="px-5 py-4 whitespace-nowrap text-sm">
-                                            <span className="font-extrabold text-lg text-green-700">{grade.score}</span>
-                                        </td>
-                                        <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-700">
-                                            {grade.maxScore}
-                                        </td>
-                                        <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-700">
-                                            {grade.weight}%
-                                        </td>
-                                        <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-700">
-                                            <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">{grade.term}</span>
-                                        </td>
-                                        <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-700">
-                                            <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">{grade.academicYear}</span>
-                                        </td>
-                                        <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-700">
-                                            {new Date(grade.dateGraded).toLocaleDateString('en-US', {
-                                                year: 'numeric',
-                                                month: 'short',
-                                                day: 'numeric',
-                                            })}
-                                        </td>
-                                        <td className="px-5 py-4 whitespace-nowrap text-sm">
-                                            <button
-                                                onClick={() => handleEditGradeClick(grade)}
-                                                className="text-indigo-600 hover:text-indigo-900 mr-3 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-75"
-                                                title="Edit Grade"
-                                            >
-                                                <i className="fas fa-edit"></i> Edit
-                                            </button>
-                                            <button
-                                                onClick={() => handleDeleteGrade(grade._id, `${grade.student?.user?.firstName} ${grade.student?.user?.lastName}`, grade.course?.name || '', grade.gradeType)}
-                                                className="text-red-600 hover:text-red-900 font-medium disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-75"
-                                                disabled={deleteLoading === grade._id}
-                                                title="Delete Grade"
-                                            >
-                                                {deleteLoading === grade._id ? (
-                                                    <>
-                                                        <i className="fas fa-spinner fa-spin mr-1"></i> Deleting...
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <i className="fas fa-trash-alt"></i> Delete
-                                                    </>
-                                                )}
-                                            </button>
-                                        </td>
-                                    </motion.tr>
-                                ))}
-                            </AnimatePresence>
-                        </tbody>
-                    </table>
+                <div className="space-y-8"> {/* Container for course sections */}
+                    <AnimatePresence>
+                        {Object.values(groupedGrades).map((group, groupIndex) => (
+                            <motion.div 
+                                key={group.courseInfo._id}
+                                variants={courseSectionVariants}
+                                initial="hidden"
+                                animate="visible"
+                                exit="hidden"
+                                transition={{ delay: groupIndex * 0.1 }}
+                                className="bg-white rounded-lg shadow-xl border border-gray-200 p-6"
+                            >
+                                <h3 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                                    <i className="fas fa-chalkboard-teacher mr-3 text-green-600"></i> 
+                                    {group.courseInfo.name} ({group.courseInfo.code})
+                                </h3>
+                                <div className="overflow-x-auto">
+                                    <table className="min-w-full leading-normal divide-y divide-gray-200">
+                                        <thead className="bg-gray-100">
+                                            <tr>
+                                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                                    Student
+                                                </th>
+                                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                                    Type / Assignment
+                                                </th>
+                                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                                    Score
+                                                </th>
+                                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                                    Max Score
+                                                </th>
+                                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                                    Weight (%)
+                                                </th>
+                                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                                    Term
+                                                </th>
+                                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                                    Academic Year
+                                                </th>
+                                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                                    Date Graded
+                                                </th>
+                                                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                                    Actions
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="bg-white divide-y divide-gray-200">
+                                            {group.grades.map((grade, index) => (
+                                                <motion.tr
+                                                    key={grade._id}
+                                                    custom={index}
+                                                    initial="hidden"
+                                                    animate="visible"
+                                                    exit="hidden"
+                                                    variants={tableRowVariants}
+                                                    className="hover:bg-gray-50 transition-colors duration-150"
+                                                >
+                                                    <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                        <div className="flex items-center">
+                                                            <i className="fas fa-user-graduate text-blue-500 mr-2"></i>
+                                                            <span className="font-medium">
+                                                                {grade.student?.user?.firstName} {grade.student?.user?.lastName}
+                                                            </span>
+                                                            <span className="text-gray-500 ml-1">({grade.student?.studentId})</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-5 py-4 text-sm text-gray-900">
+                                                        <span className="font-semibold text-indigo-700">{grade.gradeType}</span>
+                                                        {grade.assignmentName && (
+                                                            <p className="text-xs text-gray-500 italic mt-1">({grade.assignmentName})</p>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-5 py-4 whitespace-nowrap text-sm">
+                                                        <span className="font-extrabold text-lg text-green-700">{grade.score}</span>
+                                                    </td>
+                                                    <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-700">
+                                                        {grade.maxScore}
+                                                    </td>
+                                                    <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-700">
+                                                        {grade.weight}%
+                                                    </td>
+                                                    <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-700">
+                                                        <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">{grade.term}</span>
+                                                    </td>
+                                                    <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-700">
+                                                        <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">{grade.academicYear}</span>
+                                                    </td>
+                                                    <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-700">
+                                                        {new Date(grade.dateGraded).toLocaleDateString('en-US', {
+                                                            year: 'numeric',
+                                                            month: 'short',
+                                                            day: 'numeric',
+                                                        })}
+                                                    </td>
+                                                    <td className="px-5 py-4 whitespace-nowrap text-sm">
+                                                        <button
+                                                            onClick={() => handleEditGradeClick(grade)}
+                                                            className="text-indigo-600 hover:text-indigo-900 mr-3 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-75"
+                                                            title="Edit Grade"
+                                                        >
+                                                            <i className="fas fa-edit"></i> Edit
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteGrade(grade._id, `${grade.student?.user?.firstName} ${grade.student?.user?.lastName}`, grade.course?.name || '', grade.gradeType)}
+                                                            className="text-red-600 hover:text-red-900 font-medium disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-75"
+                                                            disabled={deleteLoading === grade._id}
+                                                            title="Delete Grade"
+                                                        >
+                                                            {deleteLoading === grade._id ? (
+                                                                <>
+                                                                    <i className="fas fa-spinner fa-spin mr-1"></i> Deleting...
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <i className="fas fa-trash-alt"></i> Delete
+                                                                </>
+                                                            )}
+                                                        </button>
+                                                    </td>
+                                                </motion.tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {group.grades.length === 0 && (
+                                    <p className="text-center text-gray-500 mt-4">No grades recorded for this course yet.</p>
+                                )}
+                            </motion.div>
+                        ))}
+                    </AnimatePresence>
                 </div>
             )}
 
@@ -299,7 +343,7 @@ const TeacherGradebookPage: React.FC = () => {
                 onClose={() => setIsModalOpen(false)}
                 gradeToEdit={selectedGrade}
                 onSave={handleSaveGrade}
-                isTeacherView={true} // Indicate this is for a teacher
+                isTeacherView={true}
             />
         </motion.div>
     );
