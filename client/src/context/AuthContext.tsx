@@ -22,7 +22,8 @@ interface UserInfo {
 
 interface AuthContextType {
   userInfo: UserInfo | null;
-  userToken: string | null; // <-- ADD THIS LINE to expose userToken
+  loading: boolean; // Declared here as required
+  userToken: string | null;
   login: (userData: UserInfo) => void;
   logout: () => void;
   fetchUserProfile: () => Promise<void>;
@@ -44,16 +45,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   });
 
+  // 1. Introduce the loading state
+  const [loading, setLoading] = useState(true); // Initialize as true, as we'll check local storage/fetch on mount
+
   // Derive userToken from userInfo
-  const userToken = userInfo?.token || null; // <-- ADD THIS LINE
+  const userToken = userInfo?.token || null;
 
   const fetchUserProfile = useCallback(async () => {
+    setLoading(true); // Set loading to true at the start of the fetch
     const stored = localStorage.getItem('userInfo');
     const localUserInfo: UserInfo | null = stored ? JSON.parse(stored) : null;
 
     if (!localUserInfo?.token) {
       setUserInfo(null);
       localStorage.removeItem('userInfo');
+      setLoading(false); // Set loading to false if no token
       return;
     }
 
@@ -74,6 +80,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       console.error('Error fetching user profile:', error);
       setUserInfo(null);
       localStorage.removeItem('userInfo');
+    } finally {
+      setLoading(false); // Set loading to false when fetch is complete (success or fail)
     }
   }, []);
 
@@ -82,18 +90,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [fetchUserProfile]);
 
   const login = (userData: UserInfo) => {
+    setLoading(true); // Set loading to true during login process
     setUserInfo(userData);
     localStorage.setItem('userInfo', JSON.stringify(userData));
+    setLoading(false); // Set loading to false after login
   };
 
   const logout = () => {
+    setLoading(true); // Set loading to true during logout process
     setUserInfo(null);
     localStorage.removeItem('userInfo');
+    setLoading(false); // Set loading to false after logout
   };
 
   return (
     <AuthContext.Provider
-      value={{ userInfo, userToken, login, logout, fetchUserProfile, setUserInfo }} // <-- Include userToken here
+      value={{ userInfo, loading, userToken, login, logout, fetchUserProfile, setUserInfo }} // 2. Pass 'loading' here
     >
       {children}
     </AuthContext.Provider>

@@ -1,6 +1,6 @@
 // src/pages/dashboard/SettingsPage.tsx
-import React, { useState } from 'react';
-import { motion, AnimatePresence, easeOut, easeIn } from 'framer-motion'; // Import easeOut and easeIn
+import React, { useState, useEffect } from 'react'; // Import useEffect
+import { motion, AnimatePresence, easeOut, easeIn } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import ProfileSettings from '../../components/dashboard/settings/ProfileSettings';
 import PasswordSettings from '../../components/dashboard/settings/PasswordSettings';
@@ -38,22 +38,41 @@ const TabButton: React.FC<TabButtonProps> = ({ tabName, activeTab, iconClass, la
 
 
 const SettingsPage: React.FC = () => {
-  const { userInfo } = useAuth();
+  const { userInfo, loading: authLoading } = useAuth(); // Destructure loading from useAuth
   const [activeTab, setActiveTab] = useState('profile');
+  const [pageLoaded, setPageLoaded] = useState(false); // New state to track if page content should render
+
+  // Use useEffect to set pageLoaded to true once userInfo is available and authLoading is false
+  useEffect(() => {
+    if (!authLoading && userInfo) {
+      setPageLoaded(true);
+    }
+  }, [authLoading, userInfo]);
 
   // Framer Motion variants for page entry
   const pageVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: easeOut } }, // Use imported easeOut
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: easeOut } },
   };
 
   // Framer Motion variants for content section transitions
   const contentVariants = {
     enter: { opacity: 0, y: 20 },
-    center: { opacity: 1, y: 0, transition: { duration: 0.5, ease: easeOut } }, // Use imported easeOut
-    exit: { opacity: 0, y: -20, transition: { duration: 0.3, ease: easeIn } }, // Use imported easeIn
+    center: { opacity: 1, y: 0, transition: { duration: 0.5, ease: easeOut } },
+    exit: { opacity: 0, y: -20, transition: { duration: 0.3, ease: easeIn } },
   };
 
+  // Show a loading spinner while authentication info is being fetched
+  if (authLoading || !pageLoaded) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-50">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
+        <p className="ml-4 text-xl text-gray-600">Loading settings... ⚙️</p>
+      </div>
+    );
+  }
+
+  // If userInfo is still null/undefined after loading, show authentication required message
   if (!userInfo) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-50">
@@ -71,6 +90,7 @@ const SettingsPage: React.FC = () => {
     );
   }
 
+  // Render the actual settings content once userInfo is available
   return (
     <motion.div
       initial="hidden"
