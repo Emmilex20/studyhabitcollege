@@ -11,10 +11,8 @@
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.7.2",
-    "@google/generative-ai": "^0.24.1",
     "@heroicons/react": "^2.2.0",
     "axios": "^1.10.0",
-    "dotenv": "^17.2.0",
     "framer-motion": "^12.23.5",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
