@@ -58,6 +58,7 @@ router.route('/')
     .get(protect, authorizeRoles('admin', 'teacher', 'parent', 'student'), getStudents)
     .post(protect, authorizeRoles('admin', 'teacher'), createStudent);
 
+    
 router.route('/:id') // This must come LAST among student-related routes that start with /:something
     .get(protect, authorizeRoles('admin', 'teacher', 'parent'), getStudentById)
     .put(protect, authorizeRoles('admin', 'teacher'), updateStudent)
