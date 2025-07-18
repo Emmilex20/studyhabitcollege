@@ -52,15 +52,13 @@ const TeacherCoursesPage: React.FC = () => {
           withCredentials: true, // Ensure cookies are sent with requests
         };
 
-        const { data } = await axios.get('https://studyhabitcollege.onrender.com/api/courses', config);
-        // Filter courses to only show those taught by the current teacher
-
+         const { data } = await axios.get('https://studyhabitcollege.onrender.com/api/courses', config);
         setCourses(data);
         setError(null);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
-        setError(err.response?.data?.message || 'Failed to fetch courses. Please try again.');
-        console.error('Error fetching teacher courses:', err);
+        setError(err.response?.data?.message || 'Failed to fetch courses.');
+        console.error(err);
       } finally {
         setLoading(false);
       }
