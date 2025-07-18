@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 
+// --- Interfaces ---
 interface Student {
   _id: string;
   user: { _id: string; firstName: string; lastName: string; email: string };
@@ -42,8 +43,7 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
   isOpen,
   onClose,
   studentToEdit,
-  onSave,
-  isTeacherView,
+  onSave, // Prop is still here, but we'll adjust its usage for the userId field
 }) => {
   const { userInfo } = useAuth();
   const [formData, setFormData] = useState({
@@ -61,6 +61,8 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
   const [loadingDependencies, setLoadingDependencies] = useState(true); // Loading state for initial data fetch
   const [isSubmitting, setIsSubmitting] = useState(false); // Submitting state for form
   const [error, setError] = useState<string | null>(null); // Error message state
+
+  // --- Effects ---
 
   // Effect to populate form data when editing an existing student or reset for new student
   useEffect(() => {
@@ -103,9 +105,6 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
       try {
         setLoadingDependencies(true);
 
-        // Fetch all users to filter by role
-        // For security, ideally, your backend would have specific endpoints
-        // like /api/users/students-available and /api/users/parents-available
         const { data: usersData } = await axios.get(
           'https://studyhabitcollege.onrender.com/api/users',
           config
@@ -114,7 +113,6 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
         setStudentUsers(usersData.filter((u: UserOption) => u.role === 'student'));
         setParentUsers(usersData.filter((u: UserOption) => u.role === 'parent'));
 
-        // Fetch all courses
         const { data: coursesData } = await axios.get(
           'https://studyhabitcollege.onrender.com/api/courses',
           config
@@ -135,6 +133,8 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
       fetchDependencies();
     }
   }, [isOpen, userInfo?.token]); // Depend on isOpen and userInfo.token
+
+  // --- Handlers ---
 
   // Handle changes for text and select inputs
   const handleChange = (
@@ -180,26 +180,20 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
         parentId: formData.parentId === '' ? null : formData.parentId, // Send null if no parent selected
       };
 
-      // Conditionally add userId for new student creation by admin
-      // Teachers cannot create new user accounts or link unlinked users to students
-      if (!studentToEdit && !isTeacherView) { // Admin adding new student
+      // Condition for showing the 'Associated User' dropdown:
+      // It should be shown when we are CREATING a new student record (`!studentToEdit`).
+      // The `isTeacherView` prop no longer affects this specific dropdown's visibility,
+      // only whether we are in "create" or "edit" mode.
+      if (!studentToEdit) { // Only when creating a new student record
         if (!formData.userId) {
           setError('Please select an associated student user.');
           setIsSubmitting(false);
           return;
         }
         payload.userId = formData.userId;
-      } else if (studentToEdit) {
-        // When editing, the userId is already established and shouldn't be changed via this form.
-        // If the backend expects userId for updates, ensure it's included from studentToEdit.
+      } else { // When editing, ensure the existing userId is sent back
         payload.userId = studentToEdit.user._id;
       }
-      // Note: If 'firstName', 'lastName', 'email' are part of the 'User' model
-      // and not directly on the 'Student' model, they shouldn't be in this payload
-      // unless you're also making a separate API call to update the User.
-      // Based on your Student interface, 'user' is an embedded object,
-      // so updates to user details would typically go through a user-specific endpoint.
-      // This form primarily updates the Student record itself.
 
       if (studentToEdit) {
         // Update existing student record
@@ -221,7 +215,6 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
       onClose(); // Close modal on success
     } catch (err: any) {
       console.error('Student form submission error:', err);
-      // More specific error messages for user feedback
       if (err.response && err.response.data && err.response.data.message) {
         setError(err.response.data.message);
       } else {
@@ -232,6 +225,7 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
     }
   };
 
+  // --- Render ---
   if (!isOpen) return null; // Don't render anything if modal is not open
 
   return (
@@ -267,8 +261,8 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Conditional rendering for 'Associated User' dropdown (Admin only, when adding new) */}
-              {!studentToEdit && !isTeacherView && (
+              {/* This is the key change: Only hide the dropdown if we are EDITING */}
+              {!studentToEdit && (
                 <div>
                   <label htmlFor="userId" className="block text-sm font-medium text-gray-700">
                     Associated User (Student Role)
@@ -279,7 +273,7 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
                     value={formData.userId}
                     onChange={handleChange}
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    required // Required when adding a new student as admin
+                    required // Required when adding a new student
                     disabled={loadingDependencies}
                   >
                     <option value="">Select a User with 'Student' Role</option>
@@ -295,7 +289,7 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
                 </div>
               )}
 
-              {/* Display Associated User Info (Read-only when editing or in teacher view) */}
+              {/* Display Associated User Info (Read-only when editing) */}
               {studentToEdit && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
@@ -308,6 +302,7 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
                 </div>
               )}
 
+              {/* Student ID */}
               <div>
                 <label htmlFor="studentId" className="block text-sm font-medium text-gray-700">
                   Student ID
@@ -323,6 +318,7 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
                 />
               </div>
 
+              {/* Date of Birth */}
               <div>
                 <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700">
                   Date of Birth
@@ -338,6 +334,7 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
                 />
               </div>
 
+              {/* Gender */}
               <div>
                 <label htmlFor="gender" className="block text-sm font-medium text-gray-700">
                   Gender
@@ -357,6 +354,7 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
                 </select>
               </div>
 
+              {/* Current Class */}
               <div>
                 <label htmlFor="currentClass" className="block text-sm font-medium text-gray-700">
                   Current Class (Optional)
@@ -372,6 +370,7 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
                 />
               </div>
 
+              {/* Enrolled Courses */}
               <div>
                 <label htmlFor="enrolledCourses" className="block text-sm font-medium text-gray-700">
                   Enrolled Courses (Ctrl/Cmd + Click to select multiple)
@@ -399,6 +398,7 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
                 </select>
               </div>
 
+              {/* Associated Parent */}
               <div>
                 <label htmlFor="parentId" className="block text-sm font-medium text-gray-700">
                   Associated Parent (Optional)
@@ -423,6 +423,7 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
                 </p>
               </div>
 
+              {/* Action Buttons */}
               <div className="flex justify-end space-x-3 mt-6">
                 <button
                   type="button"
