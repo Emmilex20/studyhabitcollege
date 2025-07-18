@@ -71,6 +71,47 @@ const getMyChildren = async (req, res) => {
   }
 };
 
+// ✅ Get grades for a specific child
+// ✅ controllers/parentController.js
+const getChildGrades = async (req, res) => {
+  const { studentId } = req.params;
+
+  try {
+    const student = await Student.findById(studentId);
+    if (!student || student.parent?.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to view grades for this student' });
+    }
+
+    const grades = await Grade.find({ student: studentId })
+      .populate('course', 'name code') // ✅ make sure it's 'course', not 'enrolledCourses'
+      .populate('teacher', 'firstName lastName');
+
+    const formattedGrades = grades.map((grade) => ({
+      _id: grade._id,
+      course: grade.course ?? null, // ✅ send full course object
+      assignmentName: grade.gradeType || 'Unnamed',
+      score: grade.score ?? 0,
+      maxScore: grade.maxScore ?? 100,
+      percentage:
+        grade.maxScore && grade.maxScore > 0
+          ? `${((grade.score / grade.maxScore) * 100).toFixed(1)}%`
+          : 'N/A',
+      dateGraded: grade.dateGraded
+        ? new Date(grade.dateGraded).toISOString()
+        : null,
+      feedback: grade.remarks || 'N/A',
+      teacher: grade.teacher
+        ? `${grade.teacher.firstName} ${grade.teacher.lastName}`
+        : 'N/A',
+    }));
+
+    res.status(200).json(formattedGrades);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error fetching grades' });
+  }
+};
+
 
 // ✅ Get attendance for a specific child
 const getChildAttendance = async (req, res) => {
