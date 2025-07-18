@@ -443,7 +443,7 @@ const GalleryManagement: React.FC = () => {
                     rows={4}
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 transition-colors resize-y"
                     required
-                    maxLength={500}
+                    maxLength={1500}
                     placeholder="Provide a brief description of the photo."
                   ></textarea>
                 </div>
