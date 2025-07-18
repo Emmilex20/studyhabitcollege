@@ -23,6 +23,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import Chatbot from './components/Chatbot'; // <--- Import the Chatbot component here
 
 // === ADMIN DASHBOARD PAGES ===
 import AdminUsersPage from './pages/dashboard/AdminUsersPage';
@@ -33,7 +34,7 @@ import AdminAttendancePage from './pages/dashboard/AdminAttendancePage';
 import AdminEventsPage from './pages/dashboard/AdminEventsPage';
 import AdminAnnouncementsPage from './pages/dashboard/AdminAnnouncementsPage';
 import GalleryManagement from './pages/dashboard/GalleryManagement';
-import SettingsPage from './pages/dashboard/SettingsPage'; // <--- Import SettingsPage here
+import SettingsPage from './pages/dashboard/SettingsPage';
 
 // === TEACHER DASHBOARD PAGES ===
 import TeacherCoursesPage from './pages/dashboard/TeacherCoursesPage';
@@ -130,8 +131,8 @@ function App() {
                 />
                 {/* ⭐ Settings Page (Admin only) ⭐ */}
                 <Route
-                  path="settings" // <--- Add this route path
-                  element={<ProtectedRoute allowedRoles={['admin', 'teacher', 'student', 'parent']}><SettingsPage /></ProtectedRoute>} // <--- Render SettingsPage here
+                  path="settings"
+                  element={<ProtectedRoute allowedRoles={['admin', 'teacher', 'student', 'parent']}><SettingsPage /></ProtectedRoute>}
                 />
 
 
@@ -172,7 +173,6 @@ function App() {
                   path="child"
                   element={<ProtectedRoute allowedRoles={['parent']}><ParentChildrenPage /></ProtectedRoute>}
                 >
-                  {/* Nested routes rendered via <Outlet /> inside ParentChildrenPage */}
                   <Route
                     path=":studentId/grades"
                     element={<ChildGradesPage />}
@@ -190,6 +190,8 @@ function App() {
           </main>
           <Footer />
         </div>
+        {/* Render the Chatbot component outside the main content flow but within the Router and AuthProvider */}
+        <Chatbot /> {/* <--- Place the Chatbot component here */}
       </AuthProvider>
     </Router>
   );

@@ -3,6 +3,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import cors from 'cors';
+import chatbotRoutes from './routes/chatbotRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import courseRoutes from './routes/courseRoutes.js';
@@ -55,6 +56,7 @@ app.use('/api/parents', parentRoutes);
 console.log('Parent routes initialized.'); // Keep this log for verification
 app.use('/api/gallery', galleryRoutes);
 app.use('/api/enrollments', enrollmentRoutes);
+app.use('/api/chatbot', chatbotRoutes);
 
 // ----------------------------------------------------
 // 404 Not Found Handler - MUST BE LAST AMONG ROUTES
