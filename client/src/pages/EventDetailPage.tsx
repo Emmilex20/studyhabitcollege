@@ -123,8 +123,8 @@ const EventDetailPage: React.FC = () => {
     return (
         <div className="container mx-auto px-4 py-8 max-w-4xl">
             <nav className="mb-6">
-                <Link to="/news" className="inline-flex items-center text-blue-700 hover:text-yellow-600 font-semibold transition-colors">
-                    <IoArrowBackCircleOutline className="mr-2 text-2xl" /> Back to News & Events
+                <Link to="/" className="inline-flex items-center text-blue-700 hover:text-yellow-600 font-semibold transition-colors">
+                    <IoArrowBackCircleOutline className="mr-2 text-2xl" /> Back to Home
                 </Link>
             </nav>
 
