@@ -49,7 +49,7 @@ const EventDetailPage: React.FC = () => {
                 const token = localStorage.getItem('token'); // Assuming you store token in localStorage
                 
                 const response = await axios.get(
-                    `https://studyhabitcollege.onrender.com/api/events/${id}`, // Your backend API base URL
+                    `https://studyhabitcollege.onrender.com/api/events/public/${id}`, // Your backend API base URL
                     {
                         headers: {
                             Authorization: `Bearer ${token}`, // Include token for protected route
