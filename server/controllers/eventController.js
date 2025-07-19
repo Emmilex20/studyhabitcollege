@@ -153,10 +153,33 @@ const deleteEvent = async (req, res) => {
     }
 };
 
+// @desc    Get single event by ID for public access
+// @route   GET /api/events/public/:id
+// @access  Public
+const getPublicEventById = async (req, res) => {
+    try {
+        const event = await Event.findById(req.params.id)
+            .populate('organizer', 'firstName lastName email role'); // Still populate if needed for public view
+
+        if (event) {
+            res.status(200).json(event);
+        } else {
+            res.status(404).json({ message: 'Event not found' });
+        }
+    } catch (error) {
+        console.error("Error in getPublicEventById:", error); // Specific log for public endpoint errors
+        if (error.kind === 'ObjectId') { // Handle invalid MongoDB ID format
+            return res.status(400).json({ message: 'Invalid Event ID format' });
+        }
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
 export {
     getEvents,
     getEventById,
     createEvent,
     updateEvent,
     deleteEvent,
+    getPublicEventById,
 };
