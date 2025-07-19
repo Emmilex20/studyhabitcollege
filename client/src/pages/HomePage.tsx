@@ -595,7 +595,7 @@ const HomePage: React.FC = () => {
                                         <h3 className="text-lg sm:text-xl font-bold text-blue-800 mb-2 group-hover:text-yellow-600 transition-colors leading-tight">{item.title}</h3>
                                         <p className="text-xs sm:text-sm text-gray-500 mb-3">{formatDateForDisplay(item.createdAt)}</p>
                                         <p className="text-gray-700 text-sm sm:text-base mb-4 mt-auto line-clamp-3">{item.description}</p> {/* line-clamp for description */}
-                                        <Link to={`/news-events/${item._id}`} className="text-blue-700 font-semibold hover:text-yellow-600 transition-colors flex items-center text-sm sm:text-base">
+                                        <Link to={`/events/${item._id}`} className="text-blue-700 font-semibold hover:text-yellow-600 transition-colors flex items-center text-sm sm:text-base">
                                             Read More <span aria-hidden="true" className="ml-1 group-hover:translate-x-1 transition-transform">&rarr;</span>
                                         </Link>
                                     </div>
@@ -604,7 +604,7 @@ const HomePage: React.FC = () => {
                         </div>
                     )}
                     <div className="text-center mt-12 md:mt-16">
-                        <Link to="/events"> {/* Link to a dedicated news/events page */}
+                        <Link to="/events-calendar"> {/* Link to a dedicated news/events page */}
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
