@@ -26,18 +26,23 @@ const eventSchema = mongoose.Schema({
     },
     organizer: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User', // User who created/organized the event (e.g., Admin)
+        ref: 'User',
         required: true,
     },
     targetAudience: {
-        type: [String], // Array of strings for different roles/groups
+        type: [String],
         default: ['all'],
-        enum: ['all', 'students', 'teachers', 'parents', 'JSS1', 'SS2', 'Year 7'], // Example enums, extend as needed
+        enum: ['all', 'students', 'teachers', 'parents', 'JSS1', 'SS2', 'Year 7'],
     },
-    course: { // ✨ ADDED THIS FIELD to link events/deadlines to courses
+    course: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Course',
-        required: false, // Not all events are course-specific (e.g., general school events)
+        required: false,
+    },
+    // ✨ NEW: Add imageUrl field ✨
+    imageUrl: {
+        type: String, // This will store the URL returned by Cloudinary
+        required: false, // Event images are optional
     },
 }, {
     timestamps: true,

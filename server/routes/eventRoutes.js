@@ -1,8 +1,9 @@
 // server/routes/eventRoutes.js
 import express from 'express';
 import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
+import { upload } from '../config/multerConfig.js'; // ✨ Import the upload middleware ✨
 import {
-    getEvents,       // This controller will now be used for public and protected views
+    getEvents,
     getEventById,
     createEvent,
     updateEvent,
@@ -11,22 +12,18 @@ import {
 
 const router = express.Router();
 
-// 1. PUBLIC ROUTE for fetching ALL events (for the EventsCalendarPage)
-//    This route does NOT have 'protect' or 'authorizeRoles' middleware.
-router.get('/public', getEvents); // You can choose any suitable path, e.g., '/all', '/calendar'
+// Public route for fetching all events (for the EventsCalendarPage)
+router.get('/public', getEvents); // Assuming this is your public endpoint
 
-// 2. PROTECTED ROUTES for managing or role-specific viewing of events
-//    Keep your existing protected routes as they are for dashboard functionalities.
 router.route('/')
-    // This GET endpoint can be kept if your dashboard needs a different 'getEvents' behavior,
-    // or if you want to explicitly protect the root path for some reason.
-    // If AdminEventsPage also uses the public /public route, you can remove this specific GET method here.
-    .get(protect, authorizeRoles('admin', 'teacher', 'student', 'parent'), getEvents) // For authenticated users viewing all events
-    .post(protect, authorizeRoles('admin'), createEvent); // Only admin can create
+    .get(protect, authorizeRoles('admin', 'teacher', 'student', 'parent'), getEvents) // Authenticated view
+    // ✨ Apply upload.single('image') middleware before createEvent ✨
+    .post(protect, authorizeRoles('admin'), upload.single('image'), createEvent);
 
 router.route('/:id')
     .get(protect, authorizeRoles('admin', 'teacher', 'student', 'parent'), getEventById)
-    .put(protect, authorizeRoles('admin'), updateEvent) // Only admin can update
-    .delete(protect, authorizeRoles('admin'), deleteEvent); // Only admin can delete
+    // ✨ Apply upload.single('image') middleware before updateEvent ✨
+    .put(protect, authorizeRoles('admin'), upload.single('image'), updateEvent)
+    .delete(protect, authorizeRoles('admin'), deleteEvent);
 
 export default router;

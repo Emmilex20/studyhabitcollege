@@ -13,6 +13,7 @@ interface Event {
     location?: string;
     organizer: { _id: string; firstName: string; lastName: string; };
     targetAudience: string[];
+    imageUrl?: string; // ✨ NEW: Include imageUrl in the interface ✨
     // createdAt and other fields might be present from the backend but not needed for form input
 }
 
@@ -21,7 +22,6 @@ interface EventFormModalProps {
     onClose: () => void;
     eventToEdit?: Event | null; // Null for create, object for edit
     onSave: (event: Event) => void;
-    // Add the new props here
     currentUserId: string | undefined;
     userToken: string | undefined;
 }
@@ -33,14 +33,10 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
     onClose,
     eventToEdit,
     onSave,
-    currentUserId, // Destructure the new prop
-    userToken,   // Destructure the new prop
+    currentUserId,
+    userToken,
 }) => {
-    // We already have userInfo from useAuth, which contains _id and token,
-    // so `currentUserId` and `userToken` passed as props are redundant if `useAuth` is already used internally.
-    // However, for explicit prop passing as per your request and to ensure they're available if `useAuth` isn't fully reliable or for testing, we'll use them.
-    // For this specific use case, relying on `userInfo` directly from `useAuth` is more idiomatic.
-    const { userInfo } = useAuth(); // Keeping this as it's already used for auth token
+    const { userInfo } = useAuth();
 
     const [formData, setFormData] = useState({
         title: '',
@@ -49,7 +45,11 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
         endDate: '',
         location: '',
         targetAudience: [] as string[],
+        // ✨ Initialize imageUrl for existing events or empty for new ✨
+        imageUrl: '',
     });
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [imagePreview, setImagePreview] = useState<string | null>(null); // For displaying selected image
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -62,7 +62,10 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
                 endDate: eventToEdit.endDate.split('T')[0],     // Format for input type="date"
                 location: eventToEdit.location || '',
                 targetAudience: eventToEdit.targetAudience || ['all'],
+                imageUrl: eventToEdit.imageUrl || '', // ✨ Set existing image URL ✨
             });
+            setImagePreview(eventToEdit.imageUrl || null); // Display existing image
+            setSelectedFile(null); // Clear any previously selected file
         } else {
             setFormData({
                 title: '',
@@ -70,8 +73,11 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
                 startDate: '',
                 endDate: '',
                 location: '',
-                targetAudience: ['all'], // Default to 'all' for new events
+                targetAudience: ['all'],
+                imageUrl: '',
             });
+            setImagePreview(null); // Clear image preview for new events
+            setSelectedFile(null); // Clear selected file for new events
         }
         setError(null);
     }, [eventToEdit, isOpen]);
@@ -86,14 +92,33 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
         setFormData(prev => ({ ...prev, targetAudience: options }));
     };
 
+    // ✨ Handle file selection ✨
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setSelectedFile(file);
+            setImagePreview(URL.createObjectURL(file)); // Create a local URL for preview
+        } else {
+            setSelectedFile(null);
+            setImagePreview(null);
+        }
+    };
+
+    // ✨ Handle removing existing image for edit ✨
+    const handleRemoveImage = () => {
+        setSelectedFile(null); // Clear selected file
+        setImagePreview(null); // Clear preview
+        setFormData(prev => ({ ...prev, imageUrl: '' })); // Set imageUrl to empty string to signal removal
+    };
+
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
         setError(null);
 
-        // Prefer `userToken` from props if provided, otherwise fall back to `userInfo.token`
         const tokenToUse = userToken || userInfo?.token;
-        const userIdToUse = currentUserId || userInfo?._id; // Prefer `currentUserId` from props
+        const userIdToUse = currentUserId || userInfo?._id;
 
         if (!tokenToUse || !userIdToUse) {
             setError('Authentication token or user ID is missing. Cannot save event.');
@@ -107,33 +132,42 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
             return;
         }
 
+        const dataToSend = new FormData();
+        dataToSend.append('title', formData.title);
+        dataToSend.append('description', formData.description);
+        dataToSend.append('startDate', new Date(formData.startDate).toISOString());
+        dataToSend.append('endDate', new Date(formData.endDate).toISOString());
+        dataToSend.append('location', formData.location);
+        formData.targetAudience.forEach(audience => dataToSend.append('targetAudience[]', audience)); // Append array elements correctly
+        dataToSend.append('organizer', userIdToUse); // Organizer ID
+
+        // ✨ Append image if selected, or existing imageUrl if no new file and not removed ✨
+        if (selectedFile) {
+            dataToSend.append('image', selectedFile); // 'image' should match the name in multerConfig.js upload.single('image')
+        } else if (eventToEdit && !selectedFile && formData.imageUrl) {
+            // If no new file selected, but there's an existing image URL from the eventToEdit,
+            // and it hasn't been explicitly cleared by the user, send the old URL back.
+            // Backend update function needs to handle if imageUrl is empty string for removal.
+             dataToSend.append('imageUrl', formData.imageUrl);
+        } else if (eventToEdit && !selectedFile && formData.imageUrl === '') {
+            // If the user explicitly removed the image (imageUrl in state is empty)
+            dataToSend.append('imageUrl', ''); // Send empty string to backend to clear image
+        }
+
+
         const config = {
             headers: {
                 Authorization: `Bearer ${tokenToUse}`,
-                'Content-Type': 'application/json',
+                // 'Content-Type': 'multipart/form-data' is automatically set by axios when sending FormData
             },
         };
 
         try {
             let response;
-            const payload = {
-                ...formData,
-                startDate: new Date(formData.startDate).toISOString(),
-                endDate: new Date(formData.endDate).toISOString(),
-                targetAudience: formData.targetAudience.length > 0 ? formData.targetAudience : ['all'],
-                // Set organizer for new events or if editing an event created by current user
-                // The backend should handle validation if `organizer` needs to match `currentUserId` for updates.
-                // For creation, we ensure the current user is set as the organizer.
-                organizer: userIdToUse, // This sends the organizer's ID
-            };
-
             if (eventToEdit) {
-                // When editing, the backend might ignore the organizer field from payload
-                // if the event already has an organizer and updates are restricted to that organizer.
-                // This typically depends on your backend's API design.
-                response = await axios.put(`https://studyhabitcollege.onrender.com/api/events/${eventToEdit._id}`, payload, config);
+                response = await axios.put(`https://studyhabitcollege.onrender.com/api/events/${eventToEdit._id}`, dataToSend, config);
             } else {
-                response = await axios.post('https://studyhabitcollege.onrender.com/api/events', payload, config);
+                response = await axios.post('https://studyhabitcollege.onrender.com/api/events', dataToSend, config);
             }
             onSave(response.data);
             onClose();
@@ -248,6 +282,47 @@ const EventFormModal: React.FC<EventFormModalProps> = ({
                                     ))}
                                 </select>
                             </div>
+
+                            {/* ✨ NEW: Image Upload Field ✨ */}
+                            <div className="border border-dashed border-gray-300 p-4 rounded-md text-center">
+                                <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-2 cursor-pointer">
+                                    Upload Event Image (Optional)
+                                </label>
+                                <input
+                                    type="file"
+                                    id="image"
+                                    name="image"
+                                    accept="image/*"
+                                    onChange={handleFileChange}
+                                    className="hidden" // Hide default file input
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => document.getElementById('image')?.click()}
+                                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                                >
+                                    <i className="fas fa-upload mr-2"></i> Choose File
+                                </button>
+                                {imagePreview && (
+                                    <div className="mt-4 flex flex-col items-center">
+                                        <img src={imagePreview} alt="Event Preview" className="max-h-48 w-auto rounded-md shadow-md object-contain" />
+                                        <button
+                                            type="button"
+                                            onClick={handleRemoveImage}
+                                            className="mt-2 text-red-600 hover:text-red-800 text-sm font-medium flex items-center"
+                                        >
+                                            <i className="fas fa-times-circle mr-1"></i> Remove Image
+                                        </button>
+                                    </div>
+                                )}
+                                {!imagePreview && selectedFile && (
+                                    <p className="mt-2 text-sm text-gray-500">{selectedFile.name}</p>
+                                )}
+                                {!imagePreview && !selectedFile && !formData.imageUrl && (
+                                    <p className="mt-2 text-sm text-gray-500">No file chosen</p>
+                                )}
+                            </div>
+
 
                             <div className="flex justify-end space-x-3 mt-6">
                                 <button
