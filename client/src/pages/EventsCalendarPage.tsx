@@ -1,6 +1,5 @@
-// src/pages/EventsCalendarPage.tsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion, easeOut, AnimatePresence, type Variants } from 'framer-motion'; // Import Variants
+import { motion, easeOut, AnimatePresence, type Variants } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 
@@ -40,6 +39,8 @@ const EventsCalendarPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [displayedEventsCount, setDisplayedEventsCount] = useState(eventsPerPage);
   const [selectedCategory, setSelectedCategory] = useState<string | 'All'>('All');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
   const fetchEvents = useCallback(async () => {
     setLoading(true);
@@ -83,8 +84,20 @@ const EventsCalendarPage: React.FC = () => {
     setDisplayedEventsCount(prevCount => prevCount + eventsPerPage);
   };
 
+  const openModal = (event: Event) => {
+    setSelectedEvent(event);
+    setIsModalOpen(true);
+    document.body.style.overflow = 'hidden'; // Prevent scrolling on body
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedEvent(null);
+    document.body.style.overflow = ''; // Restore scrolling
+  };
+
   // Variants for section animations
-  const sectionVariants = {
+  const sectionVariants: Variants = {
     hidden: { opacity: 0, y: 50 },
     visible: {
       opacity: 1,
@@ -94,7 +107,7 @@ const EventsCalendarPage: React.FC = () => {
   };
 
   // Variants for individual event cards
-  const eventCardVariants: Variants = { // Added type assertion here
+  const eventCardVariants: Variants = {
     hidden: { opacity: 0, y: 30, scale: 0.95 },
     visible: {
       opacity: 1,
@@ -113,6 +126,28 @@ const EventsCalendarPage: React.FC = () => {
       transition: { type: "spring", stiffness: 300, damping: 10 }
     },
     tap: { scale: 0.98 }
+  };
+
+  // Variants for the modal
+  const modalVariants: Variants = {
+    hidden: { opacity: 0, scale: 0.8, y: -100 },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      y: 0,
+      transition: {
+        type: "spring",
+        stiffness: 260,
+        damping: 20,
+      }
+    },
+    exit: { opacity: 0, scale: 0.8, y: 100, transition: { duration: 0.2 } }
+  };
+
+  const backdropVariants: Variants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { duration: 0.3 } },
+    exit: { opacity: 0, transition: { duration: 0.2 } }
   };
 
   return (
@@ -252,7 +287,8 @@ const EventsCalendarPage: React.FC = () => {
                     whileTap="tap"
                     viewport={{ once: true, amount: 0.3 }}
                     transition={{ delay: index * 0.08 }}
-                    className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300 flex flex-col h-full overflow-hidden relative"
+                    className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300 flex flex-col h-full overflow-hidden relative cursor-pointer" // Added cursor-pointer
+                    onClick={() => openModal(event)} // Added onClick to open modal
                   >
                     {event.imageUrl && (
                       <div className="relative w-full h-48 mb-4 overflow-hidden rounded-lg">
@@ -295,15 +331,6 @@ const EventsCalendarPage: React.FC = () => {
                           </span>
                         ))}
                       </div>
-                      {/* Optional: Add a "Read More" link if event has a dedicated page */}
-                       {/*
-                       <Link
-                         to={`/events/${event._id}`} // Example dynamic route
-                         className="inline-flex items-center text-blue-600 hover:text-blue-800 font-semibold transition-colors duration-200"
-                       >
-                         Read More <i className="fas fa-arrow-right ml-2 text-sm"></i>
-                       </Link>
-                       */}
                     </div>
                   </motion.div>
                 ))}
@@ -383,6 +410,101 @@ const EventsCalendarPage: React.FC = () => {
           </Link>
         </motion.section>
       </div>
+
+      {/* Event Details Modal */}
+      <AnimatePresence>
+        {isModalOpen && selectedEvent && (
+          <motion.div
+            className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 overflow-y-auto"
+            variants={backdropVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            onClick={closeModal} // Close modal when clicking on backdrop
+          >
+            <motion.div
+              className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-8 relative m-auto border-t-8 border-indigo-600 transform"
+              variants={modalVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              onClick={(e) => e.stopPropagation()} // Prevent modal from closing when clicking inside
+            >
+              <button
+                onClick={closeModal}
+                className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 transition-colors duration-200"
+                aria-label="Close modal"
+              >
+                <i className="fas fa-times text-2xl"></i>
+              </button>
+
+              {selectedEvent.imageUrl && (
+                <div className="w-full h-64 overflow-hidden rounded-xl mb-6 shadow-md">
+                  <img
+                    src={selectedEvent.imageUrl}
+                    alt={selectedEvent.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+
+              <h2 className="text-3xl md:text-4xl font-extrabold text-blue-900 mb-4 leading-tight">
+                {selectedEvent.title}
+              </h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-lg text-gray-700 mb-6">
+                <p className="flex items-center">
+                  <i className="far fa-calendar-alt mr-3 text-indigo-600 text-xl"></i>
+                  <span className="font-semibold">Date:</span> {formatDateForDisplay(selectedEvent.startDate)}
+                  {new Date(selectedEvent.startDate).toDateString() !== new Date(selectedEvent.endDate).toDateString() &&
+                    ` - ${formatDateForDisplay(selectedEvent.endDate)}`
+                  }
+                </p>
+                <p className="flex items-center">
+                  <i className="far fa-clock mr-3 text-green-600 text-xl"></i>
+                  <span className="font-semibold">Time:</span>
+                  {new Date(selectedEvent.startDate).toDateString() === new Date(selectedEvent.endDate).toDateString() ?
+                    `${formatTimeForDisplay(selectedEvent.startDate)}` : 'Throughout the day(s)'
+                  }
+                </p>
+                <p className="flex items-center col-span-1 md:col-span-2">
+                  <i className="fas fa-map-marker-alt mr-3 text-red-600 text-xl"></i>
+                  <span className="font-semibold">Location:</span> {selectedEvent.location || 'Location to be announced'}
+                </p>
+                <p className="flex items-center col-span-1 md:col-span-2">
+                  <i className="fas fa-user-circle mr-3 text-yellow-600 text-xl"></i>
+                  <span className="font-semibold">Organizer:</span> {selectedEvent.organizer.firstName} {selectedEvent.organizer.lastName}
+                </p>
+              </div>
+
+              <div className="mb-6">
+                <h3 className="text-xl font-bold text-blue-800 mb-2 border-b border-gray-200 pb-1">Description:</h3>
+                <p className="text-gray-800 leading-relaxed text-base">{selectedEvent.description || 'No detailed description available.'}</p>
+              </div>
+
+              <div className="mb-6">
+                <h3 className="text-xl font-bold text-blue-800 mb-2 border-b border-gray-200 pb-1">Target Audience:</h3>
+                <div className="flex flex-wrap gap-2">
+                  {selectedEvent.targetAudience.map(audience => (
+                    <span key={audience} className="inline-block bg-indigo-100 text-indigo-800 text-sm font-semibold px-4 py-1.5 rounded-full border border-indigo-300">
+                      {audience.charAt(0).toUpperCase() + audience.slice(1)}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="text-center mt-8">
+                <button
+                  onClick={closeModal}
+                  className="px-8 py-3 bg-blue-700 text-white font-semibold rounded-full hover:bg-blue-800 transition-colors duration-300 shadow-md"
+                >
+                  Close Details
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
