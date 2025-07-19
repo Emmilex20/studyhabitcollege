@@ -109,8 +109,8 @@ const EventDetailPage: React.FC = () => {
             <div className="text-center py-20 px-4">
                 <h1 className="text-3xl font-bold text-gray-700 mb-4">Event Not Found</h1>
                 <p className="text-xl text-gray-600">The event you are looking for does not exist.</p>
-                <Link to="/news" className="mt-8 inline-flex items-center text-blue-700 hover:text-yellow-600 font-semibold transition-colors">
-                    <IoArrowBackCircleOutline className="mr-2 text-2xl" /> Back to News & Events
+                <Link to="/" className="mt-8 inline-flex items-center text-blue-700 hover:text-yellow-600 font-semibold transition-colors">
+                    <IoArrowBackCircleOutline className="mr-2 text-2xl" /> Back to Home
                 </Link>
             </div>
         );
