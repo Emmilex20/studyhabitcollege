@@ -90,7 +90,7 @@ const HomePage: React.FC = () => {
         setNewsError(null);
         try {
             // Adjust this URL to your actual news/events API endpoint
-            const { data } = await axios.get('https://studyhabitcollege.onrender.com/api/news-events/public');
+            const { data } = await axios.get('https://studyhabitcollege.onrender.com/api/events/public');
             // Assuming your backend returns an array of news/event objects directly,
             // or an object with a property like 'newsEvents' that is an array.
             const newsData = Array.isArray(data) ? data : (data && Array.isArray(data.newsEvents) ? data.newsEvents : []);
