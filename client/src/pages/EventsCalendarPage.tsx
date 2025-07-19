@@ -19,6 +19,7 @@ interface Event {
   organizer: { _id: string; firstName: string; lastName: string };
   targetAudience: string[];
   createdAt: string; // To allow sorting or display creation date
+  imageUrl?: string; // <--- ADDED: Optional imageUrl field for event images
 }
 
 // Helper to format dates for display
@@ -81,7 +82,8 @@ const EventsCalendarPage: React.FC = () => {
       return true; // Show all events
     }
     // Check if any of the event's target audiences match the selected category
-    return event.targetAudience.includes(selectedCategory.toLowerCase());
+    // Ensure consistent casing for comparison
+    return event.targetAudience.map(audience => audience.toLowerCase()).includes(selectedCategory.toLowerCase());
   });
 
 
@@ -143,7 +145,7 @@ const EventsCalendarPage: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* --- */}
+        ---
 
         {/* Event Categories Filter */}
         <motion.section
@@ -174,7 +176,7 @@ const EventsCalendarPage: React.FC = () => {
           </div>
         </motion.section>
 
-        {/* --- */}
+        ---
 
         {/* Events List */}
         <motion.section
@@ -247,14 +249,14 @@ const EventsCalendarPage: React.FC = () => {
                     transition={{ delay: index * 0.05 }} // Staggered animation for events
                     className="bg-gray-50 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col h-full"
                   >
-                    {/* If your backend events include an imageUrl, display it here */}
-                    {/* {event.imageUrl && (
+                    {/* UPDATED: Display image if imageUrl exists */}
+                    {event.imageUrl && (
                       <img
                         src={event.imageUrl}
                         alt={event.title}
                         className="w-full h-40 object-cover rounded-md mb-4"
                       />
-                    )} */}
+                    )}
                     <h3 className="text-xl font-bold text-blue-900 mb-2 leading-tight">
                       {event.title}
                     </h3>
@@ -265,12 +267,11 @@ const EventsCalendarPage: React.FC = () => {
                         ` - ${formatDateForDisplay(event.endDate)}` // Show end date if different
                       }
                     </p>
-                    {/* Assuming you don't store time specifically yet, just note "All Day" or time from start date */}
                     <p className="text-gray-600 text-sm mb-1">
                       <i className="far fa-clock mr-2"></i>
                       {/* You can refine this if your backend provides specific event times */}
                       {new Date(event.startDate).toDateString() === new Date(event.endDate).toDateString() ?
-                       `Starts ${formatTimeForDisplay(event.startDate)}` : 'Multiple Days'
+                        `Starts ${formatTimeForDisplay(event.startDate)}` : 'Multiple Days'
                       }
                     </p>
                     <p className="text-gray-600 text-sm mb-3">
@@ -320,7 +321,7 @@ const EventsCalendarPage: React.FC = () => {
           )}
         </motion.section>
 
-        {/* --- */}
+        ---
 
         {/* Calendar Integration (Placeholder/Future Idea) */}
         <motion.section
@@ -347,7 +348,7 @@ const EventsCalendarPage: React.FC = () => {
           </div>
         </motion.section>
 
-        {/* --- */}
+        ---
 
         {/* Call to Action */}
         <motion.section
