@@ -604,7 +604,7 @@ const HomePage: React.FC = () => {
                         </div>
                     )}
                     <div className="text-center mt-12 md:mt-16">
-                        <Link to="/news-events"> {/* Link to a dedicated news/events page */}
+                        <Link to="/events"> {/* Link to a dedicated news/events page */}
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
