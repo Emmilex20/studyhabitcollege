@@ -23,7 +23,10 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
-import Chatbot from './components/Chatbot'; // <--- Import the Chatbot component here
+import Chatbot from './components/Chatbot';
+
+// ✨ NEW IMPORT: EventDetailPage ✨
+import EventDetailPage from './pages/EventDetailPage'; // Assuming you'll place it in 'src/pages'
 
 // === ADMIN DASHBOARD PAGES ===
 import AdminUsersPage from './pages/dashboard/AdminUsersPage';
@@ -68,6 +71,8 @@ function App() {
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/admissions" element={<AdmissionsPage />} />
               <Route path="/student-life" element={<StudentLifePage />} />
+              {/* ✨ NEW ROUTE FOR SINGLE EVENT DETAIL ✨ */}
+              <Route path="/events/:id" element={<EventDetailPage />} />
               <Route path="/news" element={<NewsEventsPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
@@ -191,7 +196,7 @@ function App() {
           <Footer />
         </div>
         {/* Render the Chatbot component outside the main content flow but within the Router and AuthProvider */}
-        <Chatbot /> {/* <--- Place the Chatbot component here */}
+        <Chatbot />
       </AuthProvider>
     </Router>
   );
