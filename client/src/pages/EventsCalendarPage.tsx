@@ -49,7 +49,7 @@ const EventsCalendarPage: React.FC = () => {
     setError(null);
     try {
       // No token needed for public events view
-      const { data } = await axios.get('https://studyhabitcollege.onrender.com/api/events');
+      const { data } = await axios.get('https://studyhabitcollege.onrender.com/api/events/public');
       // Ensure data is an array, or extract events if wrapped in an object like { events: [...] }
       const eventsData = Array.isArray(data) ? data : (data && Array.isArray(data.events) ? data.events : []);
 
