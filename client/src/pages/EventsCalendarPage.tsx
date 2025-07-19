@@ -1,6 +1,6 @@
 // src/pages/EventsCalendarPage.tsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion, easeOut, AnimatePresence } from 'framer-motion';
+import { motion, easeOut, AnimatePresence, type Variants } from 'framer-motion'; // Import Variants
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 
@@ -8,7 +8,6 @@ import axios from 'axios';
 import calendarHero from '../assets/calendar-hero.png'; // e.g., a diverse group of students at an event
 
 // Define the type for an event item as it comes from your backend
-// This should match the Event interface used in AdminEventsPage and EventFormModal
 interface Event {
   _id: string;
   title: string;
@@ -19,7 +18,7 @@ interface Event {
   organizer: { _id: string; firstName: string; lastName: string };
   targetAudience: string[];
   createdAt: string; // To allow sorting or display creation date
-  imageUrl?: string; // <--- ADDED: Optional imageUrl field for event images
+  imageUrl?: string; // Optional imageUrl field for event images
 }
 
 // Helper to format dates for display
@@ -31,30 +30,24 @@ const formatDateForDisplay = (isoString: string): string => {
 // Helper to format time (assuming events might have a more specific time if added to backend)
 const formatTimeForDisplay = (isoString: string): string => {
   const date = new Date(isoString);
-  // If your backend stores a time, extract it. Otherwise, default.
-  // For simplicity, we'll just say "All Day" if start and end dates are the same,
-  // or imply a range. You might need to adjust this if your backend sends specific times.
   return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
 };
 
 const EventsCalendarPage: React.FC = () => {
   const eventsPerPage = 6;
-  const [events, setEvents] = useState<Event[]>([]); // State to hold fetched events
+  const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [displayedEventsCount, setDisplayedEventsCount] = useState(eventsPerPage);
-  const [selectedCategory, setSelectedCategory] = useState<string | 'All'>('All'); // Changed to string to accommodate dynamic categories
+  const [selectedCategory, setSelectedCategory] = useState<string | 'All'>('All');
 
   const fetchEvents = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      // No token needed for public events view
       const { data } = await axios.get('https://studyhabitcollege.onrender.com/api/events/public');
-      // Ensure data is an array, or extract events if wrapped in an object like { events: [...] }
       const eventsData = Array.isArray(data) ? data : (data && Array.isArray(data.events) ? data.events : []);
 
-      // Sort events by startDate, closest upcoming first
       const sortedEvents = eventsData.sort((a: Event, b: Event) => {
         return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
       });
@@ -73,19 +66,15 @@ const EventsCalendarPage: React.FC = () => {
     fetchEvents();
   }, [fetchEvents]);
 
-  // Derive categories from fetched events
   const allCategories = Array.from(new Set(events.flatMap(event => event.targetAudience)));
-  const categories = ['All', ...allCategories.filter(cat => cat !== 'all')]; // 'all' can be a category, but often you'd list specific ones + 'All' overarching
+  const categories = ['All', ...allCategories.filter(cat => cat !== 'all')];
 
   const filteredEvents = events.filter(event => {
     if (selectedCategory === 'All') {
-      return true; // Show all events
+      return true;
     }
-    // Check if any of the event's target audiences match the selected category
-    // Ensure consistent casing for comparison
     return event.targetAudience.map(audience => audience.toLowerCase()).includes(selectedCategory.toLowerCase());
   });
-
 
   const eventsToShow = filteredEvents.slice(0, displayedEventsCount);
   const hasMoreEvents = displayedEventsCount < filteredEvents.length;
@@ -105,14 +94,25 @@ const EventsCalendarPage: React.FC = () => {
   };
 
   // Variants for individual event cards
-  const eventCardVariants = {
+  const eventCardVariants: Variants = { // Added type assertion here
     hidden: { opacity: 0, y: 30, scale: 0.95 },
     visible: {
       opacity: 1,
       y: 0,
       scale: 1,
-      transition: { duration: 0.6, ease: easeOut }
+      transition: {
+        type: "spring",
+        damping: 15,
+        stiffness: 100,
+        delay: 0.1
+      }
     },
+    hover: {
+      scale: 1.03,
+      boxShadow: "0px 10px 20px rgba(0, 0, 0, 0.15)",
+      transition: { type: "spring", stiffness: 300, damping: 10 }
+    },
+    tap: { scale: 0.98 }
   };
 
   return (
@@ -158,20 +158,23 @@ const EventsCalendarPage: React.FC = () => {
           <h2 className="text-2xl font-bold text-blue-900 mb-6">Filter Events by Category</h2>
           <div className="flex flex-wrap justify-center gap-3">
             {categories.map((category) => (
-              <button
+              <motion.button
                 key={category}
                 onClick={() => {
                   setSelectedCategory(category);
                   setDisplayedEventsCount(eventsPerPage); // Reset displayed count on category change
                 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
                 className={`px-6 py-2 rounded-full font-semibold transition-all duration-300
                   ${selectedCategory === category
-                    ? 'bg-blue-600 text-white shadow-lg'
+                    ? 'bg-blue-600 text-white shadow-lg transform translate-y-[-2px]'
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
               >
                 {category === 'all' ? 'All Stakeholders' : category.charAt(0).toUpperCase() + category.slice(1)}
-              </button>
+              </motion.button>
             ))}
           </div>
         </motion.section>
@@ -241,63 +244,66 @@ const EventsCalendarPage: React.FC = () => {
               <AnimatePresence>
                 {eventsToShow.map((event, index) => (
                   <motion.div
-                    key={event._id} // Use event._id for unique key from backend
+                    key={event._id}
                     variants={eventCardVariants}
                     initial="hidden"
-                    whileInView="visible"
+                    animate="visible"
+                    whileHover="hover"
+                    whileTap="tap"
                     viewport={{ once: true, amount: 0.3 }}
-                    transition={{ delay: index * 0.05 }} // Staggered animation for events
-                    className="bg-gray-50 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col h-full"
+                    transition={{ delay: index * 0.08 }}
+                    className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300 flex flex-col h-full overflow-hidden relative"
                   >
-                    {/* UPDATED: Display image if imageUrl exists */}
                     {event.imageUrl && (
-                      <img
-                        src={event.imageUrl}
-                        alt={event.title}
-                        className="w-full h-40 object-cover rounded-md mb-4"
-                      />
+                      <div className="relative w-full h-48 mb-4 overflow-hidden rounded-lg">
+                        <img
+                          src={event.imageUrl}
+                          alt={event.title}
+                          className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-300"
+                        />
+                         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                      </div>
                     )}
-                    <h3 className="text-xl font-bold text-blue-900 mb-2 leading-tight">
+                    <h3 className="text-2xl font-bold text-blue-900 mb-2 leading-tight">
                       {event.title}
                     </h3>
-                    <p className="text-gray-600 text-sm mb-1">
-                      <i className="far fa-calendar-alt mr-2"></i>
+                    <p className="text-gray-600 text-sm mb-1 flex items-center">
+                      <i className="far fa-calendar-alt mr-2 text-indigo-500"></i>
                       <span className="font-semibold">{formatDateForDisplay(event.startDate)}</span>
                       {new Date(event.startDate).toDateString() !== new Date(event.endDate).toDateString() &&
-                        ` - ${formatDateForDisplay(event.endDate)}` // Show end date if different
+                        ` - ${formatDateForDisplay(event.endDate)}`
                       }
                     </p>
-                    <p className="text-gray-600 text-sm mb-1">
-                      <i className="far fa-clock mr-2"></i>
-                      {/* You can refine this if your backend provides specific event times */}
+                    <p className="text-gray-600 text-sm mb-1 flex items-center">
+                      <i className="far fa-clock mr-2 text-green-500"></i>
                       {new Date(event.startDate).toDateString() === new Date(event.endDate).toDateString() ?
                         `Starts ${formatTimeForDisplay(event.startDate)}` : 'Multiple Days'
                       }
                     </p>
-                    <p className="text-gray-600 text-sm mb-3">
-                      <i className="fas fa-map-marker-alt mr-2"></i>
+                    <p className="text-gray-600 text-sm mb-3 flex items-center">
+                      <i className="fas fa-map-marker-alt mr-2 text-red-500"></i>
                       {event.location || 'Location to be announced'}
                     </p>
-                    <p className="text-gray-700 text-base flex-grow mb-4">
+                    <p className="text-gray-700 text-base flex-grow mb-4 line-clamp-3"> {/* Use line-clamp to limit description length */}
                       {event.description || 'No description provided.'}
                     </p>
                     <div className="mt-auto">
-                      <div className="flex flex-wrap gap-2 mb-2">
+                      <div className="flex flex-wrap gap-2 mb-3">
                         {event.targetAudience.map(audience => (
-                          <span key={audience} className="inline-block bg-indigo-200 text-indigo-800 text-xs font-semibold px-3 py-1 rounded-full">
+                          <span key={audience} className="inline-block bg-purple-100 text-purple-800 text-xs font-semibold px-3 py-1 rounded-full border border-purple-300">
                             {audience.charAt(0).toUpperCase() + audience.slice(1)}
                           </span>
                         ))}
                       </div>
-                      {/* You can add a link if your events have more detailed pages */}
-                      {/* {event.link && (
-                        <Link
-                          to={event.link}
-                          className="inline-block ml-4 text-blue-600 hover:text-blue-800 font-semibold transition-colors duration-200"
-                        >
-                          Details <i className="fas fa-external-link-alt ml-1 text-xs"></i>
-                        </Link>
-                      )} */}
+                      {/* Optional: Add a "Read More" link if event has a dedicated page */}
+                       {/*
+                       <Link
+                         to={`/events/${event._id}`} // Example dynamic route
+                         className="inline-flex items-center text-blue-600 hover:text-blue-800 font-semibold transition-colors duration-200"
+                       >
+                         Read More <i className="fas fa-arrow-right ml-2 text-sm"></i>
+                       </Link>
+                       */}
                     </div>
                   </motion.div>
                 ))}
@@ -313,9 +319,14 @@ const EventsCalendarPage: React.FC = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.5 }}
                 transition={{ duration: 0.6, delay: 0.3 }}
-                className="px-8 py-3 bg-blue-800 text-white font-semibold rounded-full hover:bg-blue-900 transition-colors duration-300 shadow-lg"
+                className="px-8 py-3 bg-blue-800 text-white font-semibold rounded-full hover:bg-blue-900 transition-colors duration-300 shadow-lg flex items-center justify-center mx-auto group"
               >
-                Load More Events <i className="fas fa-chevron-down ml-2"></i>
+                Load More Events
+                <motion.i
+                  className="fas fa-chevron-down ml-2 group-hover:translate-y-1 transition-transform duration-300"
+                  animate={{ y: [0, 2, 0] }}
+                  transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                ></motion.i>
               </motion.button>
             </div>
           )}
