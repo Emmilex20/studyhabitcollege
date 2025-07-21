@@ -72,7 +72,7 @@ const ParentDashboardOverview: React.FC = () => {
 
         // ⭐ FIXED: Using distinct variable names for each API call ⭐
         const childrenSummaryResponse = await axios.get(`https://studyhabitcollege.onrender.com/api/parents/me/summary`, config);
-        const announcementsResponse = await axios.get(`https://studyhabitcollege.onrender.com/dashboard/announcements`, config);
+        const announcementsResponse = await axios.get(`https://studyhabitcollege.onrender.com/api/announcements`, config);
 
         // ⭐ Combine data from both responses into the ParentDashboardData structure ⭐
         setParentData({
