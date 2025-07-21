@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-import { motion, AnimatePresence, type Variants } from 'framer-motion'; // Import AnimatePresence and Variants
+import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import StudentFormModal from '../../components/modals/StudentFormModal'; // Assuming this component is well-styled
 
 interface Student {
@@ -13,6 +13,8 @@ interface Student {
   dateOfBirth: string; // Consider using Date type if you perform date operations
   gender: string;
   currentClass?: string;
+  // ⭐ Added currentTerm property ⭐
+  currentTerm?: string; // Assuming 'Term 1', 'Term 2', 'Term 3' or similar
   enrolledCourses: { _id: string; name: string; code: string }[];
   parent?: { _id: string; firstName: string; lastName: string; email: string };
   createdAt: string;
@@ -202,6 +204,10 @@ const AdminStudentsPage: React.FC = () => {
                   <th className="px-5 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Class
                   </th>
+                  {/* ⭐ New Term Header ⭐ */}
+                  <th className="px-5 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Term
+                  </th>
                   <th className="px-5 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Gender
                   </th>
@@ -247,6 +253,12 @@ const AdminStudentsPage: React.FC = () => {
                       <td className="px-5 py-4 text-sm text-gray-700">{student.user?.email}</td>
                       <td className="px-5 py-4 text-sm text-gray-700 whitespace-nowrap">
                         {student.currentClass || (
+                          <span className="italic text-gray-500">N/A</span>
+                        )}
+                      </td>
+                      {/* ⭐ New Term Data Cell ⭐ */}
+                      <td className="px-5 py-4 text-sm text-gray-700 whitespace-nowrap">
+                        {student.currentTerm || (
                           <span className="italic text-gray-500">N/A</span>
                         )}
                       </td>
