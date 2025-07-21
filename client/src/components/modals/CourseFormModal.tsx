@@ -412,3 +412,4 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
 };
 
 export default CourseFormModal;
+
