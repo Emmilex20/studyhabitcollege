@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'; // Import useRef
+import React, { useState, useEffect } from 'react'; // Removed useRef
 import { Link, Outlet, useNavigate, useLocation, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { motion, AnimatePresence, easeOut } from 'framer-motion';
@@ -28,15 +28,14 @@ const ParentChildrenPage: React.FC = () => {
   const [children, setChildren] = useState<Child[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  // ⭐ New state to control initial navigation ⭐
-  const hasNavigatedInitially = useRef(false); // Using useRef to persist value without re-renders
 
   const { userInfo } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { studentId } = useParams<{ studentId?: string }>(); // Get studentId from URL params
+  const { studentId } = useParams<{ studentId?: string }>();
 
   // Determine if a child-specific sub-route (grades/attendance) is currently active
+  // This correctly controls whether to show the list of children or the detail view.
   const isChildDetailRouteActive = studentId && (
     location.pathname.includes(`/children/${studentId}/grades`) ||
     location.pathname.includes(`/children/${studentId}/attendance`)
@@ -62,33 +61,27 @@ const ParentChildrenPage: React.FC = () => {
         const fetchedChildren: Child[] = response.data.children || [];
         setChildren(fetchedChildren);
 
-        // ⭐ Modified navigation logic ⭐
-        // Only attempt initial navigation if we haven't already AND
-        // if we are currently at the base /dashboard/children route AND
-        // if there are children to display.
-        if (
-          !hasNavigatedInitially.current && // Check the ref value
-          !studentId && // No student ID in URL
-          fetchedChildren.length > 0 && // Children exist
-          location.pathname === '/dashboard/children' // At the base path
-        ) {
-          navigate(`/dashboard/children/${fetchedChildren[0]._id}/grades`, { replace: true });
-          hasNavigatedInitially.current = true; // Set the flag to true after navigation
-        } else if (studentId && !fetchedChildren.some(child => child._id === studentId)) {
-          // If studentId in URL is not valid for this parent, navigate away or show error
+        // ⭐ Simplified and Corrected Navigation Logic ⭐
+        // NO automatic navigation to first child.
+        // Only handle invalid studentId or empty children with nested routes.
+
+        if (studentId && !fetchedChildren.some(child => child._id === studentId)) {
+          // If studentId in URL is not valid for this parent, navigate back to the children list
           console.warn(`Attempted to access invalid child ID: ${studentId}. Navigating to children list.`);
           navigate('/dashboard/children', { replace: true });
         } else if (!studentId && fetchedChildren.length === 0 && location.pathname !== '/dashboard/children') {
-          // If no children and we are on a nested route (e.g. /dashboard/children/someid/grades), redirect to base
+          // If no children found AND the user is somehow on a nested route (e.g., /dashboard/children/someId),
+          // redirect them to the base /dashboard/children to show the "No Children Found" message.
           navigate('/dashboard/children', { replace: true });
         }
+        // If a valid studentId is present, or if no studentId and children are available,
+        // no explicit navigation is needed here. The component's JSX will handle rendering.
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         console.error('Error fetching children:', err.response?.data?.message || err.message, err);
         setError(err.response?.data?.message || 'Failed to load children. Please try again.');
         setChildren([]);
-        // Reset navigation flag if there's an error and no children are loaded
-        hasNavigatedInitially.current = false;
       } finally {
         setLoading(false);
       }
@@ -101,9 +94,9 @@ const ParentChildrenPage: React.FC = () => {
       setError('You must be logged in to view your children\'s profiles.');
       setChildren([]);
     }
-  }, [userInfo, studentId, location.pathname, navigate]); // Dependencies remain the same
+  }, [userInfo, studentId, location.pathname, navigate]); // Dependencies remain crucial
 
-  // Framer Motion variants
+  // Framer Motion variants for animations
   const pageVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: easeOut } },
@@ -116,7 +109,7 @@ const ParentChildrenPage: React.FC = () => {
       scale: 1,
       y: 0,
       transition: {
-        delay: i * 0.1, // Stagger animation
+        delay: i * 0.1,
         duration: 0.4,
         ease: easeOut
       }
@@ -199,9 +192,10 @@ const ParentChildrenPage: React.FC = () => {
                       initial="hidden"
                       animate="visible"
                       whileHover="hover"
-                      custom={index} // Stagger animation
+                      custom={index}
                       onClick={() => {
-                        navigate(`/dashboard/children/${child._id}/grades`); // Navigate to grades by default on card click
+                        // Navigate to grades by default when a card is clicked
+                        navigate(`/dashboard/children/${child._id}/grades`);
                       }}
                       className={`relative bg-white p-6 rounded-xl shadow-md border cursor-pointer transition-all duration-300 ease-in-out transform
                         ${studentId === child._id ? 'border-blue-600 ring-4 ring-blue-200 shadow-xl' : 'border-gray-200 hover:border-blue-300'}`}
@@ -230,7 +224,7 @@ const ParentChildrenPage: React.FC = () => {
                             <i className="fas fa-percent text-yellow-500 mr-2"></i> Grade Avg: <span className="font-bold ml-auto text-yellow-700">{displayGradeAverage.toFixed(1)}%</span>
                           </p>
                         )}
-                         {typeof displayGPA === 'number' && ( // Display GPA if available, potentially as primary grade metric
+                         {typeof displayGPA === 'number' && (
                           <p className="text-base text-gray-700 flex items-center">
                             <i className="fas fa-graduation-cap text-indigo-500 mr-2"></i> GPA: <span className="font-bold ml-auto text-indigo-700">{displayGPA.toFixed(2)}</span>
                           </p>
@@ -242,6 +236,7 @@ const ParentChildrenPage: React.FC = () => {
                         )}
                       </div>
 
+                      {/* This "Selected" tag is for visual feedback if a child is selected from the list and the detail view is active */}
                       {studentId === child._id && (
                         <div className="absolute inset-x-0 bottom-0 bg-blue-100 text-blue-800 text-center py-2 text-sm font-semibold rounded-b-xl">
                           Selected
@@ -252,7 +247,7 @@ const ParentChildrenPage: React.FC = () => {
                 })}
               </AnimatePresence>
             </div>
-          ) : ( // Show the detail section if a specific child is selected
+          ) : (
             <div className="mt-8 p-6 bg-white rounded-xl shadow-lg border border-gray-100">
               <Link to="/dashboard/children" className="text-blue-600 hover:underline mb-4 inline-flex items-center text-sm font-medium">
                   <i className="fas fa-arrow-left mr-2"></i> Back to Children List
@@ -293,7 +288,7 @@ const ParentChildrenPage: React.FC = () => {
               </div>
               <AnimatePresence mode="wait">
                 <motion.div
-                  key={location.pathname} // Key for animating Outlet content
+                  key={location.pathname}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
