@@ -5,7 +5,7 @@ import {
   getYearLevels,
   updateSetting,
 } from '../controllers/settingController.js';
-import { protect, authorize } from '../middleware/authMiddleware.js'; // Assuming you have these middleware functions
+import { protect, authorizeRoles } from '../middleware/authMiddleware.js'; // Assuming you have these middleware functions
 
 const router = express.Router();
 
@@ -16,6 +16,6 @@ router.route('/terms').get(protect, getTerms);
 router.route('/year-levels').get(protect, getYearLevels);
 
 // Admin-only route for updating settings
-router.route('/:key').put(protect, authorize(['admin']), updateSetting);
+router.route('/:key').put(protect, authorizeRoles(['admin']), updateSetting);
 
 export default router;
