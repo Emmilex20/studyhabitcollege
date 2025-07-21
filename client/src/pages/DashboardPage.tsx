@@ -65,7 +65,7 @@ const DashboardPage: React.FC = () => {
       case 'parent':
         return [
           { name: 'Overview', path: '/dashboard', icon: 'fas fa-tachometer-alt' },
-          { name: 'My Children', path: '/dashboard/child', icon: 'fas fa-child' },
+          { name: 'My Children', path: '/dashboard/children', icon: 'fas fa-child' },
           { name: 'Announcements', path: '/dashboard/announcements', icon: 'fas fa-bullhorn' },
           { name: 'Events', path: '/dashboard/events', icon: 'fas fa-calendar-alt' },
           { name: 'Settings', path: '/dashboard/settings', icon: 'fas fa-cog' },
