@@ -14,7 +14,7 @@ interface ChildSummary {
   gpa?: number; // Assume GPA is a number
   attendancePercentage?: number; // Assume attendance is a number
   letterGrade?: string; // Assume letter grade is a string
-  avatarUrl?: string;
+  avatarUrl?: string; // This is the field that should contain the direct avatar URL
 }
 
 interface Announcement { // Define an interface for Announcement
@@ -69,13 +69,16 @@ const ParentDashboardOverview: React.FC = () => {
           },
           withCredentials: true,
         };
-        // Ensure your backend endpoint `/api/parents/me/summary`
-        // returns both `children` and `importantAnnouncements` in its response.
-        const response = await axios.get(`https://studyhabitcollege.onrender.com/api/parents/me/summary`, config);
 
-        // ⭐ REMOVE THE MOCK DATA ASSIGNMENT ⭐
-        // Directly use response.data if your API returns the expected structure
-        setParentData(response.data); // Assuming response.data is already ParentDashboardData type
+        // ⭐ FIXED: Using distinct variable names for each API call ⭐
+        const childrenSummaryResponse = await axios.get(`https://studyhabitcollege.onrender.com/api/parents/me/summary`, config);
+        const announcementsResponse = await axios.get(`https://studyhabitcollege.onrender.com/dashboard/announcements`, config);
+
+        // ⭐ Combine data from both responses into the ParentDashboardData structure ⭐
+        setParentData({
+          children: childrenSummaryResponse.data.children || [], // Assumes children are in a 'children' property
+          importantAnnouncements: announcementsResponse.data || [], // Assumes announcements are directly the response data
+        });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
@@ -157,7 +160,10 @@ const ParentDashboardOverview: React.FC = () => {
                 <motion.div variants={itemVariants} key={child._id} className="bg-white p-6 rounded-lg shadow-md border border-blue-200 hover:shadow-xl transition-shadow duration-300">
                   <div className="flex items-center mb-4">
                     <img
-                      src={child.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(child.firstName + ' ' + child.lastName)}&chars=2&fontFamily=Arial,sans-serif&fontWeight=600`} // Improved avatar placeholder
+                      // The 'src' attribute correctly prioritizes child.avatarUrl.
+                      // If child.avatarUrl is a valid non-empty string, it will be used.
+                      // Otherwise, it falls back to the DiceBear initials generator.
+                      src={child.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(child.firstName + ' ' + child.lastName)}&chars=2&fontFamily=Arial,sans-serif&fontWeight=600`}
                       alt={`${child.firstName || 'Unknown'} ${child.lastName || ''} Avatar`}
                       className="w-16 h-16 rounded-full object-cover mr-4"
                     />
