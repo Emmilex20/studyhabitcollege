@@ -282,8 +282,9 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
                 disabled={loadingDynamicData}
               >
                 {loadingDynamicData && <option value="" disabled>Loading year levels...</option>}
-                {!loadingDynamicData && dynamicYearLevels.length === 0 && <option value="" disabled>No year levels available</option>}
-                {dynamicYearLevels.map(level => (
+                {!loadingDynamicData && dynamicYearLevels?.length === 0 && <option value="" disabled>No year levels available</option>}
+                {/* Added optional chaining here */}
+                {dynamicYearLevels?.map(level => (
                   <option key={level} value={level}>{level}</option>
                 ))}
               </select>
@@ -304,8 +305,9 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
               >
                 {loadingDynamicData && <option value="" disabled>Loading academic years...</option>}
                 <option value="">Select Academic Year</option> {/* Keep for single select, allows no selection */}
-                {!loadingDynamicData && dynamicAcademicYears.length === 0 && <option value="" disabled>No academic years available</option>}
-                {dynamicAcademicYears.map(year => (
+                {!loadingDynamicData && dynamicAcademicYears?.length === 0 && <option value="" disabled>No academic years available</option>}
+                {/* Added optional chaining here */}
+                {dynamicAcademicYears?.map(year => (
                   <option key={year} value={year}>{year}</option>
                 ))}
               </select>
@@ -328,8 +330,9 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
                 disabled={loadingDynamicData}
               >
                 {loadingDynamicData && <option value="" disabled>Loading terms...</option>}
-                {!loadingDynamicData && dynamicTerms.length === 0 && <option value="" disabled>No terms available</option>}
-                {dynamicTerms.map(termOption => (
+                {!loadingDynamicData && dynamicTerms?.length === 0 && <option value="" disabled>No terms available</option>}
+                {/* Added optional chaining here */}
+                {dynamicTerms?.map(termOption => (
                   <option key={termOption} value={termOption}>{termOption}</option>
                 ))}
               </select>
@@ -362,8 +365,9 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
               >
                 {loadingDynamicData && <option value="" disabled>Loading teachers...</option>}
                 <option value="">Select Teacher (Optional)</option>
-                {!loadingDynamicData && teachers.length === 0 && <option value="" disabled>No teachers available</option>}
-                {teachers.map(teacher => (
+                {!loadingDynamicData && teachers?.length === 0 && <option value="" disabled>No teachers available</option>}
+                {/* Added optional chaining here */}
+                {teachers?.map(teacher => (
                   <option key={teacher._id} value={teacher._id}>
                     {teacher.firstName} {teacher.lastName} ({teacher.email})
                   </option>
