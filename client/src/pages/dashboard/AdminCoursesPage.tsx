@@ -2,18 +2,22 @@
 // src/pages/dashboard/AdminCoursesPage.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { useAuth } from '../../context/AuthContext';
-import { motion, AnimatePresence, type Variants } from 'framer-motion'; // Import AnimatePresence and Variants
-import CourseFormModal from '../../components/modals/CourseFormModal'; // Assuming this component is also well-styled
+import { useAuth } from '../../context/AuthContext'; // Ensure this path is correct
+import { motion, AnimatePresence, type Variants } from 'framer-motion';
+import CourseFormModal from '../../components/modals/CourseFormModal';
 
+// CORRECTED Course Interface:
+// It's highly recommended to import this from a shared types file
+// (e.g., import { Course } from '../../types';)
+// For demonstration, I'm correcting it directly here, but a shared file is better.
 interface Course {
   _id: string;
   name: string;
   code: string;
   description?: string;
-  yearLevel: string;
+  yearLevel: string[]; // <--- CHANGED from string to string[]
   academicYear?: string;
-  term?: string;
+  term: string[]; // <--- CHANGED from string to string[]
   teacher?: {
     _id: string;
     firstName: string;
@@ -34,7 +38,7 @@ const AdminCoursesPage: React.FC = () => {
   // Framer Motion Variants for page entry
   const pageVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] } }, // Using easeOut cubic-bezier
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] } },
   };
 
   // Framer Motion Variants for table rows
@@ -45,7 +49,7 @@ const AdminCoursesPage: React.FC = () => {
   };
 
   const fetchCourses = useCallback(async () => {
-    if (!userInfo?.token || userInfo.role !== 'admin') { // Ensure only admins can access
+    if (!userInfo?.token || userInfo.role !== 'admin') {
       setError('You are not authorized to view this page. Admin access required.');
       setLoading(false);
       return;
@@ -53,21 +57,31 @@ const AdminCoursesPage: React.FC = () => {
 
     try {
       setLoading(true);
-      setError(null); // Clear previous errors
+      setError(null);
       const config = {
         headers: {
           Authorization: `Bearer ${userInfo.token}`,
         },
       };
       const { data } = await axios.get('https://studyhabitcollege.onrender.com/api/courses', config);
-      setCourses(data);
+
+      // Map over the fetched data to ensure yearLevel and term are arrays,
+      // especially if your backend might still return them as single strings for old data.
+      // This is a defensive measure. Ideally, your backend should enforce the array type.
+      const transformedCourses = data.map((course: any) => ({
+        ...course,
+        yearLevel: Array.isArray(course.yearLevel) ? course.yearLevel : (course.yearLevel ? [course.yearLevel] : []),
+        term: Array.isArray(course.term) ? course.term : (course.term ? [course.term] : []),
+      }));
+
+      setCourses(transformedCourses);
     } catch (err: any) {
       console.error('Error fetching courses:', err);
       setError(err.response?.data?.message || 'Failed to fetch courses. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [userInfo?.token, userInfo?.role]); // Added userInfo.role to dependency array
+  }, [userInfo?.token, userInfo?.role]);
 
   useEffect(() => {
     fetchCourses();
@@ -96,7 +110,7 @@ const AdminCoursesPage: React.FC = () => {
     }
 
     if (window.confirm(`Are you sure you want to delete course: "${courseName}"? This action cannot be undone.`)) {
-      setDeleteLoading(courseId); // Set loading state for the specific course's delete button
+      setDeleteLoading(courseId);
 
       try {
         const config = {
@@ -106,13 +120,13 @@ const AdminCoursesPage: React.FC = () => {
         };
         await axios.delete(`https://studyhabitcollege.onrender.com/api/courses/${courseId}`, config);
         await fetchCourses(); // Re-fetch courses to update the list
-        alert('Course deleted successfully!'); // User feedback
+        alert('Course deleted successfully!');
       } catch (err: any) {
         console.error('Error deleting course:', err);
         setError(err.response?.data?.message || 'Failed to delete course.');
         alert(`Error deleting course: ${err.response?.data?.message || 'Please try again.'}`);
       } finally {
-        setDeleteLoading(null); // Clear loading state
+        setDeleteLoading(null);
       }
     }
   };
@@ -201,13 +215,13 @@ const AdminCoursesPage: React.FC = () => {
                     Description
                   </th>
                   <th className="px-5 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
-                    Year Level
+                    Year Level(s)
                   </th>
                   <th className="px-5 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
                     Acad. Year
                   </th>
                   <th className="px-5 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Term
+                    Term(s)
                   </th>
                   <th className="px-5 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
                     Assigned Teacher
@@ -237,17 +251,19 @@ const AdminCoursesPage: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-5 py-4 text-sm text-gray-700 max-w-xs overflow-hidden text-ellipsis whitespace-nowrap"
-                          title={course.description}> {/* Add title for full description on hover */}
+                          title={course.description}>
                         {course.description || 'N/A'}
                       </td>
+                      {/* Display yearLevel as comma-separated string */}
                       <td className="px-5 py-4 text-sm text-gray-700 whitespace-nowrap">
-                        {course.yearLevel}
+                        {Array.isArray(course.yearLevel) ? course.yearLevel.join(', ') : course.yearLevel || 'N/A'}
                       </td>
                       <td className="px-5 py-4 text-sm text-gray-700 whitespace-nowrap">
                         {course.academicYear || 'N/A'}
                       </td>
+                      {/* Display term as comma-separated string */}
                       <td className="px-5 py-4 text-sm text-gray-700 whitespace-nowrap">
-                        {course.term || 'N/A'}
+                        {Array.isArray(course.term) ? course.term.join(', ') : course.term || 'N/A'}
                       </td>
                       <td className="px-5 py-4 text-sm text-gray-700 whitespace-nowrap">
                         {course.teacher ? (
