@@ -13,8 +13,7 @@ interface Student {
   dateOfBirth: string;
   gender: string;
   currentClass?: string;
-  // ⭐ Add currentTerm to the Student interface ⭐
-  currentTerm?: string;
+  currentTerm?: string; // This will now be one of the predefined terms
   enrolledCourses: { _id: string; name: string; code: string }[];
   parent?: { _id: string; firstName: string; lastName: string; email: string };
 }
@@ -49,22 +48,25 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
 }) => {
   const { userInfo } = useAuth();
   const [formData, setFormData] = useState({
-    userId: '', // For associating with an existing user (admin add)
+    userId: '',
     studentId: '',
     dateOfBirth: '',
     gender: '',
     currentClass: '',
-    // ⭐ Add currentTerm to the formData state ⭐
-    currentTerm: '',
-    enrolledCourses: [] as string[], // Array of course IDs
-    parentId: '', // For associating with an existing parent user
+    currentTerm: '', // This will hold the selected term from the dropdown
+    enrolledCourses: [] as string[],
+    parentId: '',
   });
-  const [studentUsers, setStudentUsers] = useState<UserOption[]>([]); // Available student users for association
-  const [parentUsers, setParentUsers] = useState<UserOption[]>([]); // Available parent users for association
-  const [allCourses, setAllCourses] = useState<CourseOption[]>([]); // All available courses
-  const [loadingDependencies, setLoadingDependencies] = useState(true); // Loading state for initial data fetch
-  const [isSubmitting, setIsSubmitting] = useState(false); // Submitting state for form
-  const [error, setError] = useState<string | null>(null); // Error message state
+  const [studentUsers, setStudentUsers] = useState<UserOption[]>([]);
+  const [parentUsers, setParentUsers] = useState<UserOption[]>([]);
+  const [allCourses, setAllCourses] = useState<CourseOption[]>([]);
+  const [loadingDependencies, setLoadingDependencies] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Define your term options
+  const termOptions = ['First Term', 'Second Term', 'Third Term'];
+
 
   // --- Effects ---
 
@@ -74,11 +76,10 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
       setFormData({
         userId: studentToEdit.user._id,
         studentId: studentToEdit.studentId,
-        dateOfBirth: studentToEdit.dateOfBirth.split('T')[0], // Format for HTML date input
+        dateOfBirth: studentToEdit.dateOfBirth.split('T')[0],
         gender: studentToEdit.gender,
         currentClass: studentToEdit.currentClass || '',
-        // ⭐ Populate currentTerm when editing ⭐
-        currentTerm: studentToEdit.currentTerm || '',
+        currentTerm: studentToEdit.currentTerm || '', // Ensure term is pre-selected if available
         enrolledCourses: studentToEdit.enrolledCourses.map((c) => c._id),
         parentId: studentToEdit.parent?._id || '',
       });
@@ -90,14 +91,13 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
         dateOfBirth: '',
         gender: '',
         currentClass: '',
-        // ⭐ Reset currentTerm for new student ⭐
-        currentTerm: '',
+        currentTerm: '', // Reset term for new student
         enrolledCourses: [],
         parentId: '',
       });
     }
     setError(null); // Clear any previous errors
-  }, [studentToEdit, isOpen]); // Re-run when editing student changes or modal opens/closes
+  }, [studentToEdit, isOpen]);
 
   // Effect to fetch available student users, parent users, and courses
   useEffect(() => {
@@ -117,7 +117,6 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
           'https://studyhabitcollege.onrender.com/api/users',
           config
         );
-        // Filter users based on their roles
         setStudentUsers(usersData.filter((u: UserOption) => u.role === 'student'));
         setParentUsers(usersData.filter((u: UserOption) => u.role === 'parent'));
 
@@ -126,7 +125,7 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
           config
         );
         setAllCourses(coursesData);
-        setError(null); // Clear errors if fetch is successful
+        setError(null);
       } catch (err: any) {
         console.error('Failed to fetch dependencies (users/courses):', err);
         setError(
@@ -137,14 +136,13 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
       }
     };
 
-    if (isOpen) { // Only fetch when the modal is open
+    if (isOpen) {
       fetchDependencies();
     }
-  }, [isOpen, userInfo?.token]); // Depend on isOpen and userInfo.token
+  }, [isOpen, userInfo?.token]);
 
   // --- Handlers ---
 
-  // Handle changes for text and select inputs
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
@@ -152,13 +150,11 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle changes for the multi-select courses input
   const handleCourseChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const options = Array.from(e.target.selectedOptions, (option) => option.value);
     setFormData((prev) => ({ ...prev, enrolledCourses: options }));
   };
 
-  // Handle form submission (create or update student)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -181,35 +177,32 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
       let response;
       const payload: any = {
         studentId: formData.studentId,
-        dateOfBirth: new Date(formData.dateOfBirth).toISOString(), // Ensure ISO string format
+        dateOfBirth: new Date(formData.dateOfBirth).toISOString(),
         gender: formData.gender,
-        currentClass: formData.currentClass || undefined, // Send undefined if empty to avoid empty string
-        // ⭐ Include currentTerm in the payload ⭐
+        currentClass: formData.currentClass || undefined,
         currentTerm: formData.currentTerm || undefined, // Send undefined if empty
         enrolledCourses: formData.enrolledCourses,
-        parentId: formData.parentId === '' ? null : formData.parentId, // Send null if no parent selected
+        parentId: formData.parentId === '' ? null : formData.parentId,
       };
 
-      if (!studentToEdit) { // Only when creating a new student record
+      if (!studentToEdit) {
         if (!formData.userId) {
           setError('Please select an associated student user.');
           setIsSubmitting(false);
           return;
         }
         payload.userId = formData.userId;
-      } else { // When editing, ensure the existing userId is sent back
+      } else {
         payload.userId = studentToEdit.user._id;
       }
 
       if (studentToEdit) {
-        // Update existing student record
         response = await axios.put(
           `https://studyhabitcollege.onrender.com/api/students/${studentToEdit._id}`,
           payload,
           config
         );
       } else {
-        // Create new student record
         response = await axios.post(
           'https://studyhabitcollege.onrender.com/api/students',
           payload,
@@ -217,8 +210,8 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
         );
       }
 
-      onSave(response.data); // Call onSave with the updated/created student data
-      onClose(); // Close modal on success
+      onSave(response.data);
+      onClose();
     } catch (err: any) {
       console.error('Student form submission error:', err);
       if (err.response && err.response.data && err.response.data.message) {
@@ -232,7 +225,7 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
   };
 
   // --- Render ---
-  if (!isOpen) return null; // Don't render anything if modal is not open
+  if (!isOpen) return null;
 
   return (
     <AnimatePresence>
@@ -242,14 +235,14 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center p-4 z-50 overflow-y-auto"
-          onClick={onClose} // Close modal when clicking outside
+          onClick={onClose}
         >
           <motion.div
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 50, opacity: 0 }}
             className="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg my-8"
-            onClick={(e) => e.stopPropagation()} // Prevent click from closing modal
+            onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-2xl font-bold text-blue-800 mb-6 border-b pb-3">
               {studentToEdit ? 'Edit Student Record' : 'Create New Student Record'}
@@ -267,7 +260,6 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* This is the key change: Only hide the dropdown if we are EDITING */}
               {!studentToEdit && (
                 <div>
                   <label htmlFor="userId" className="block text-sm font-medium text-gray-700">
@@ -279,7 +271,7 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
                     value={formData.userId}
                     onChange={handleChange}
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    required // Required when adding a new student
+                    required
                     disabled={loadingDependencies}
                   >
                     <option value="">Select a User with 'Student' Role</option>
@@ -295,7 +287,6 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
                 </div>
               )}
 
-              {/* Display Associated User Info (Read-only when editing) */}
               {studentToEdit && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
@@ -376,20 +367,25 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
                 />
               </div>
 
-              {/* ⭐ New "Current Term" field ⭐ */}
+              {/* ⭐ Modified "Current Term" to a dropdown ⭐ */}
               <div>
                 <label htmlFor="currentTerm" className="block text-sm font-medium text-gray-700">
                   Current Term (Optional)
                 </label>
-                <input
-                  type="text"
+                <select
                   id="currentTerm"
                   name="currentTerm"
                   value={formData.currentTerm}
                   onChange={handleChange}
-                  placeholder="e.g., Fall 2024, Term 1"
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
+                >
+                  <option value="">Select Term</option>
+                  {termOptions.map((term) => (
+                    <option key={term} value={term}>
+                      {term}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Enrolled Courses */}
