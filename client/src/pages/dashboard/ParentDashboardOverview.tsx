@@ -147,57 +147,56 @@ const ParentDashboardOverview: React.FC = () => {
       </p>
 
       <motion.div variants={sectionVariants}>
-        <h3 className="text-2xl font-bold text-blue-900 mb-4">My Children Summary 👧👦</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          {parentData.children.length > 0 ? (
-            parentData.children.slice(0, 2).map((child) => { // Display a few children summary
+  <h3 className="text-2xl font-bold text-blue-900 mb-4">
+    {parentData.children.length === 1 ? 'My Child Summary 👧👦' : 'My Children Summary 👧👦'}
+  </h3>
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+    {parentData.children.length > 0 ? (
+      parentData.children.slice(0, 2).map((child) => { // Display a few children summary
 
-              const displayGPA = typeof child.gpa === 'number' ? child.gpa : null;
-              const displayAttendancePercentage = typeof child.attendancePercentage === 'number' ? child.attendancePercentage : null;
-              const displayLetterGrade = child.letterGrade || 'N/A';
+        const displayGPA = typeof child.gpa === 'number' ? child.gpa : null;
+        const displayAttendancePercentage = typeof child.attendancePercentage === 'number' ? child.attendancePercentage : null;
+        const displayLetterGrade = child.letterGrade || 'N/A';
 
-              return (
-                <motion.div variants={itemVariants} key={child._id} className="bg-white p-6 rounded-lg shadow-md border border-blue-200 hover:shadow-xl transition-shadow duration-300">
-                  <div className="flex items-center mb-4">
-                    <img
-                      // The 'src' attribute correctly prioritizes child.avatarUrl.
-                      // If child.avatarUrl is a valid non-empty string, it will be used.
-                      // Otherwise, it falls back to the DiceBear initials generator.
-                      src={child.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(child.firstName + ' ' + child.lastName)}&chars=2&fontFamily=Arial,sans-serif&fontWeight=600`}
-                      alt={`${child.firstName || 'Unknown'} ${child.lastName || ''} Avatar`}
-                      className="w-16 h-16 rounded-full object-cover mr-4"
-                    />
-                    <div>
-                      <h4 className="text-xl font-semibold text-blue-900">{child.firstName || 'Unknown'} {child.lastName || ''}</h4>
-                      <p className="text-gray-600 text-sm">Student ID: {child.studentId || 'N/A'}</p>
-                    </div>
-                  </div>
-                  <p className="text-gray-700 mb-3">
-                    <span className="font-medium">Overall GPA:</span>{' '}
-                    <span className={`font-bold ${displayGPA !== null && displayGPA >= 3.0 ? 'text-green-600' : displayGPA !== null && displayGPA >= 2.0 ? 'text-yellow-600' : 'text-red-600'}`}>
-                      {displayGPA !== null ? displayGPA.toFixed(2) : 'N/A'} ({displayLetterGrade})
-                    </span>
-                  </p>
-                  <p className="text-gray-700 mb-4">
-                    <span className="font-medium">Attendance:</span>{' '}
-                    <span className="font-bold text-blue-600">
-                      {displayAttendancePercentage !== null ? `${displayAttendancePercentage}%` : 'N/A'}
-                    </span>
-                  </p>
-                  <Link to={`/dashboard/children/${child._id}/grades`} className="text-blue-600 hover:underline text-sm">
-                    View Full Details <i className="fas fa-external-link-alt ml-1"></i>
-                  </Link>
-                </motion.div>
-              );
-            })
-          ) : (
-            <p className="text-gray-600 col-span-full">No children linked to this account. 😟</p>
-          )}
-        </div>
-        <Link to="/dashboard/children" className="text-blue-600 hover:underline text-md font-semibold mt-4 block text-center">
-          View All Children's Records <i className="fas fa-arrow-right ml-2"></i>
-        </Link>
-      </motion.div>
+        return (
+          <motion.div variants={itemVariants} key={child._id} className="bg-white p-6 rounded-lg shadow-md border border-blue-200 hover:shadow-xl transition-shadow duration-300">
+            <div className="flex items-center mb-4">
+              <img
+                src={child.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(child.firstName + ' ' + child.lastName)}&chars=2&fontFamily=Arial,sans-serif&fontWeight=600`}
+                alt={`${child.firstName || 'Unknown'} ${child.lastName || ''} Avatar`}
+                className="w-16 h-16 rounded-full object-cover mr-4"
+              />
+              <div>
+                <h4 className="text-xl font-semibold text-blue-900">{child.firstName || 'Unknown'} {child.lastName || ''}</h4>
+                <p className="text-gray-600 text-sm">Student ID: {child.studentId || 'N/A'}</p>
+              </div>
+            </div>
+            <p className="text-gray-700 mb-3">
+              <span className="font-medium">Overall GPA:</span>{' '}
+              <span className={`font-bold ${displayGPA !== null && displayGPA >= 3.0 ? 'text-green-600' : displayGPA !== null && displayGPA >= 2.0 ? 'text-yellow-600' : 'text-red-600'}`}>
+                {displayGPA !== null ? displayGPA.toFixed(2) : 'N/A'} ({displayLetterGrade})
+              </span>
+            </p>
+            <p className="text-gray-700 mb-4">
+              <span className="font-medium">Attendance:</span>{' '}
+              <span className="font-bold text-blue-600">
+                {displayAttendancePercentage !== null ? `${displayAttendancePercentage}%` : 'N/A'}
+              </span>
+            </p>
+            <Link to={`/dashboard/children/${child._id}/grades`} className="text-blue-600 hover:underline text-sm">
+                View Full Details <i className="fas fa-external-link-alt ml-1"></i>
+            </Link>
+          </motion.div>
+        );
+      })
+    ) : (
+      <p className="text-gray-600 col-span-full">No children linked to this account. 😟</p>
+    )}
+  </div>
+  <Link to="/dashboard/children" className="text-blue-600 hover:underline text-md font-semibold mt-4 block text-center">
+    View All Children's Records <i className="fas fa-arrow-right ml-2"></i>
+  </Link>
+</motion.div>
 
       <motion.div variants={sectionVariants} initial="hidden" animate="visible" className="mt-10">
         <h3 className="text-2xl font-bold text-blue-900 mb-4">Important Announcements 📢</h3>

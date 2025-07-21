@@ -157,7 +157,9 @@ const ParentChildrenPage: React.FC = () => {
       className="parent-children-page p-4 sm:p-6 bg-gray-50 min-h-screen"
     >
       <h2 className="text-3xl sm:text-4xl font-extrabold text-blue-800 mb-6 flex items-center">
-        <i className="fas fa-users mr-3 text-purple-500"></i> My Children
+        <i className="fas fa-users mr-3 text-purple-500"></i>{' '}
+        {/* ⭐ FIXED: Using `children.length` instead of `parentData.children.length` ⭐ */}
+        {children.length === 1 ? 'My Child' : 'My Children'}
       </h2>
 
       {children.length === 0 ? (
@@ -219,21 +221,21 @@ const ParentChildrenPage: React.FC = () => {
                         <p className="text-base text-gray-700 flex items-center">
                           <i className="fas fa-book-open text-green-500 mr-2"></i> Courses: <span className="font-semibold ml-auto">{child.enrolledCourses.length > 0 ? child.enrolledCourses.length : '0'}</span>
                         </p>
-                        {typeof displayGradeAverage === 'number' && (
-                          <p className="text-base text-gray-700 flex items-center">
-                            <i className="fas fa-percent text-yellow-500 mr-2"></i> Grade Avg: <span className="font-bold ml-auto text-yellow-700">{displayGradeAverage.toFixed(1)}%</span>
-                          </p>
-                        )}
-                         {typeof displayGPA === 'number' && (
-                          <p className="text-base text-gray-700 flex items-center">
-                            <i className="fas fa-graduation-cap text-indigo-500 mr-2"></i> GPA: <span className="font-bold ml-auto text-indigo-700">{displayGPA.toFixed(2)}</span>
-                          </p>
-                        )}
-                        {typeof displayAttendancePercentage === 'number' && (
-                          <p className="text-base text-gray-700 flex items-center">
-                            <i className="fas fa-calendar-check text-purple-500 mr-2"></i> Attendance: <span className="font-bold ml-auto text-purple-700">{displayAttendancePercentage.toFixed(1)}%</span>
-                          </p>
-                        )}
+                          {typeof displayGradeAverage === 'number' && (
+                            <p className="text-base text-gray-700 flex items-center">
+                              <i className="fas fa-percent text-yellow-500 mr-2"></i> Grade Avg: <span className="font-bold ml-auto text-yellow-700">{displayGradeAverage.toFixed(1)}%</span>
+                            </p>
+                          )}
+                            {typeof displayGPA === 'number' && (
+                            <p className="text-base text-gray-700 flex items-center">
+                              <i className="fas fa-graduation-cap text-indigo-500 mr-2"></i> GPA: <span className="font-bold ml-auto text-indigo-700">{displayGPA.toFixed(2)}</span>
+                            </p>
+                          )}
+                          {typeof displayAttendancePercentage === 'number' && (
+                            <p className="text-base text-gray-700 flex items-center">
+                              <i className="fas fa-calendar-check text-purple-500 mr-2"></i> Attendance: <span className="font-bold ml-auto text-purple-700">{displayAttendancePercentage.toFixed(1)}%</span>
+                            </p>
+                          )}
                       </div>
 
                       {/* This "Selected" tag is for visual feedback if a child is selected from the list and the detail view is active */}

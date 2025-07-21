@@ -1,14 +1,39 @@
 // src/pages/DashboardPage.tsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, easeOut, type Variants } from 'framer-motion';
-import { useAuth } from '../context/AuthContext'; // Assuming you have an AuthContext
+import { useAuth } from '../context/AuthContext';
 import { Link, Outlet, useLocation } from 'react-router-dom';
+import axios from 'axios';
 
 const DashboardPage: React.FC = () => {
-  const { userInfo, logout } = useAuth(); // Destructure logout from useAuth
-  const location = useLocation(); // To highlight active sidebar link
+  const { userInfo, logout } = useAuth();
+  const location = useLocation();
+  const [childrenCount, setChildrenCount] = useState<number | null>(null);
 
-  // If user info isn't available, show a loading/not authenticated message
+  useEffect(() => {
+    const fetchChildrenData = async () => {
+      if (userInfo && userInfo.role === 'parent' && userInfo.token) {
+        try {
+          const config = {
+            headers: {
+              Authorization: `Bearer ${userInfo.token}`,
+            },
+            withCredentials: true,
+          };
+          const response = await axios.get('https://studyhabitcollege.onrender.com/api/parents/me/children', config);
+          setChildrenCount(response.data.children?.length || 0);
+        } catch (error) {
+          console.error('Failed to fetch children count:', error);
+          setChildrenCount(0);
+        }
+      } else {
+        setChildrenCount(null);
+      }
+    };
+
+    fetchChildrenData();
+  }, [userInfo]);
+
   if (!userInfo) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-100 to-blue-100 p-6">
@@ -25,8 +50,7 @@ const DashboardPage: React.FC = () => {
     );
   }
 
-  // Define sidebar links based on user role
-  const getSidebarLinks = (role: string) => {
+  const getSidebarLinks = (role: string, count: number | null) => {
     switch (role) {
       case 'admin':
         return [
@@ -62,20 +86,22 @@ const DashboardPage: React.FC = () => {
           { name: 'Events', path: '/dashboard/events', icon: 'fas fa-calendar-alt' },
           { name: 'Settings', path: '/dashboard/settings', icon: 'fas fa-cog' },
         ];
-      case 'parent':
+      case 'parent': { // ⭐ Added curly braces here to create a new block scope ⭐
+        const childrenLinkName: "My Child" | "My Children" = count === 1 ? 'My Child' : 'My Children';
         return [
           { name: 'Overview', path: '/dashboard', icon: 'fas fa-tachometer-alt' },
-          { name: 'My Children', path: '/dashboard/children', icon: 'fas fa-child' },
+          { name: childrenLinkName, path: '/dashboard/children', icon: 'fas fa-child' },
           { name: 'Announcements', path: '/dashboard/announcements', icon: 'fas fa-bullhorn' },
           { name: 'Events', path: '/dashboard/events', icon: 'fas fa-calendar-alt' },
           { name: 'Settings', path: '/dashboard/settings', icon: 'fas fa-cog' },
         ];
+      } // ⭐ Closing curly brace ⭐
       default:
         return [{ name: 'Overview', path: '/dashboard', icon: 'fas fa-tachometer-alt' }];
     }
   };
 
-  const sidebarLinks = getSidebarLinks(userInfo.role);
+  const sidebarLinks = getSidebarLinks(userInfo.role, childrenCount);
 
   // Animation variants for main content
   const contentVariants: Variants = {
@@ -168,7 +194,7 @@ const DashboardPage: React.FC = () => {
           <p className="font-bold text-2xl mb-1 text-white truncate">{userInfo.firstName} {userInfo.lastName}</p>
           <p className="text-xs text-blue-400 italic truncate">{userInfo.email}</p>
           <button
-            onClick={logout} 
+            onClick={logout}
             className="mt-4 w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 shadow-md"
           >
             Logout <i className="fas fa-sign-out-alt ml-2"></i>
@@ -184,7 +210,7 @@ const DashboardPage: React.FC = () => {
         </h1>
         <AnimatePresence mode='wait'>
           <motion.div
-            key={location.pathname} // Key change forces re-render and animation on route change
+            key={location.pathname}
             variants={contentVariants}
             initial="hidden"
             animate="visible"
@@ -196,7 +222,7 @@ const DashboardPage: React.FC = () => {
               <i className="fas fa-lightbulb absolute -top-10 -left-10 text-9xl text-yellow-200 transform rotate-45"></i>
               <i className="fas fa-cogs absolute -bottom-10 -right-10 text-9xl text-blue-200 transform -rotate-45"></i>
             </div>
-            <Outlet /> {/* This is where the nested route components will render */}
+            <Outlet />
           </motion.div>
         </AnimatePresence>
       </main>
