@@ -1,5 +1,4 @@
-// src/pages/dashboard/parent/ParentChildrenPage.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react'; // Import useRef
 import { Link, Outlet, useNavigate, useLocation, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { motion, AnimatePresence, easeOut } from 'framer-motion';
@@ -29,6 +28,8 @@ const ParentChildrenPage: React.FC = () => {
   const [children, setChildren] = useState<Child[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  // ⭐ New state to control initial navigation ⭐
+  const hasNavigatedInitially = useRef(false); // Using useRef to persist value without re-renders
 
   const { userInfo } = useAuth();
   const navigate = useNavigate();
@@ -61,14 +62,18 @@ const ParentChildrenPage: React.FC = () => {
         const fetchedChildren: Child[] = response.data.children || [];
         setChildren(fetchedChildren);
 
-        // ⭐ THE CRITICAL FIX IS HERE ⭐
-        // Only navigate to the first child's grades if:
-        // 1. There's no studentId in the URL (meaning we're on the base /dashboard/children)
-        // 2. We have children to display
-        // 3. The current path is EXACTLY '/dashboard/children'
-        // This prevents the redirect from happening when a nested route is already active.
-        if (!studentId && fetchedChildren.length > 0 && location.pathname === '/dashboard/children') {
+        // ⭐ Modified navigation logic ⭐
+        // Only attempt initial navigation if we haven't already AND
+        // if we are currently at the base /dashboard/children route AND
+        // if there are children to display.
+        if (
+          !hasNavigatedInitially.current && // Check the ref value
+          !studentId && // No student ID in URL
+          fetchedChildren.length > 0 && // Children exist
+          location.pathname === '/dashboard/children' // At the base path
+        ) {
           navigate(`/dashboard/children/${fetchedChildren[0]._id}/grades`, { replace: true });
+          hasNavigatedInitially.current = true; // Set the flag to true after navigation
         } else if (studentId && !fetchedChildren.some(child => child._id === studentId)) {
           // If studentId in URL is not valid for this parent, navigate away or show error
           console.warn(`Attempted to access invalid child ID: ${studentId}. Navigating to children list.`);
@@ -82,6 +87,8 @@ const ParentChildrenPage: React.FC = () => {
         console.error('Error fetching children:', err.response?.data?.message || err.message, err);
         setError(err.response?.data?.message || 'Failed to load children. Please try again.');
         setChildren([]);
+        // Reset navigation flag if there's an error and no children are loaded
+        hasNavigatedInitially.current = false;
       } finally {
         setLoading(false);
       }
@@ -94,7 +101,7 @@ const ParentChildrenPage: React.FC = () => {
       setError('You must be logged in to view your children\'s profiles.');
       setChildren([]);
     }
-  }, [userInfo, studentId, location.pathname, navigate]); // Add studentId to dependencies
+  }, [userInfo, studentId, location.pathname, navigate]); // Dependencies remain the same
 
   // Framer Motion variants
   const pageVariants = {
