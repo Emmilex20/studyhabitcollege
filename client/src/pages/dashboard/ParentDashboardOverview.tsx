@@ -1,6 +1,6 @@
 // src/pages/dashboard/parent/ParentDashboardOverview.tsx
 import React, { useState, useEffect } from 'react';
-import { motion, easeOut } from 'framer-motion'; // Import easeOut here
+import { motion, easeOut } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
@@ -17,13 +17,15 @@ interface ChildSummary {
   avatarUrl?: string;
 }
 
+interface Announcement { // Define an interface for Announcement
+  title: string;
+  content: string;
+  date: string;
+}
+
 interface ParentDashboardData {
   children: ChildSummary[];
-  importantAnnouncements?: Array<{
-    title: string;
-    content: string;
-    date: string; // Add date for announcements if available
-  }>;
+  importantAnnouncements?: Announcement[]; // Use the Announcement interface
 }
 
 const sectionVariants = {
@@ -33,7 +35,7 @@ const sectionVariants = {
     y: 0,
     transition: {
       duration: 0.6,
-      ease: easeOut, // Use the imported easeOut function
+      ease: easeOut,
       when: 'beforeChildren',
       staggerChildren: 0.1,
     },
@@ -42,7 +44,7 @@ const sectionVariants = {
 
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: easeOut } }, // Use the imported easeOut function
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: easeOut } },
 };
 
 const ParentDashboardOverview: React.FC = () => {
@@ -67,25 +69,20 @@ const ParentDashboardOverview: React.FC = () => {
           },
           withCredentials: true,
         };
-        // This endpoint should provide a summary, not necessarily all detailed child data
-        // You might need to create a new backend endpoint for parent dashboard overview data
-        // For now, let's use the children endpoint and structure the response
-        const response = await axios.get(`https://studyhabitcollege.onrender.com/api/parents/me/summary`, config); // Assuming a new summary endpoint
-        // Mock data if the above endpoint doesn't exist yet, for demonstration
-        const mockResponseData: ParentDashboardData = {
-          children: response.data.children || [], // Assume children array is part of summary
-          importantAnnouncements: [
-            { title: 'Parent-Teacher Conference Sign-ups', content: 'Sign-ups for fall conferences are now open until Oct 30th. Check the events calendar for details.', date: '2025-10-15' },
-            { title: 'School Holiday Reminder', content: 'No school on November 11th for Veterans Day.', date: '2025-10-20' },
-          ],
-        };
-        setParentData(mockResponseData);
+        // Ensure your backend endpoint `/api/parents/me/summary`
+        // returns both `children` and `importantAnnouncements` in its response.
+        const response = await axios.get(`https://studyhabitcollege.onrender.com/api/parents/me/summary`, config);
+
+        // ⭐ REMOVE THE MOCK DATA ASSIGNMENT ⭐
+        // Directly use response.data if your API returns the expected structure
+        setParentData(response.data); // Assuming response.data is already ParentDashboardData type
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         console.error('Error fetching parent overview data:', err.response?.data?.message || err.message);
         setError(err.response?.data?.message || 'Failed to load parent overview data. Please try again.');
-        setParentData({ children: [], importantAnnouncements: [] }); // Set empty to avoid render errors
+        // Set to empty arrays to prevent rendering errors if data is missing
+        setParentData({ children: [], importantAnnouncements: [] });
       } finally {
         setLoading(false);
       }
@@ -120,6 +117,8 @@ const ParentDashboardOverview: React.FC = () => {
   }
 
   if (!parentData) {
+    // This case ideally shouldn't be reached if `setParentData` always sets an object,
+    // even an empty one, in the catch block. But it's a good safeguard.
     return (
       <motion.div
         initial="hidden"
@@ -149,9 +148,6 @@ const ParentDashboardOverview: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {parentData.children.length > 0 ? (
             parentData.children.slice(0, 2).map((child) => { // Display a few children summary
-              const firstInitial = child.firstName?.[0] || '';
-              const lastInitial = child.lastName?.[0] || '';
-              const initials = firstInitial + lastInitial;
 
               const displayGPA = typeof child.gpa === 'number' ? child.gpa : null;
               const displayAttendancePercentage = typeof child.attendancePercentage === 'number' ? child.attendancePercentage : null;
@@ -161,7 +157,7 @@ const ParentDashboardOverview: React.FC = () => {
                 <motion.div variants={itemVariants} key={child._id} className="bg-white p-6 rounded-lg shadow-md border border-blue-200 hover:shadow-xl transition-shadow duration-300">
                   <div className="flex items-center mb-4">
                     <img
-                      src={child.avatarUrl || `https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRISxBTQ88B9PvlreCwRY0_wqZK7y4XoG4zIQ&s${initials}`}
+                      src={child.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(child.firstName + ' ' + child.lastName)}&chars=2&fontFamily=Arial,sans-serif&fontWeight=600`} // Improved avatar placeholder
                       alt={`${child.firstName || 'Unknown'} ${child.lastName || ''} Avatar`}
                       className="w-16 h-16 rounded-full object-cover mr-4"
                     />
@@ -182,7 +178,6 @@ const ParentDashboardOverview: React.FC = () => {
                       {displayAttendancePercentage !== null ? `${displayAttendancePercentage}%` : 'N/A'}
                     </span>
                   </p>
-                  {/* Link to the ParentChildrenPage to see full details or specific grades/attendance */}
                   <Link to={`/dashboard/children/${child._id}/grades`} className="text-blue-600 hover:underline text-sm">
                     View Full Details <i className="fas fa-external-link-alt ml-1"></i>
                   </Link>
