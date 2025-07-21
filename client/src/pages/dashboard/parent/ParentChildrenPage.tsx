@@ -50,7 +50,7 @@ const ParentChildrenPage: React.FC = () => {
           withCredentials: true,
         };
         const response = await axios.get('https://studyhabitcollege.onrender.com/api/parents/me/children', config);
-        setChildren(response.data);
+        setChildren(response.data.children || []);
 
         if (response.data.length > 0) {
           const firstChildId = response.data[0]._id;
