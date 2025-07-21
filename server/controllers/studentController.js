@@ -462,6 +462,7 @@ const getLettersGradeFromGPA = (gpa) => {
 };
 
 const getMyChildren = asyncHandler(async (req, res) => {
+    console.log("Logged-in parent's user ID (req.user._id):", req.user._id);
     // req.user._id is the ObjectId of the Parent User
     // Find students where the 'parent' field matches the logged-in parent's user ID
     const children = await Student.find({ parent: req.user._id })
