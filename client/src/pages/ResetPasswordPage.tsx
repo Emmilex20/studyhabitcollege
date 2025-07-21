@@ -17,8 +17,6 @@ const ResetPasswordPage: React.FC = () => {
   const { token } = useParams<{ token: string }>(); // Get token from URL params
 
   useEffect(() => {
-    // You might want to do an initial check of the token's validity here
-    // by sending a request to the backend. For now, we'll just rely on the form submission.
     if (!token) {
       setError('Invalid or missing reset token.');
     }
@@ -49,10 +47,10 @@ const ResetPasswordPage: React.FC = () => {
         },
       };
 
-      // Replace with your actual backend endpoint for password reset
-      const { data } = await axios.post(
-        `https://studyhabitcollege.onrender.com/api/auth/reset-password/${token}`, // ✨ Your backend endpoint for reset password ✨
-        { password },
+      // ✨ CHANGE THIS LINE FROM axios.post TO axios.put ✨
+      const { data } = await axios.put(
+        `https://studyhabitcollege.onrender.com/api/auth/reset-password/${token}`,
+        { password }, // The data to send in the request body
         config
       );
 
@@ -99,13 +97,13 @@ const ResetPasswordPage: React.FC = () => {
           </div>
         )}
 
-        {!token && !error && ( // Show a message if no token is found initially
+        {!token && !error && (
             <p className="text-center text-red-600 mb-4">
                 Please use the reset link sent to your email.
             </p>
         )}
 
-        {token && !message && ( // Only show form if token is present and no success message
+        {token && !message && (
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label htmlFor="password" className="block text-gray-700 text-sm font-semibold mb-2">
