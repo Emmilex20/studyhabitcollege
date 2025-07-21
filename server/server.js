@@ -15,6 +15,7 @@ import announcementRoutes from './routes/announcementRoutes.js';
 import parentRoutes from './routes/parentRoutes.js';
 import galleryRoutes from './routes/galleryRoutes.js';
 import enrollmentRoutes from './routes/enrollmentRoutes.js'; // ⬅️ NEW: Import enrollment routes
+import settingRoutes from './routes/settingRoutes.js';
 
 
 dotenv.config();
@@ -57,6 +58,7 @@ console.log('Parent routes initialized.'); // Keep this log for verification
 app.use('/api/gallery', galleryRoutes);
 app.use('/api/enrollments', enrollmentRoutes);
 app.use('/api/chatbot', chatbotRoutes);
+app.use('/api/settings', settingRoutes);
 
 // ----------------------------------------------------
 // 404 Not Found Handler - MUST BE LAST AMONG ROUTES

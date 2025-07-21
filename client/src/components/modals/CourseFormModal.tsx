@@ -3,17 +3,15 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/AuthContext'; // Corrected path based on typical structure
 
 interface Course {
   _id: string;
   name: string;
   code: string;
   description?: string;
-  // Changed to string[] for multi-select
   yearLevel: string[];
-  // Changed to string[] for multi-select
-  academicYear?: string; // Academic year can remain single or become multi-select based on need
+  academicYear?: string;
   term: string[];
   teacher?: { _id: string; firstName: string; lastName: string };
 }
@@ -44,77 +42,104 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
     name: '',
     code: '',
     description: '',
-    // Initialize as empty arrays for multi-select
     yearLevel: [] as string[],
     academicYear: '',
-    // Initialize as empty arrays for multi-select
     term: [] as string[],
     teacher: '',
   });
+
   const [teachers, setTeachers] = useState<TeacherOption[]>([]);
-  const [loadingTeachers, setLoadingTeachers] = useState(true);
+  // State for dynamic data fetched from backend
+  const [dynamicAcademicYears, setDynamicAcademicYears] = useState<string[]>([]);
+  const [dynamicTerms, setDynamicTerms] = useState<string[]>([]);
+  const [dynamicYearLevels, setDynamicYearLevels] = useState<string[]>([]);
+
+  const [loadingDynamicData, setLoadingDynamicData] = useState(true); // Combined loading for all dynamic data
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Define the academic years and terms. You can make this dynamic if needed.
-  const academicYears = ['2023/2024', '2024/2025', '2025/2026', '2026/2027', '2027/2028'];
-  const terms = ['First Term', 'Second Term', 'Third Term'];
-  const yearLevels = ['JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3', 'SSS1', 'SSS2', 'SSS3', 'Year 7', 'Freshman', 'Sophomore', 'Junior', 'Senior', 'Graduate'];
-
-
+  // Effect to populate form when editing an existing course or resetting for a new one
   useEffect(() => {
     if (courseToEdit) {
       setFormData({
         name: courseToEdit.name,
         code: courseToEdit.code,
         description: courseToEdit.description || '',
-        // Ensure yearLevel is an array, even if it comes as a single string from old data
-        yearLevel: Array.isArray(courseToEdit.yearLevel) ? courseToEdit.yearLevel : [courseToEdit.yearLevel],
+        // Ensure yearLevel is an array, handling potential old string formats
+        yearLevel: Array.isArray(courseToEdit.yearLevel) ? courseToEdit.yearLevel : (courseToEdit.yearLevel ? [courseToEdit.yearLevel] : []),
         academicYear: courseToEdit.academicYear || '',
-        // Ensure term is an array
-        term: Array.isArray(courseToEdit.term) ? courseToEdit.term : [courseToEdit.term || ''],
+        // Ensure term is an array, handling potential old string formats
+        term: Array.isArray(courseToEdit.term) ? courseToEdit.term : (courseToEdit.term ? [courseToEdit.term] : []),
         teacher: courseToEdit.teacher?._id || '',
       });
     } else {
+      // Reset form for new course creation
       setFormData({
         name: '',
         code: '',
         description: '',
-        yearLevel: [], // Reset to empty array
+        yearLevel: [],
         academicYear: '',
-        term: [],     // Reset to empty array
+        term: [],
         teacher: '',
       });
     }
-    setError(null);
+    setError(null); // Clear any previous errors
   }, [courseToEdit, isOpen]);
 
+  // Effect to fetch dynamic data (teachers, academic years, terms, year levels)
   useEffect(() => {
-    const fetchTeachers = async () => {
-      if (!userInfo?.token) return;
+    const fetchData = async () => {
+      if (!userInfo?.token) {
+        setError('User not authenticated. Please log in.');
+        return;
+      }
+
+      setLoadingDynamicData(true);
+      setError(null); // Clear previous errors before fetching
+
+      const config = {
+        headers: {
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      };
 
       try {
-        setLoadingTeachers(true);
-        const config = {
-          headers: {
-            Authorization: `Bearer ${userInfo.token}`,
-          },
-        };
-        const { data } = await axios.get('https://studyhabitcollege.onrender.com/api/users?role=teacher', config);
-        setTeachers(data);
-      } catch (err) {
-        console.error('Failed to fetch teachers:', err);
+        // Fetch Teachers
+        const teachersResponse = await axios.get('https://studyhabitcollege.onrender.com/api/users?role=teacher', config);
+        setTeachers(teachersResponse.data);
+
+        // Fetch Academic Years
+        const academicYearsResponse = await axios.get('https://studyhabitcollege.onrender.com/api/settings/academic-years', config);
+        setDynamicAcademicYears(academicYearsResponse.data);
+
+        // Fetch Terms
+        const termsResponse = await axios.get('https://studyhabitcollege.onrender.com/api/settings/terms', config);
+        setDynamicTerms(termsResponse.data);
+
+        // Fetch Year Levels
+        const yearLevelsResponse = await axios.get('https://studyhabitcollege.onrender.com/api/settings/year-levels', config);
+        setDynamicYearLevels(yearLevelsResponse.data);
+
+      } catch (err: any) {
+        console.error('Failed to fetch dynamic data:', err);
+        setError(err.response?.data?.message || 'Failed to load options (academic years, terms, year levels, or teachers). Please try again.');
+        // Optionally, reset dynamic data if fetch fails
+        setTeachers([]);
+        setDynamicAcademicYears([]);
+        setDynamicTerms([]);
+        setDynamicYearLevels([]);
       } finally {
-        setLoadingTeachers(false);
+        setLoadingDynamicData(false);
       }
     };
 
     if (isOpen) {
-      fetchTeachers();
+      fetchData();
     }
-  }, [isOpen, userInfo?.token]);
+  }, [isOpen, userInfo?.token]); // Re-run when modal opens or token changes
 
-  // Modified handleChange to handle both single and multi-selects
+  // Handles changes for all input types, including multi-selects
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -152,30 +177,32 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
       const payload = {
         ...formData,
         teacher: formData.teacher === '' ? null : formData.teacher, // Handle unassigned teacher
-        // yearLevel and term are already arrays in formData, so they are included here
       };
 
       let response;
       if (courseToEdit) {
+        // PUT request for updating
         response = await axios.put(
           `https://studyhabitcollege.onrender.com/api/courses/${courseToEdit._id}`,
           payload,
           config
         );
       } else {
+        // POST request for creating
         response = await axios.post('https://studyhabitcollege.onrender.com/api/courses', payload, config);
       }
 
-      onSave(response.data);
-      onClose();
+      onSave(response.data); // Notify parent component of successful save
+      onClose(); // Close the modal
     } catch (err: any) {
       console.error('Course form submission error:', err);
-      setError(err.response?.data?.message || 'Failed to save course.');
+      setError(err.response?.data?.message || 'Failed to save course. Please check your input.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // Only render the modal if it's open
   if (!isOpen) return null;
 
   return (
@@ -185,24 +212,31 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center p-4 z-50"
-        onClick={onClose}
+        onClick={onClose} // Close modal when clicking outside
       >
         <motion.div
           initial={{ y: -50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 50, opacity: 0 }}
-          className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto" // Added max-h and overflow for long forms
-          onClick={e => e.stopPropagation()}
+          className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto"
+          onClick={e => e.stopPropagation()} // Prevent closing when clicking inside modal content
         >
           <h2 className="text-2xl font-bold text-blue-800 mb-6 border-b pb-3 flex items-center">
             <i className="fas fa-book mr-3 text-indigo-600"></i>
             {courseToEdit ? 'Edit Course' : 'Create New Course'}
           </h2>
 
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-              <strong className="font-bold">Error!</strong>
-              <span className="block sm:inline ml-2">{error}</span>
+          {/* Error and Loading Message Display */}
+          {(error || loadingDynamicData) && (
+            <div className={`
+              ${error ? 'bg-red-100 border-red-400 text-red-700' : 'bg-blue-100 border-blue-400 text-blue-700'}
+              px-4 py-3 rounded relative mb-4
+            `} role="alert">
+              <strong className="font-bold">{error ? 'Error!' : 'Loading Options!'}</strong>
+              <span className="block sm:inline ml-2">
+                {error || 'Fetching academic years, terms, year levels, and teachers...'}
+                {loadingDynamicData && <i className="fas fa-spinner fa-spin ml-2"></i>}
+              </span>
             </div>
           )}
 
@@ -236,7 +270,7 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
               />
             </div>
 
-            {/* Year Level - Now Multi-select */}
+            {/* Year Level - Dynamic and Multi-select */}
             <div>
               <label htmlFor="yearLevel" className="block text-sm font-medium text-gray-700">
                 Year Level(s) <span className="text-red-500">*</span>
@@ -245,19 +279,22 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
               <select
                 id="yearLevel"
                 name="yearLevel"
-                multiple // THIS IS THE KEY CHANGE for multi-select
+                multiple
                 value={formData.yearLevel}
-                onChange={handleChange} // The handleChange function is now smart enough
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-32" // Added height for better multi-select UX
+                onChange={handleChange}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-32"
                 required
+                disabled={loadingDynamicData} 
               >
-                {yearLevels.map(level => (
+                {loadingDynamicData && <option value="" disabled>Loading year levels...</option>}
+                {!loadingDynamicData && dynamicYearLevels.length === 0 && <option value="" disabled>No year levels available</option>}
+                {dynamicYearLevels.map(level => (
                   <option key={level} value={level}>{level}</option>
                 ))}
               </select>
             </div>
 
-            {/* Academic Year Input (remains single-select as per original code's intent) */}
+            {/* Academic Year Input - Dynamic and Single-select */}
             <div>
               <label htmlFor="academicYear" className="block text-sm font-medium text-gray-700">
                 Academic Year
@@ -268,15 +305,18 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
                 value={formData.academicYear}
                 onChange={handleChange}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                disabled={loadingDynamicData}
               >
-                <option value="">Select Academic Year</option>
-                {academicYears.map(year => (
+                {loadingDynamicData && <option value="" disabled>Loading academic years...</option>}
+                <option value="">Select Academic Year</option> {/* Keep for single select, allows no selection */}
+                {!loadingDynamicData && dynamicAcademicYears.length === 0 && <option value="" disabled>No academic years available</option>}
+                {dynamicAcademicYears.map(year => (
                   <option key={year} value={year}>{year}</option>
                 ))}
               </select>
             </div>
 
-            {/* Term - Now Multi-select */}
+            {/* Term - Dynamic and Multi-select */}
             <div>
               <label htmlFor="term" className="block text-sm font-medium text-gray-700">
                 Term(s) <span className="text-red-500">*</span>
@@ -285,14 +325,16 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
               <select
                 id="term"
                 name="term"
-                multiple // THIS IS THE KEY CHANGE for multi-select
+                multiple
                 value={formData.term}
-                onChange={handleChange} // The handleChange function is now smart enough
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-24" // Added height for better multi-select UX
+                onChange={handleChange}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-24"
                 required
+                disabled={loadingDynamicData}
               >
-                <option value="">Select Term(s)</option> {/* Added a default unselected option for clarity */}
-                {terms.map(termOption => (
+                {loadingDynamicData && <option value="" disabled>Loading terms...</option>}
+                {!loadingDynamicData && dynamicTerms.length === 0 && <option value="" disabled>No terms available</option>}
+                {dynamicTerms.map(termOption => (
                   <option key={termOption} value={termOption}>{termOption}</option>
                 ))}
               </select>
@@ -321,11 +363,11 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
                 value={formData.teacher}
                 onChange={handleChange}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                disabled={loadingTeachers}
+                disabled={loadingDynamicData} // Disable if any dynamic data is loading
               >
-                <option value="">
-                  {loadingTeachers ? 'Loading teachers...' : 'Select Teacher (Optional)'}
-                </option>
+                {loadingDynamicData && <option value="" disabled>Loading teachers...</option>}
+                <option value="">Select Teacher (Optional)</option>
+                {!loadingDynamicData && teachers.length === 0 && <option value="" disabled>No teachers available</option>}
                 {teachers.map(teacher => (
                   <option key={teacher._id} value={teacher._id}>
                     {teacher.firstName} {teacher.lastName} ({teacher.email})
@@ -339,13 +381,14 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
                 type="button"
                 onClick={onClose}
                 className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                disabled={isSubmitting} // Disable cancel button during submission
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75"
-                disabled={isSubmitting}
+                disabled={isSubmitting || loadingDynamicData || dynamicYearLevels.length === 0 || formData.yearLevel.length === 0 || formData.term.length === 0}
               >
                 {isSubmitting ? (
                   <>
