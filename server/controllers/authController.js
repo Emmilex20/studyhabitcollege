@@ -72,10 +72,6 @@ const registerUser = async (req, res) => {
 const loginUser = async (req, res) => {
     const { email, password } = req.body;
 
-    console.log('--- Login Attempt Initiated ---');
-    console.log(`[authController:login] Received email: ${email}`);
-    console.log(`[authController:login] Received password (masked): ${password ? '****' : 'empty'}`);
-
     // Basic validation
     if (!email || !password) {
         console.warn('[authController:login] Missing email or password in login request.');

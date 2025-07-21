@@ -24,9 +24,7 @@ import Footer from './components/Footer';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Chatbot from './components/Chatbot';
-
-// ✨ NEW IMPORT: EventDetailPage ✨
-import EventDetailPage from './pages/EventDetailPage'; // Assuming you'll place it in 'src/pages'
+import EventDetailPage from './pages/EventDetailPage'; 
 
 // === ADMIN DASHBOARD PAGES ===
 import AdminUsersPage from './pages/dashboard/AdminUsersPage';
@@ -134,7 +132,7 @@ function App() {
                   path="gallery"
                   element={<ProtectedRoute allowedRoles={['admin']}><GalleryManagement /></ProtectedRoute>}
                 />
-                {/* ⭐ Settings Page (Admin only) ⭐ */}
+                {/* ⭐ Settings Page ⭐ */}
                 <Route
                   path="settings"
                   element={<ProtectedRoute allowedRoles={['admin', 'teacher', 'student', 'parent']}><SettingsPage /></ProtectedRoute>}

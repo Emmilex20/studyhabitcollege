@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext'; // Import useAuth
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'; // Import icons
 
 const RegisterPage: React.FC = () => {
   const [firstName, setFirstName] = useState('');
@@ -14,6 +15,8 @@ const RegisterPage: React.FC = () => {
   const [role, setRole] = useState('student');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // ✨ NEW STATE FOR PASSWORD VISIBILITY ✨
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // ✨ NEW STATE FOR CONFIRM PASSWORD VISIBILITY ✨
   const navigate = useNavigate();
   const { login } = useAuth(); // Use the login function from context (to auto-login after register)
 
@@ -43,7 +46,6 @@ const RegisterPage: React.FC = () => {
 
       login(data); // Auto-login the user after successful registration
       console.log('Registration successful:', data);
-      // alert('Registration successful! You are now logged in.'); // No need for alert, navigate handles it
       navigate('/dashboard'); // Redirect to dashboard
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -53,6 +55,14 @@ const RegisterPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const togglePasswordVisibility = () => { // ✨ NEW FUNCTION FOR PASSWORD ✨
+    setShowPassword(!showPassword);
+  };
+
+  const toggleConfirmPasswordVisibility = () => { // ✨ NEW FUNCTION FOR CONFIRM PASSWORD ✨
+    setShowConfirmPassword(!showConfirmPassword);
   };
 
   return (
@@ -121,31 +131,59 @@ const RegisterPage: React.FC = () => {
             <label htmlFor="password" className="block text-gray-700 text-sm font-semibold mb-2">
               Password
             </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="shadow-sm appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="••••••••"
-              required
-            />
+            <div className="relative"> {/* ✨ ADD RELATIVE CONTAINER ✨ */}
+              <input
+                type={showPassword ? 'text' : 'password'}
+                id="password"
+                name="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="shadow-sm appearance-none border rounded w-full py-3 px-4 pr-10 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="••••••••"
+                required
+              />
+              <button
+                type="button"
+                onClick={togglePasswordVisibility}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-600 hover:text-gray-900 focus:outline-none"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? (
+                  <EyeSlashIcon className="h-5 w-5" />
+                ) : (
+                  <EyeIcon className="h-5 w-5" />
+                )}
+              </button>
+            </div>
           </div>
           <div>
             <label htmlFor="confirmPassword" className="block text-gray-700 text-sm font-semibold mb-2">
               Confirm Password
             </label>
-            <input
-              type="password"
-              id="confirmPassword"
-              name="confirmPassword"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="shadow-sm appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="••••••••"
-              required
-            />
+            <div className="relative"> {/* ✨ ADD RELATIVE CONTAINER ✨ */}
+              <input
+                type={showConfirmPassword ? 'text' : 'password'}
+                id="confirmPassword"
+                name="confirmPassword"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="shadow-sm appearance-none border rounded w-full py-3 px-4 pr-10 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="••••••••"
+                required
+              />
+              <button
+                type="button"
+                onClick={toggleConfirmPasswordVisibility}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-600 hover:text-gray-900 focus:outline-none"
+                aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+              >
+                {showConfirmPassword ? (
+                  <EyeSlashIcon className="h-5 w-5" />
+                ) : (
+                  <EyeIcon className="h-5 w-5" />
+                )}
+              </button>
+            </div>
           </div>
           <div>
             <label htmlFor="role" className="block text-gray-700 text-sm font-semibold mb-2">

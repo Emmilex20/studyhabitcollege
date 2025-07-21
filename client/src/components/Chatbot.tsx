@@ -1,9 +1,8 @@
 // src/components/Chatbot.tsx
 import React, { useState, useRef, useEffect } from 'react';
-import { MdChat } from 'react-icons/md'; // Example icon from react-icons/md
-import './Chatbot.css'; // We'll create this CSS file next
+import { MdChat } from 'react-icons/md'; 
+import './Chatbot.css'; 
 
-// Define Message interface for type safety
 interface Message {
     text: string;
     sender: 'user' | 'bot' | 'bot error';
@@ -32,9 +31,6 @@ const Chatbot: React.FC = () => {
         setInput('');
 
         try {
-            // Replace with your backend URL.
-            // In a production environment, you'd likely use a relative path like '/api/chatbot/message'
-            // or an environment variable for the full URL.
             const response = await fetch('https://studyhabitcollege.onrender.com/api/chatbot/message', {
                 method: 'POST',
                 headers: {
@@ -49,7 +45,7 @@ const Chatbot: React.FC = () => {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const data: { reply: string } = await response.json(); // Type assertion for response data
+            const data: { reply: string } = await response.json();
             const botReply: Message = { text: data.reply, sender: 'bot' };
             setMessages((prevMessages) => [...prevMessages, botReply]);
 

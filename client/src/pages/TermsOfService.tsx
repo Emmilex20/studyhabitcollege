@@ -304,7 +304,7 @@ const TermsOfService: React.FC = () => {
           <motion.section ref={sectionRefs.governingLaw} id="governingLaw" variants={sectionVariants}>
             <h2 className="text-3xl font-bold text-green-800 mb-4 pb-2 border-b-2 border-green-200">12. Governing Law</h2>
             <motion.p variants={paragraphVariants} className="mb-4 leading-relaxed text-gray-700">
-              These Terms shall be governed and construed in accordance with the laws of **Nigeria**, without regard to its conflict of law provisions.
+              These Terms shall be governed and construed in accordance with the laws of <strong>Nigeria</strong>, without regard to its conflict of law provisions.
             </motion.p>
             <motion.p variants={paragraphVariants} className="mb-4 leading-relaxed text-gray-700">
               Our failure to enforce any right or provision of these Terms will not be considered a waiver of those rights. If any provision of these Terms is held to be invalid or unenforceable by a court, the remaining provisions of these Terms will remain in effect. These Terms constitute the entire agreement between us regarding our Service, and supersede and replace any prior agreements we might have had between us regarding the Service.
@@ -316,10 +316,10 @@ const TermsOfService: React.FC = () => {
           <motion.section ref={sectionRefs.disputeResolution} id="disputeResolution" variants={sectionVariants}>
             <h2 className="text-3xl font-bold text-green-800 mb-4 pb-2 border-b-2 border-green-200">13. Dispute Resolution</h2>
             <motion.p variants={paragraphVariants} className="mb-4 leading-relaxed text-gray-700">
-              Any dispute, controversy, or claim arising out of or relating to these Terms, or the breach, termination, or invalidity thereof, shall be settled by **arbitration** in accordance with the provisions of the Arbitration and Conciliation Act Cap A18, Laws of the Federation of Nigeria, 2004.
+              Any dispute, controversy, or claim arising out of or relating to these Terms, or the breach, termination, or invalidity thereof, shall be settled by <strong>arbitration</strong> in accordance with the provisions of the Arbitration and Conciliation Act Cap A18, Laws of the Federation of Nigeria, 2004.
             </motion.p>
             <ul className="list-disc pl-5 space-y-2 text-gray-700">
-              <motion.li variants={listVariants}>The place of arbitration shall be **Lagos, Nigeria**.</motion.li>
+              <motion.li variants={listVariants}>The place of arbitration shall be <strong>Lagos, Nigeria</strong>.</motion.li>
               <motion.li variants={listVariants}>The language to be used in the arbitral proceedings shall be English.</motion.li>
               <motion.li variants={listVariants}>The arbitral award shall be final and binding on both parties.</motion.li>
             </ul>

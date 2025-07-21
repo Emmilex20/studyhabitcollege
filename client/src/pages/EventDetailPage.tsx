@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
-import { format } from 'date-fns'; // For better date formatting
-import { IoArrowBackCircleOutline } from 'react-icons/io5'; // Example icon for back button
+import { format } from 'date-fns'; 
+import { IoArrowBackCircleOutline } from 'react-icons/io5'; 
 
 interface EventDetail {
     _id: string;

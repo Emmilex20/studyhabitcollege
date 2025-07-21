@@ -1,6 +1,5 @@
 // client/src/swiper-custom.d.ts
 
-// This declares modules for specific Swiper CSS paths
 declare module 'swiper/css' {
   const content: Record<string, string>;
   export default content;

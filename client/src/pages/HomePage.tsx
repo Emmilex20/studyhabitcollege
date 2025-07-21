@@ -211,7 +211,7 @@ const HomePage: React.FC = () => {
                             Welcome to Studyhabit College
                         </h2>
                         <p className="text-gray-700 text-base sm:text-lg leading-relaxed mb-4 md:mb-6">
-                            At **Studyhabit College**, we are dedicated to fostering a vibrant learning environment
+                            At <strong>Studyhabit College</strong>, we are dedicated to fostering a vibrant learning environment
                             where academic rigor meets innovative thinking. Our commitment is to nurture the next
                             generation of leaders, innovators, and global citizens through a holistic educational approach.
                         </p>
@@ -341,8 +341,8 @@ const HomePage: React.FC = () => {
                         </h2>
                         <p className="text-gray-700 text-base sm:text-lg leading-relaxed mb-4 md:mb-6">
                             Our curriculum is designed to challenge students intellectually and foster a deep understanding
-                            of core subjects. With state-of-the-art **science laboratories** for Physics, Chemistry,
-                            and Biology, and modern **computer suites**, students gain hands-on experience and develop
+                            of core subjects. With state-of-the-art <strong>science laboratories</strong> for Physics, Chemistry,
+                            and Biology, and modern <strong>computer suites</strong>, students gain hands-on experience and develop
                             critical analytical skills essential for future success.
                         </p>
                         <ul className="list-disc list-inside text-gray-600 text-sm sm:text-base mb-6 md:mb-8 space-y-2 text-left mx-auto lg:mx-0">
@@ -460,7 +460,7 @@ const HomePage: React.FC = () => {
                             Meet Our Exceptional Faculty
                         </h2>
                         <p className="text-gray-700 text-base sm:text-lg leading-relaxed mb-4 md:mb-6">
-                            Our dedicated **faculty members** are not just educators; they are mentors, innovators,
+                            Our dedicated <strong>faculty members</strong> are not just educators; they are mentors, innovators,
                             and leaders in their respective fields. They bring a wealth of experience and a passion
                             for teaching, inspiring students to achieve their academic and personal best.
                         </p>

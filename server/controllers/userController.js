@@ -89,11 +89,6 @@ const updateUserProfile = asyncHandler(async (req, res) => {
 const changePassword = asyncHandler(async (req, res) => {
     const { currentPassword, newPassword } = req.body;
 
-    console.log('--- Change Password Request Initiated ---');
-    console.log(`[userController] Received currentPassword (masked): ${currentPassword ? '****' : 'empty'}`);
-    console.log(`[userController] Received newPassword (masked): ${newPassword ? '****' : 'empty'}`);
-    console.log('[userController] req.user from token:', req.user ? `ID: ${req.user._id}, Role: ${req.user.role}` : 'undefined');
-
     if (!req.user || !req.user._id) {
         console.error('[userController] Error: Not authorized, no user ID found in token.');
         res.status(401);

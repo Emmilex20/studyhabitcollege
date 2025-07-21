@@ -1,7 +1,7 @@
 // src/components/Footer.tsx
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { motion, easeOut } from 'framer-motion'; // Make sure easeOut is imported here
+import { motion, easeOut } from 'framer-motion'; 
 
 const Footer: React.FC = () => {
   // Animation variants for sections
@@ -10,7 +10,7 @@ const Footer: React.FC = () => {
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.5, ease: easeOut } // Use the imported easeOut
+      transition: { duration: 0.5, ease: easeOut }
     }
   };
 
@@ -38,9 +38,9 @@ const Footer: React.FC = () => {
           <p className="text-sm leading-relaxed mb-4">
             In pursuit of excellence. Providing quality education in Lagos, Nigeria, preparing students for global success. Our commitment is to foster a vibrant learning environment.
           </p>
-          <div className="flex space-x-5 mt-auto"> {/* mt-auto pushes social icons to bottom if content above varies */}
+          <div className="flex space-x-5 mt-auto"> 
             <motion.a
-              href="https://facebook.com/studyhabit" // Replace with actual links
+              href="https://facebook.com/studyhabit" 
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-400 hover:text-yellow-400 transition-transform transform hover:scale-125 duration-300"
@@ -50,7 +50,7 @@ const Footer: React.FC = () => {
               <i className="fab fa-facebook-f text-2xl"></i>
             </motion.a>
             <motion.a
-              href="https://twitter.com/studyhabit" // Replace with actual links
+              href="https://twitter.com/studyhabit" 
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-400 hover:text-yellow-400 transition-transform transform hover:scale-125 duration-300"
@@ -60,7 +60,7 @@ const Footer: React.FC = () => {
               <i className="fab fa-twitter text-2xl"></i>
             </motion.a>
             <motion.a
-              href="https://instagram.com/studyhabit" // Replace with actual links
+              href="https://instagram.com/studyhabit" 
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-400 hover:text-yellow-400 transition-transform transform hover:scale-125 duration-300"
@@ -70,7 +70,7 @@ const Footer: React.FC = () => {
               <i className="fab fa-instagram text-2xl"></i>
             </motion.a>
             <motion.a
-              href="https://linkedin.com/company/studyhabit" // Add LinkedIn
+              href="https://linkedin.com/company/studyhabit" 
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-400 hover:text-yellow-400 transition-transform transform hover:scale-125 duration-300"
@@ -92,8 +92,8 @@ const Footer: React.FC = () => {
               { to: "/admissions", text: "Admissions" },
               { to: "/news", text: "News & Events" },
               { to: "/contact", text: "Contact Us" },
-              { to: "/privacy-policy", text: "Privacy Policy" }, // Added for completeness
-              { to: "/terms-of-service", text: "Terms of Service" } // Added for completeness
+              { to: "/privacy-policy", text: "Privacy Policy" }, 
+              { to: "/terms-of-service", text: "Terms of Service" }
             ].map((link, index) => (
               <motion.li key={index} variants={itemVariants}>
                 <Link to={link.to} className="group flex items-center hover:text-yellow-400 transition-colors duration-300">
@@ -167,7 +167,7 @@ const Footer: React.FC = () => {
           &copy; {new Date().getFullYear()} <span className="font-semibold">Studyhabit College, Lagos.</span> All rights reserved.
         </p>
         <p className="mt-1 text-gray-400">
-          Crafted with passion for education 🎓
+          Crafted with passion for education 🎓 by EmmyCode
         </p>
       </div>
     </motion.footer>

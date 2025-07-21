@@ -4,12 +4,14 @@ import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext'; // Import useAuth
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'; // Import icons
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // ✨ NEW STATE FOR PASSWORD VISIBILITY ✨
   const navigate = useNavigate();
   const { login } = useAuth(); // Use the login function from context
 
@@ -33,7 +35,6 @@ const LoginPage: React.FC = () => {
 
       login(data); // Call context's login function
       console.log('Login successful:', data);
-      // alert('Login successful!'); // No need for alert, navigate handles it
       navigate('/dashboard'); // Redirect to dashboard or a protected route
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -43,6 +44,10 @@ const LoginPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const togglePasswordVisibility = () => { // ✨ NEW FUNCTION TO TOGGLE VISIBILITY ✨
+    setShowPassword(!showPassword);
   };
 
   return (
@@ -81,16 +86,30 @@ const LoginPage: React.FC = () => {
             <label htmlFor="password" className="block text-gray-700 text-sm font-semibold mb-2">
               Password
             </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="shadow-sm appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="••••••••"
-              required
-            />
+            <div className="relative"> {/* ✨ ADD RELATIVE CONTAINER ✨ */}
+              <input
+                type={showPassword ? 'text' : 'password'}
+                id="password"
+                name="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="shadow-sm appearance-none border rounded w-full py-3 px-4 pr-10 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="••••••••"
+                required
+              />
+              <button
+                type="button" // Important: type="button" to prevent form submission
+                onClick={togglePasswordVisibility}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-600 hover:text-gray-900 focus:outline-none"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? (
+                  <EyeSlashIcon className="h-5 w-5" /> // ✨ HIDE ICON ✨
+                ) : (
+                  <EyeIcon className="h-5 w-5" /> // ✨ SHOW ICON ✨
+                )}
+              </button>
+            </div>
           </div>
           <button
             type="submit"
