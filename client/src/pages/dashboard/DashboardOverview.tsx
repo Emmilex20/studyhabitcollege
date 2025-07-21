@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom'; // Removed useLocation import
 import axios from 'axios';
 import AddUserModal from '../../components/modals/AddUserModal';
 import CourseFormModal from '../../components/modals/CourseFormModal';
+import ParentDashboardOverview from './ParentDashboardOverview';
 
 // Define interfaces for your fetched data structures
 interface AdminDashboardData {
@@ -26,22 +27,6 @@ interface StudentDashboardData {
     overallGPA?: number;           
     letterGrade: string;   
     upcomingDeadlines: { title: string; course: string; dueDate: string }[];
-}
-interface ChildData {
-    _id: string;
-    firstName: string;
-    lastName: string;
-    studentId: string;
-    gradeAverage: number;
-    gpa: number;
-    letterGrade: string;
-    attendancePercentage: number;
-    avatarUrl?: string;
-}
-
-interface ParentDashboardData {
-    children: ChildData[];
-    importantAnnouncements: { title: string; content: string }[];
 }
 
 interface Course {
@@ -67,7 +52,6 @@ const DashboardOverview: React.FC = () => {
     const [adminData, setAdminData] = useState<AdminDashboardData | null>(null);
     const [teacherData, setTeacherData] = useState<TeacherDashboardData | null>(null);
     const [studentData, setStudentData] = useState<StudentDashboardData | null>(null);
-    const [parentData, setParentData] = useState<ParentDashboardData | null>(null);
 
     // State for AddUserModal
     const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
@@ -227,37 +211,6 @@ const DashboardOverview: React.FC = () => {
         }
     }, [userToken]);
 
-    // Function to fetch parent data
-    const fetchParentData = useCallback(async () => {
-    try {
-        setLoading(true);
-        setError(null);
-        const config = {
-            headers: {
-                Authorization: `Bearer ${userToken}`,
-            },
-        };
-
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate loading time
-
-        const [childrenRes, announcementsRes] = await Promise.all([
-            axios.get(`${API_BASE_URL}/parents/me/children`, config),
-            axios.get(`${API_BASE_URL}/announcements`, config),
-        ]);
-
-        setParentData({
-            // Correctly access the 'children' array from childrenRes.data
-            children: childrenRes.data.children || [],
-            importantAnnouncements: announcementsRes.data || [],
-        });
-    } catch (err: any) {
-        console.error('Error fetching parent data:', err);
-        setError(err.response?.data?.message || 'Failed to fetch parent data.');
-    } finally {
-        setLoading(false);
-    }
-}, [userToken]);
-
 
     useEffect(() => {
         if (userInfo && userToken) {
@@ -265,7 +218,6 @@ const DashboardOverview: React.FC = () => {
             setAdminData(null);
             setTeacherData(null);
             setStudentData(null);
-            setParentData(null);
             setError(null);
             setLoading(true);
 
@@ -279,8 +231,6 @@ const DashboardOverview: React.FC = () => {
                 case 'student':
                     fetchStudentData();
                     break;
-                case 'parent':
-                    fetchParentData();
                     break;
                 default:
                     setLoading(false);
@@ -289,7 +239,7 @@ const DashboardOverview: React.FC = () => {
             setLoading(false);
             setError('User not logged in or token missing.');
         }
-    }, [userInfo, userToken, fetchAdminData, fetchTeacherData, fetchStudentData, fetchParentData]);
+    }, [userInfo, userToken, fetchAdminData, fetchTeacherData, fetchStudentData]);
 
     if (!userInfo) {
         return (
@@ -524,93 +474,6 @@ const DashboardOverview: React.FC = () => {
         </>
     )
 );
-    const renderParentDashboard = () => (
-    parentData && (
-        <>
-            <motion.div variants={sectionVariants} initial="hidden" animate="visible">
-                <h2 className="text-3xl font-bold text-blue-900 mb-6">Parent Overview 👨‍👩‍👧‍👦</h2>
-                <p className="text-gray-700 mb-8">
-                    Welcome, <span className="font-semibold">{userInfo!.firstName}</span>! Here's a summary of your children's academic progress.
-                </p>
-
-                <h3 className="text-2xl font-bold text-blue-900 mb-4">My Children 👧👦</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                    {parentData.children.length > 0 ? (
-                        parentData.children.map((child) => {
-                            const firstInitial = child.firstName?.[0] || '';
-                            const lastInitial = child.lastName?.[0] || '';
-                            const initials = firstInitial + lastInitial;
-
-                            // Safely get numerical data
-                            const displayGPA = typeof child.gpa === 'number' ? child.gpa : null;
-                            const displayAttendancePercentage = typeof child.attendancePercentage === 'number' ? child.attendancePercentage : null;
-
-                            // The letter grade comes directly from the backend now
-                            const displayLetterGrade = child.letterGrade || 'N/A'; // Use 'N/A' if not available
-
-                            return (
-                                <motion.div variants={itemVariants} key={child._id} className="bg-white p-6 rounded-lg shadow-md border border-blue-200 hover:shadow-xl transition-shadow duration-300">
-                                    <div className="flex items-center mb-4">
-                                        <img
-                                            src={child.avatarUrl || `https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRISxBTQ88B9PvlreCwRY0_wqZK7y4XoG4zIQ&s${initials}`}
-                                            alt={`${child.firstName || 'Unknown'} ${child.lastName || ''} Avatar`}
-                                            className="w-16 h-16 rounded-full object-cover mr-4"
-                                        />
-                                        <div>
-                                            <h4 className="text-xl font-semibold text-blue-900">{child.firstName || 'Unknown'} {child.lastName || ''}</h4>
-                                            <p className="text-gray-600 text-sm">Student ID: {child.studentId || 'N/A'}</p>
-                                        </div>
-                                    </div>
-                                    <p className="text-gray-700 mb-3">
-                                        <span className="font-medium">Overall GPA:</span>{' '}
-                                        <span className={`font-bold ${displayGPA !== null && displayGPA >= 3.0 ? 'text-green-600' : displayGPA !== null && displayGPA >= 2.0 ? 'text-yellow-600' : 'text-red-600'}`}>
-                                            {displayGPA !== null ? displayGPA.toFixed(2) : 'N/A'} ({displayLetterGrade})
-                                        </span>
-                                    </p>
-                                    <p className="text-gray-700 mb-4">
-                                        <span className="font-medium">Attendance:</span>{' '}
-                                        <span className="font-bold text-blue-600">
-                                            {displayAttendancePercentage !== null ? `${displayAttendancePercentage}%` : 'N/A'}
-                                        </span>
-                                    </p>
-                                    <Link to={`/dashboard/child/${child._id}/grades`} className="text-blue-600 hover:underline text-sm mr-4">
-                                        View Grades <i className="fas fa-external-link-alt ml-1"></i>
-                                    </Link>
-                                    <Link to={`/dashboard/child/${child._id}/attendance`} className="text-blue-600 hover:underline text-sm">
-                                        View Attendance <i className="fas fa-external-link-alt ml-1"></i>
-                                    </Link>
-                                </motion.div>
-                            );
-                        })
-                    ) : (
-                        <p className="text-gray-600 col-span-full">No children linked to this account. 😟</p>
-                    )}
-                </div>
-            </motion.div>
-
-            <motion.div variants={sectionVariants} initial="hidden" animate="visible" className="mt-10">
-                <h3 className="text-2xl font-bold text-blue-900 mb-4">Important Announcements 📢</h3>
-                <div className="bg-gray-50 p-6 rounded-lg shadow">
-                    <ul className="space-y-3">
-                        {parentData.importantAnnouncements && parentData.importantAnnouncements.length > 0 ? (
-                            parentData.importantAnnouncements.map((announcement, index) => (
-                                <motion.li variants={itemVariants} key={index} className="py-2 border-b last:border-b-0 border-gray-200">
-                                    <p className="font-semibold text-blue-800">{announcement.title}</p>
-                                    <p className="text-gray-700 text-sm">{announcement.content}</p>
-                                </motion.li>
-                            ))
-                        ) : (
-                            <p className="text-gray-600">No recent announcements. ℹ️</p>
-                        )}
-                    </ul>
-                    <Link to="/dashboard/announcements" className="text-blue-600 hover:underline text-sm mt-4 block text-right">
-                        View All Announcements <i className="fas fa-long-arrow-alt-right ml-1"></i>
-                    </Link>
-                </div>
-            </motion.div>
-        </>
-    )
-);
 
     const renderDashboardContent = () => {
         switch (userInfo.role) {
@@ -621,7 +484,7 @@ const DashboardOverview: React.FC = () => {
             case 'student':
                 return renderStudentDashboard();
             case 'parent':
-                return renderParentDashboard();
+                return <ParentDashboardOverview />;
             default:
                 return (
                     <motion.div variants={sectionVariants} initial="hidden" animate="visible">

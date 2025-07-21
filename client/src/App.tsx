@@ -1,4 +1,3 @@
-// src/App.tsx
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
@@ -24,7 +23,7 @@ import Footer from './components/Footer';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Chatbot from './components/Chatbot';
-import EventDetailPage from './pages/EventDetailPage'; 
+import EventDetailPage from './pages/EventDetailPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 
@@ -51,6 +50,7 @@ import MyGradesPage from './pages/dashboard/student/MyGradesPage';
 import AttendancePage from './pages/dashboard/student/AttendancePage';
 
 // === PARENT DASHBOARD PAGES ===
+import ParentDashboardOverview from './pages/dashboard/ParentDashboardOverview'; // New: Dedicated Parent Overview
 import ParentChildrenPage from './pages/dashboard/parent/ParentChildrenPage';
 import ChildGradesPage from './pages/dashboard/parent/ChildGradesPage';
 import ChildAttendancePage from './pages/dashboard/parent/ChildAttendancePage';
@@ -71,7 +71,6 @@ function App() {
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/admissions" element={<AdmissionsPage />} />
               <Route path="/student-life" element={<StudentLifePage />} />
-              {/* ✨ NEW ROUTE FOR SINGLE EVENT DETAIL ✨ */}
               <Route path="/events/:id" element={<EventDetailPage />} />
               <Route path="/news" element={<NewsEventsPage />} />
               <Route path="/login" element={<LoginPage />} />
@@ -83,7 +82,7 @@ function App() {
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-of-service" element={<TermsOfService />} />
               <Route path="/gallery" element={<Gallery />} />
-              <Route path="/forgot-password" element={<ForgotPasswordPage />} /> 
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
               {/* Protected Dashboard Layout */}
@@ -96,10 +95,27 @@ function App() {
                 }
               >
                 {/* Dashboard Overview (default for /dashboard) */}
+                <Route index element={<DashboardOverview />} />
+
+                {/* Parent-specific Dashboard Overview - a summary view */}
                 <Route
-                  index
-                  element={<DashboardOverview />}
+                  path="parent-overview"
+                  element={<ProtectedRoute allowedRoles={['parent']}><ParentDashboardOverview /></ProtectedRoute>}
                 />
+
+                {/* PARENT ROUTES with NESTING: This is the main section for parents to manage children */}
+                <Route
+                  path="children" // Changed from 'child' to 'children' for clarity, as it lists multiple
+                  element={<ProtectedRoute allowedRoles={['parent']}><ParentChildrenPage /></ProtectedRoute>}
+                >
+                  {/* These routes will render inside ParentChildrenPage's <Outlet /> */}
+                  <Route path=":studentId/grades" element={<ChildGradesPage />} />
+                  <Route path=":studentId/attendance" element={<ChildAttendancePage />} />
+                  {/* No index route here for ParentChildrenPage if it defaults to showing the list.
+                      The ParentChildrenPage itself will render the list of children.
+                      The Outlet will be empty unless a specific child detail is selected.
+                  */}
+                </Route>
 
                 {/* Admin Routes */}
                 <Route
@@ -131,17 +147,14 @@ function App() {
                   path="announcements"
                   element={<ProtectedRoute allowedRoles={['admin', 'teacher', 'student', 'parent']}><AdminAnnouncementsPage /></ProtectedRoute>}
                 />
-                {/* 🎨 Admin Gallery Management Route */}
                 <Route
                   path="gallery"
                   element={<ProtectedRoute allowedRoles={['admin']}><GalleryManagement /></ProtectedRoute>}
                 />
-                {/* ⭐ Settings Page ⭐ */}
                 <Route
                   path="settings"
                   element={<ProtectedRoute allowedRoles={['admin', 'teacher', 'student', 'parent']}><SettingsPage /></ProtectedRoute>}
                 />
-
 
                 {/* Teacher Routes */}
                 <Route
@@ -174,21 +187,6 @@ function App() {
                   path="student-attendance"
                   element={<ProtectedRoute allowedRoles={['student']}><AttendancePage /></ProtectedRoute>}
                 />
-
-                {/* ✅ PARENT ROUTES with NESTING */}
-                <Route
-                  path="child"
-                  element={<ProtectedRoute allowedRoles={['parent']}><ParentChildrenPage /></ProtectedRoute>}
-                >
-                  <Route
-                    path=":studentId/grades"
-                    element={<ChildGradesPage />}
-                  />
-                  <Route
-                    path=":studentId/attendance"
-                    element={<ChildAttendancePage />}
-                  />
-                </Route>
               </Route>
 
               {/* Catch-all for 404 */}
@@ -197,7 +195,6 @@ function App() {
           </main>
           <Footer />
         </div>
-        {/* Render the Chatbot component outside the main content flow but within the Router and AuthProvider */}
         <Chatbot />
       </AuthProvider>
     </Router>
