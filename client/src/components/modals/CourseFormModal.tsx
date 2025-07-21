@@ -4,18 +4,12 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext'; // Corrected path based on typical structure
+// 🎯 IMPORT Course interface from the centralized types file
+// 🎯 IMPORT Course interface from the centralized types file
+import type { Course } from '../../types'; // ADJUST PATH if your src/types is in a different location relative to this file
+ // ADJUST PATH if your src/types is in a different location relative to this file
 
-interface Course {
-  _id: string;
-  name: string;
-  code: string;
-  description?: string;
-  yearLevel: string[];
-  academicYear?: string;
-  term: string[];
-  teacher?: { _id: string; firstName: string; lastName: string };
-}
-
+// Keep these interfaces here if they are only used within this file
 interface TeacherOption {
   _id: string;
   firstName: string;
@@ -27,7 +21,7 @@ interface TeacherOption {
 interface CourseFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  courseToEdit?: Course | null;
+  courseToEdit?: Course | null; // This type is correct for the prop
   onSave: (course: Course) => void;
 }
 
@@ -44,7 +38,7 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
     description: '',
     yearLevel: [] as string[],
     academicYear: '',
-    term: [] as string[],
+    term: [] as string[], // Initialize as empty array
     teacher: '',
   });
 
@@ -65,11 +59,11 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
         name: courseToEdit.name,
         code: courseToEdit.code,
         description: courseToEdit.description || '',
-        // Ensure yearLevel is an array, handling potential old string formats
-        yearLevel: Array.isArray(courseToEdit.yearLevel) ? courseToEdit.yearLevel : (courseToEdit.yearLevel ? [courseToEdit.yearLevel] : []),
+        // Ensure yearLevel is an array. Use `|| []` to handle potential undefined
+        yearLevel: courseToEdit.yearLevel || [],
         academicYear: courseToEdit.academicYear || '',
-        // Ensure term is an array, handling potential old string formats
-        term: Array.isArray(courseToEdit.term) ? courseToEdit.term : (courseToEdit.term ? [courseToEdit.term] : []),
+        // Ensure term is an array. Use `|| []` to handle potential undefined
+        term: courseToEdit.term || [], // 🎯 Correctly handle `undefined` from `courseToEdit.term`
         teacher: courseToEdit.teacher?._id || '',
       });
     } else {
@@ -284,7 +278,7 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
                 onChange={handleChange}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-32"
                 required
-                disabled={loadingDynamicData} 
+                disabled={loadingDynamicData}
               >
                 {loadingDynamicData && <option value="" disabled>Loading year levels...</option>}
                 {!loadingDynamicData && dynamicYearLevels.length === 0 && <option value="" disabled>No year levels available</option>}
