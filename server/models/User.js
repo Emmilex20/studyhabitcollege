@@ -1,6 +1,6 @@
 // server/models/User.js
 import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcryptjs'; // Ensure bcrypt is imported here
 
 const userSchema = mongoose.Schema(
     {
@@ -17,6 +17,10 @@ const userSchema = mongoose.Schema(
             required: true,
             unique: true, // Ensure emails are unique
             lowercase: true,
+            match: [
+                /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
+                'Please fill a valid email address',
+            ],
         },
         password: {
             type: String,
@@ -28,28 +32,20 @@ const userSchema = mongoose.Schema(
             enum: ['student', 'parent', 'teacher', 'admin'], // Enforce specific roles
             default: 'student', // Default role for new registrations
         },
-
         avatarUrl: {
             type: String,
             required: false, // Not all users might have an avatar
             default: '', // Or a default placeholder URL if you have one
         },
-        // ✨ ADD THIS FIELD to link teachers to the courses they teach ✨
-        // If a user (specifically a teacher) needs to know what courses they teach
         classesTaught: [
             {
                 type: mongoose.Schema.Types.ObjectId,
                 ref: 'Course', // Reference the 'Course' model
             },
         ],
-        // If a user (specifically a student) needs to know what courses they are enrolled in
-        // You might also add:
-        // enrolledCourses: [
-        //     {
-        //         type: mongoose.Schema.Types.ObjectId,
-        //         ref: 'Course',
-        //     },
-        // ],
+        // ✨ NEW FIELDS FOR PASSWORD RESET ✨
+        passwordResetToken: String,
+        passwordResetExpires: Date,
     },
     {
         timestamps: true, // Adds createdAt and updatedAt timestamps
@@ -62,8 +58,7 @@ userSchema.pre('save', async function (next) {
     console.log(`[User Model:pre('save')] Checking if password is modified...`);
     if (!this.isModified('password')) {
         console.log(`[User Model:pre('save')] Password not modified. Skipping hashing.`);
-        next(); // If password is not modified, move to the next middleware
-        return; // Important: return after calling next() to prevent further execution
+        return next(); // If password is not modified, move to the next middleware
     }
 
     console.log(`[User Model:pre('save')] Password modified. Hashing password...`);
@@ -77,14 +72,12 @@ userSchema.pre('save', async function (next) {
 // Method to compare entered password with hashed password in DB
 userSchema.methods.matchPassword = async function (enteredPassword) {
     console.log(`[User Model:matchPassword] Comparing entered password with stored hash.`);
-    // CAUTION: Only uncomment the line below for very specific debugging in development,
-    // NEVER log plain enteredPassword or stored hash in production logs!
-    // console.log(`[User Model:matchPassword] Entered: ${enteredPassword} | Stored: ${this.password}`);
     const isMatch = await bcrypt.compare(enteredPassword, this.password);
     console.log(`[User Model:matchPassword] bcrypt.compare result: ${isMatch}`);
     return isMatch;
 };
 
+// Define the User model after defining the schema
 const User = mongoose.model('User', userSchema);
 
 export default User;

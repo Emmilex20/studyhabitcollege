@@ -25,6 +25,8 @@ import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Chatbot from './components/Chatbot';
 import EventDetailPage from './pages/EventDetailPage'; 
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 // === ADMIN DASHBOARD PAGES ===
 import AdminUsersPage from './pages/dashboard/AdminUsersPage';
@@ -81,6 +83,8 @@ function App() {
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-of-service" element={<TermsOfService />} />
               <Route path="/gallery" element={<Gallery />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} /> 
+              <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
               {/* Protected Dashboard Layout */}
               <Route

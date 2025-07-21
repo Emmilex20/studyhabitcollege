@@ -3,17 +3,17 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { useAuth } from '../context/AuthContext'; // Import useAuth
-import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'; // Import icons
+import { useAuth } from '../context/AuthContext';
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false); // ✨ NEW STATE FOR PASSWORD VISIBILITY ✨
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth(); // Use the login function from context
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -33,9 +33,9 @@ const LoginPage: React.FC = () => {
         config
       );
 
-      login(data); // Call context's login function
+      login(data);
       console.log('Login successful:', data);
-      navigate('/dashboard'); // Redirect to dashboard or a protected route
+      navigate('/dashboard');
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
@@ -46,7 +46,7 @@ const LoginPage: React.FC = () => {
     }
   };
 
-  const togglePasswordVisibility = () => { // ✨ NEW FUNCTION TO TOGGLE VISIBILITY ✨
+  const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
 
@@ -86,7 +86,7 @@ const LoginPage: React.FC = () => {
             <label htmlFor="password" className="block text-gray-700 text-sm font-semibold mb-2">
               Password
             </label>
-            <div className="relative"> {/* ✨ ADD RELATIVE CONTAINER ✨ */}
+            <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
                 id="password"
@@ -98,17 +98,23 @@ const LoginPage: React.FC = () => {
                 required
               />
               <button
-                type="button" // Important: type="button" to prevent form submission
+                type="button"
                 onClick={togglePasswordVisibility}
                 className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-600 hover:text-gray-900 focus:outline-none"
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? (
-                  <EyeSlashIcon className="h-5 w-5" /> // ✨ HIDE ICON ✨
+                  <EyeSlashIcon className="h-5 w-5" />
                 ) : (
-                  <EyeIcon className="h-5 w-5" /> // ✨ SHOW ICON ✨
+                  <EyeIcon className="h-5 w-5" />
                 )}
               </button>
+            </div>
+            {/* ✨ NEW: Forgot Password Link ✨ */}
+            <div className="text-right text-sm mt-2">
+              <Link to="/forgot-password" className="text-blue-600 hover:underline">
+                Forgot Password?
+              </Link>
             </div>
           </div>
           <button
