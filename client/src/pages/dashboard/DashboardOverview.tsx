@@ -229,33 +229,34 @@ const DashboardOverview: React.FC = () => {
 
     // Function to fetch parent data
     const fetchParentData = useCallback(async () => {
-        try {
-            setLoading(true);
-            setError(null);
-            const config = {
-                headers: {
-                    Authorization: `Bearer ${userToken}`,
-                },
-            };
+    try {
+        setLoading(true);
+        setError(null);
+        const config = {
+            headers: {
+                Authorization: `Bearer ${userToken}`,
+            },
+        };
 
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate loading time
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate loading time
 
-            const [childrenRes, announcementsRes] = await Promise.all([
-                axios.get(`${API_BASE_URL}/parents/me/children`, config),
-                axios.get(`${API_BASE_URL}/announcements`, config),
-            ]);
+        const [childrenRes, announcementsRes] = await Promise.all([
+            axios.get(`${API_BASE_URL}/parents/me/children`, config),
+            axios.get(`${API_BASE_URL}/announcements`, config),
+        ]);
 
-            setParentData({
-                children: childrenRes.data || [],
-                importantAnnouncements: announcementsRes.data || [],
-            });
-        } catch (err: any) {
-            console.error('Error fetching parent data:', err);
-            setError(err.response?.data?.message || 'Failed to fetch parent data.');
-        } finally {
-            setLoading(false);
-        }
-    }, [userToken]);
+        setParentData({
+            // Correctly access the 'children' array from childrenRes.data
+            children: childrenRes.data.children || [],
+            importantAnnouncements: announcementsRes.data || [],
+        });
+    } catch (err: any) {
+        console.error('Error fetching parent data:', err);
+        setError(err.response?.data?.message || 'Failed to fetch parent data.');
+    } finally {
+        setLoading(false);
+    }
+}, [userToken]);
 
 
     useEffect(() => {
