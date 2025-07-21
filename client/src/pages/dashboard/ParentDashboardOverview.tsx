@@ -194,7 +194,7 @@ const ParentDashboardOverview: React.FC = () => {
     )}
   </div>
   <Link to="/dashboard/children" className="text-blue-600 hover:underline text-md font-semibold mt-4 block text-center">
-  {parentData.children.length === 1 ? "View All Child's Records" : "View All Children's Records"}{' '}
+  {parentData.children.length === 1 ? "View Your Child's Records" : "View All Children's Records"}{' '}
   <i className="fas fa-arrow-right ml-2"></i>
 </Link>
 </motion.div>
