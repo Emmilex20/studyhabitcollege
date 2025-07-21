@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/pages/dashboard/parent/ParentChildrenPage.tsx
 import React, { useState, useEffect } from 'react';
 import { Link, Outlet, useNavigate, useLocation, useParams } from 'react-router-dom';
@@ -62,8 +61,13 @@ const ParentChildrenPage: React.FC = () => {
         const fetchedChildren: Child[] = response.data.children || [];
         setChildren(fetchedChildren);
 
-        // If no studentId in URL, and we have children, navigate to the first child's grades
-        if (!studentId && fetchedChildren.length > 0) {
+        // ⭐ THE CRITICAL FIX IS HERE ⭐
+        // Only navigate to the first child's grades if:
+        // 1. There's no studentId in the URL (meaning we're on the base /dashboard/children)
+        // 2. We have children to display
+        // 3. The current path is EXACTLY '/dashboard/children'
+        // This prevents the redirect from happening when a nested route is already active.
+        if (!studentId && fetchedChildren.length > 0 && location.pathname === '/dashboard/children') {
           navigate(`/dashboard/children/${fetchedChildren[0]._id}/grades`, { replace: true });
         } else if (studentId && !fetchedChildren.some(child => child._id === studentId)) {
           // If studentId in URL is not valid for this parent, navigate away or show error
@@ -73,6 +77,7 @@ const ParentChildrenPage: React.FC = () => {
           // If no children and we are on a nested route (e.g. /dashboard/children/someid/grades), redirect to base
           navigate('/dashboard/children', { replace: true });
         }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         console.error('Error fetching children:', err.response?.data?.message || err.message, err);
         setError(err.response?.data?.message || 'Failed to load children. Please try again.');
@@ -171,11 +176,11 @@ const ParentChildrenPage: React.FC = () => {
         </motion.div>
       ) : (
         <>
-          {!isChildDetailRouteActive && ( // Only show the list if no specific child detail route is active
+          {/* Only show the list if no specific child detail route is active */}
+          {!isChildDetailRouteActive ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
               <AnimatePresence>
                 {children.map((child, index) => {
-                  // Removed 'firstInitial', 'lastInitial', and 'initials' as they are not used.
                   const displayGPA = typeof child.gpa === 'number' ? child.gpa : null;
                   const displayAttendancePercentage = typeof child.attendancePercentage === 'number' ? child.attendancePercentage : null;
                   const displayGradeAverage = typeof child.gradeAverage === 'number' ? child.gradeAverage : null;
@@ -240,16 +245,14 @@ const ParentChildrenPage: React.FC = () => {
                 })}
               </AnimatePresence>
             </div>
-          )}
-
-          {isChildDetailRouteActive && ( // Only show the detail section if a specific child is selected
+          ) : ( // Show the detail section if a specific child is selected
             <div className="mt-8 p-6 bg-white rounded-xl shadow-lg border border-gray-100">
               <Link to="/dashboard/children" className="text-blue-600 hover:underline mb-4 inline-flex items-center text-sm font-medium">
                   <i className="fas fa-arrow-left mr-2"></i> Back to Children List
               </Link>
               <h3 className="text-2xl font-bold text-gray-800 mb-5 flex items-center">
                 <i className="fas fa-chart-line mr-3 text-green-600"></i>
-                {`Details for ${children.find(c => c._id === studentId)?.firstName} ${children.find(c => c._id === studentId)?.lastName}`}
+                {`Details for ${children.find(c => c._id === studentId)?.firstName || 'Selected'} ${children.find(c => c._id === studentId)?.lastName || 'Child'}`}
               </h3>
               <div className="flex space-x-4 mb-6 border-b border-gray-200 pb-4">
                 <Link
