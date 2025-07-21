@@ -443,21 +443,39 @@ const getMyCourses = asyncHandler(async (req, res) => {
 // @desc    Get all children linked to the authenticated parent
 // @route   GET /api/parent/me/children
 // @access  Private (Parent)
+// Function to determine letter grade from a 4.0 scale GPA
+// (Consider moving this to a shared utility file if used in multiple controllers)
+const getLettersGradeFromGPA = (gpa) => {
+    if (gpa >= 3.85) return 'A+';
+    if (gpa >= 3.5) return 'A';
+    if (gpa >= 3.15) return 'A-';
+    if (gpa >= 2.85) return 'B+';
+    if (gpa >= 2.5) return 'B';
+    if (gpa >= 2.15) return 'B-';
+    if (gpa >= 1.85) return 'C+';
+    if (gpa >= 1.5) return 'C';
+    if (gpa >= 1.15) return 'C-';
+    if (gpa >= 0.85) return 'D+';
+    if (gpa >= 0.5) return 'D';
+    if (gpa >= 0.15) return 'D-';
+    return 'F';
+};
+
 const getMyChildren = asyncHandler(async (req, res) => {
     // req.user._id is the ObjectId of the Parent User
     // Find students where the 'parent' field matches the logged-in parent's user ID
-    const children = await Student.find({ parent: req.user._id }) // Corrected: Use 'parent' field directly
-        .populate('user', 'firstName lastName email gender dateOfBirth studentId') // Populate child's user details
+    const children = await Student.find({ parent: req.user._id })
+        .populate('user', 'firstName lastName email gender dateOfBirth studentId avatarUrl') // Ensure avatarUrl is populated from User model
         .populate('enrolledCourses', 'name code') // Optionally populate enrolled courses for overview
         .select('-academicRecords -attendanceRecords -grades -messages'); // Exclude sensitive details not needed in overview
 
     if (!children || children.length === 0) {
+        // Return an empty array if no children are found
         return res.status(200).json([]);
     }
 
-    // Map children to include avatarUrl from their user profile if available, and calculate gradeAverage/attendancePercentage
     const childrenWithDetails = await Promise.all(children.map(async (child) => {
-        const user = await User.findById(child.user).select('avatarUrl').lean(); // Fetch user for avatarUrl
+        // No need to fetch user again if it's already populated in the initial query
         const grades = await Grade.find({ student: child._id }).populate('course', 'credits');
         const attendanceRecords = await Attendance.find({ student: child._id });
 
@@ -466,32 +484,28 @@ const getMyChildren = asyncHandler(async (req, res) => {
         let totalPresent = 0;
         let totalSessions = 0;
 
+        // Calculate GPA
         for (const gradeEntry of grades) {
             if (gradeEntry.score !== undefined && gradeEntry.course && gradeEntry.course.credits !== undefined) {
                 let gradePoints = 0;
-                // Define your GPA scale here. This is a common 4.0 scale example.
-                if (gradeEntry.score >= 90) { // A
-                    gradePoints = 4.0;
-                } else if (gradeEntry.score >= 80) { // B
-                    gradePoints = 3.0;
-                } else if (gradeEntry.score >= 70) { // C
-                    gradePoints = 2.0;
-                } else if (gradeEntry.score >= 60) { // D
-                    gradePoints = 1.0;
-                } else { // F
-                    gradePoints = 0.0;
-                }
+                if (gradeEntry.score >= 90) { gradePoints = 4.0; }
+                else if (gradeEntry.score >= 80) { gradePoints = 3.0; }
+                else if (gradeEntry.score >= 70) { gradePoints = 2.0; }
+                else if (gradeEntry.score >= 60) { gradePoints = 1.0; }
+                else { gradePoints = 0.0; }
 
                 const credits = gradeEntry.course.credits;
                 totalGradePoints += (gradePoints * credits);
                 totalCredits += credits;
             }
         }
-        const overallGPA = totalCredits > 0 ? (totalGradePoints / totalCredits) : 0.0;
-        const gradeAverage = parseFloat((overallGPA * 25).toFixed(2)); // Rough conversion for dashboard display (e.g., 4.0 * 25 = 100%)
+        const gpa = totalCredits > 0 ? parseFloat((totalGradePoints / totalCredits).toFixed(2)) : 0.0;
+        // Get the letter grade using the helper function
+        const letterGrade = getLettersGradeFromGPA(gpa);
 
+        // Calculate attendance percentage
         for (const record of attendanceRecords) {
-            totalSessions += 1; // Assuming each record is one session
+            totalSessions += 1;
             if (record.status === 'Present') {
                 totalPresent += 1;
             }
@@ -500,16 +514,20 @@ const getMyChildren = asyncHandler(async (req, res) => {
 
         return {
             _id: child._id,
-            firstName: child.user?.firstName, // Use optional chaining in case user isn't fully populated
+            firstName: child.user?.firstName,
             lastName: child.user?.lastName,
             studentId: child.studentId,
-            gradeAverage: gradeAverage, // Calculated average
-            attendancePercentage: attendancePercentage, // Calculated percentage
-            avatarUrl: user?.avatarUrl, // Avatar URL from the User document
+            // Include both GPA and letterGrade
+            gpa: gpa, // The actual 4.0 scale GPA
+            letterGrade: letterGrade, // The calculated letter grade
+            gradeAverage: parseFloat((gpa * 25).toFixed(2)), // Keep for compatibility if frontend uses it, otherwise remove
+            attendancePercentage: attendancePercentage,
+            avatarUrl: child.user?.avatarUrl, // Use avatarUrl from the populated user object
         };
     }));
 
-    res.status(200).json(childrenWithDetails);
+    // The frontend expects an object with a 'children' array, not just the array itself.
+    res.status(200).json({ children: childrenWithDetails });
 });
 
 // @desc    Get grades for a specific child linked to the authenticated parent
