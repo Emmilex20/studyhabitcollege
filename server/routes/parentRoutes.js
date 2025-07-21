@@ -10,6 +10,7 @@ import {
 const router = express.Router();
 
 router.get('/me/children', protect, authorizeRoles('parent'), getMyChildren);
+router.get('/me/summary', protect, authorizeRoles('parent'), getMyChildren);
 router.get('/child/:studentId/grades', protect, authorizeRoles('parent'), getChildGrades);
 router.get('/child/:studentId/attendance', protect, authorizeRoles('parent'), getChildAttendance);
 
