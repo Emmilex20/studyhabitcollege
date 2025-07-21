@@ -57,7 +57,8 @@ const getStudentById = asyncHandler(async (req, res) => {
 // @route   POST /api/students
 // @access  Private/Admin
 const createStudent = asyncHandler(async (req, res) => {
-    const { userId, studentId, dateOfBirth, gender, currentClass, enrolledCourses, parentId } = req.body;
+    // ⭐ Added currentTerm to destructuring ⭐
+    const { userId, studentId, dateOfBirth, gender, currentClass, currentTerm, enrolledCourses, parentId } = req.body;
 
     if (!userId || !studentId || !dateOfBirth || !gender) {
         return res.status(400).json({ message: 'Please enter all required student fields' });
@@ -123,6 +124,7 @@ const createStudent = asyncHandler(async (req, res) => {
             dateOfBirth,
             gender,
             currentClass,
+            currentTerm, // ⭐ Added currentTerm here ⭐
             enrolledCourses: validCourses,
             parent: assignedParent,
         });
@@ -154,7 +156,8 @@ const createStudent = asyncHandler(async (req, res) => {
 // @route   PUT /api/students/:id
 // @access  Private/Admin
 const updateStudent = asyncHandler(async (req, res) => {
-    const { userId, studentId, dateOfBirth, gender, currentClass, enrolledCourses, parentId } = req.body;
+    // ⭐ Added currentTerm to destructuring ⭐
+    const { userId, studentId, dateOfBirth, gender, currentClass, currentTerm, enrolledCourses, parentId } = req.body;
 
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -211,6 +214,7 @@ const updateStudent = asyncHandler(async (req, res) => {
         student.dateOfBirth = dateOfBirth || student.dateOfBirth;
         student.gender = gender || student.gender;
         student.currentClass = currentClass || student.currentClass;
+        student.currentTerm = currentTerm !== undefined ? currentTerm : student.currentTerm; // ⭐ Updated currentTerm here ⭐
         student.enrolledCourses = updatedEnrolledCourses;
         student.parent = updatedParent;
 
@@ -468,6 +472,7 @@ const getMyChildren = asyncHandler(async (req, res) => {
     const children = await Student.find({ parent: req.user._id })
         .populate('user', 'firstName lastName email gender dateOfBirth studentId avatarUrl') // Ensure avatarUrl is populated from User model
         .populate('enrolledCourses', 'name code') // Optionally populate enrolled courses for overview
+        // ⭐ Select currentTerm here ⭐
         .select('-academicRecords -attendanceRecords -grades -messages'); // Exclude sensitive details not needed in overview
 
     if (!children || children.length === 0) {
@@ -518,6 +523,7 @@ const getMyChildren = asyncHandler(async (req, res) => {
             firstName: child.user?.firstName,
             lastName: child.user?.lastName,
             studentId: child.studentId,
+            currentTerm: child.currentTerm, // ⭐ Include currentTerm here for parent view ⭐
             // Include both GPA and letterGrade
             gpa: gpa, // The actual 4.0 scale GPA
             letterGrade: letterGrade, // The calculated letter grade
@@ -776,6 +782,6 @@ export {
     getMyCoursesCount,
     getUpcomingDeadlines,
     getStudentCount,
-    enrollStudentInCourse,   // <--- New export
-    unenrollStudentFromCourse // <--- New export
+    enrollStudentInCourse,
+    unenrollStudentFromCourse
 };

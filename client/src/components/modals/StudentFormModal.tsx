@@ -13,6 +13,8 @@ interface Student {
   dateOfBirth: string;
   gender: string;
   currentClass?: string;
+  // ⭐ Add currentTerm to the Student interface ⭐
+  currentTerm?: string;
   enrolledCourses: { _id: string; name: string; code: string }[];
   parent?: { _id: string; firstName: string; lastName: string; email: string };
 }
@@ -43,7 +45,7 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
   isOpen,
   onClose,
   studentToEdit,
-  onSave, // Prop is still here, but we'll adjust its usage for the userId field
+  onSave,
 }) => {
   const { userInfo } = useAuth();
   const [formData, setFormData] = useState({
@@ -52,6 +54,8 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
     dateOfBirth: '',
     gender: '',
     currentClass: '',
+    // ⭐ Add currentTerm to the formData state ⭐
+    currentTerm: '',
     enrolledCourses: [] as string[], // Array of course IDs
     parentId: '', // For associating with an existing parent user
   });
@@ -73,6 +77,8 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
         dateOfBirth: studentToEdit.dateOfBirth.split('T')[0], // Format for HTML date input
         gender: studentToEdit.gender,
         currentClass: studentToEdit.currentClass || '',
+        // ⭐ Populate currentTerm when editing ⭐
+        currentTerm: studentToEdit.currentTerm || '',
         enrolledCourses: studentToEdit.enrolledCourses.map((c) => c._id),
         parentId: studentToEdit.parent?._id || '',
       });
@@ -84,6 +90,8 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
         dateOfBirth: '',
         gender: '',
         currentClass: '',
+        // ⭐ Reset currentTerm for new student ⭐
+        currentTerm: '',
         enrolledCourses: [],
         parentId: '',
       });
@@ -176,14 +184,12 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
         dateOfBirth: new Date(formData.dateOfBirth).toISOString(), // Ensure ISO string format
         gender: formData.gender,
         currentClass: formData.currentClass || undefined, // Send undefined if empty to avoid empty string
+        // ⭐ Include currentTerm in the payload ⭐
+        currentTerm: formData.currentTerm || undefined, // Send undefined if empty
         enrolledCourses: formData.enrolledCourses,
         parentId: formData.parentId === '' ? null : formData.parentId, // Send null if no parent selected
       };
 
-      // Condition for showing the 'Associated User' dropdown:
-      // It should be shown when we are CREATING a new student record (`!studentToEdit`).
-      // The `isTeacherView` prop no longer affects this specific dropdown's visibility,
-      // only whether we are in "create" or "edit" mode.
       if (!studentToEdit) { // Only when creating a new student record
         if (!formData.userId) {
           setError('Please select an associated student user.');
@@ -366,6 +372,22 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
                   value={formData.currentClass}
                   onChange={handleChange}
                   placeholder="e.g., JSS1A, SS2C"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
+
+              {/* ⭐ New "Current Term" field ⭐ */}
+              <div>
+                <label htmlFor="currentTerm" className="block text-sm font-medium text-gray-700">
+                  Current Term (Optional)
+                </label>
+                <input
+                  type="text"
+                  id="currentTerm"
+                  name="currentTerm"
+                  value={formData.currentTerm}
+                  onChange={handleChange}
+                  placeholder="e.g., Fall 2024, Term 1"
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>

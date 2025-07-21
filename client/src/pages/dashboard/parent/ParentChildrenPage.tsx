@@ -16,6 +16,8 @@ interface Child {
   lastName: string;
   studentId: string;
   currentClass?: string;
+  // ⭐ Add currentTerm to the Child interface ⭐
+  currentTerm?: string;
   enrolledCourses: CourseSummary[];
   gradeAverage?: number; // Added for general display
   attendancePercentage?: number; // Added for general display
@@ -218,6 +220,12 @@ const ParentChildrenPage: React.FC = () => {
                         <p className="text-base text-gray-700 flex items-center">
                           <i className="fas fa-school text-blue-500 mr-2"></i> Class: <span className="font-semibold ml-auto">{child.currentClass || 'N/A'}</span>
                         </p>
+                        {/* ⭐ Display Current Term if available ⭐ */}
+                        {child.currentTerm && (
+                          <p className="text-base text-gray-700 flex items-center">
+                            <i className="fas fa-calendar-alt text-orange-500 mr-2"></i> Term: <span className="font-semibold ml-auto">{child.currentTerm}</span>
+                          </p>
+                        )}
                         <p className="text-base text-gray-700 flex items-center">
                           <i className="fas fa-book-open text-green-500 mr-2"></i> Courses: <span className="font-semibold ml-auto">{child.enrolledCourses.length > 0 ? child.enrolledCourses.length : '0'}</span>
                         </p>

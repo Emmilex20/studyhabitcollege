@@ -28,6 +28,12 @@ const studentSchema = mongoose.Schema(
       type: String,
       required: false, // Can be assigned later
     },
+    // ⭐ New field for the current academic term ⭐
+    currentTerm: {
+      type: String, // You can use a string like 'Fall 2024', 'Term 1', '2024-2025 Semester A'
+      required: false, // Make it optional, as it might be set dynamically or later
+      trim: true,
+    },
     enrolledCourses: [ // Array of references to Course model
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -39,10 +45,10 @@ const studentSchema = mongoose.Schema(
       ref: 'User',
       required: false, // A student might not have a linked parent user initially
     },
-    relation: { // e.g., "Mother", "Father", "Guardian"
-                type: String,
-                required: false,
-            },
+    relation: { // e.g., "Mother", "Father", "Guardian" (this field might be better placed on the User model for parents if a parent can have multiple children)
+      type: String,
+      required: false,
+    },
   },
   {
     timestamps: true,
