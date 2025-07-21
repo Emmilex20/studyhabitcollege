@@ -598,6 +598,23 @@ const getParentEvents = asyncHandler(async (req, res) => {
 // @desc    Get overall GPA for the logged-in student
 // @route   GET /api/student/me/gpa
 // @access  Private/Student
+// Function to determine letter grade from a 4.0 scale GPA
+const getLetterGradeFromGPA = (gpa) => {
+    if (gpa >= 3.85) return 'A+';
+    if (gpa >= 3.5) return 'A';
+    if (gpa >= 3.15) return 'A-';
+    if (gpa >= 2.85) return 'B+';
+    if (gpa >= 2.5) return 'B';
+    if (gpa >= 2.15) return 'B-';
+    if (gpa >= 1.85) return 'C+';
+    if (gpa >= 1.5) return 'C';
+    if (gpa >= 1.15) return 'C-';
+    if (gpa >= 0.85) return 'D+';
+    if (gpa >= 0.5) return 'D';
+    if (gpa >= 0.15) return 'D-';
+    return 'F';
+};
+
 const getStudentGPA = asyncHandler(async (req, res) => {
     // Find the student record linked to the current logged-in user
     const student = await Student.findOne({ user: req.user._id });
@@ -609,12 +626,13 @@ const getStudentGPA = asyncHandler(async (req, res) => {
     // Fetch all grades for this student
     const grades = await Grade.find({ student: student._id }).populate('course', 'credits');
 
-    if (grades.length === 0) {
-        return res.json({ gpa: 0.0, message: 'No grades recorded yet.' });
-    }
-
     let totalGradePoints = 0;
     let totalCredits = 0;
+
+    if (grades.length === 0) {
+        // Return 'F' for no grades to indicate a failing academic standing initially
+        return res.json({ gpa: 0.0, letterGrade: 'F', message: 'No grades recorded yet.' });
+    }
 
     for (const gradeEntry of grades) {
         if (gradeEntry.score !== undefined && gradeEntry.course && gradeEntry.course.credits !== undefined) {
@@ -639,8 +657,13 @@ const getStudentGPA = asyncHandler(async (req, res) => {
     }
 
     const overallGPA = totalCredits > 0 ? (totalGradePoints / totalCredits) : 0.0;
+    // Use the helper function here to get the letter grade
+    const overallLetterGrade = getLetterGradeFromGPA(overallGPA);
 
-    res.status(200).json({ gpa: parseFloat(overallGPA.toFixed(2)) }); // Return GPA rounded to 2 decimal places
+    res.status(200).json({
+        gpa: parseFloat(overallGPA.toFixed(2)), // GPA rounded to 2 decimal places
+        letterGrade: overallLetterGrade // The calculated letter grade
+    });
 });
 
 // @desc    Get count of courses for the logged-in student

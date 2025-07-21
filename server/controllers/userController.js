@@ -188,6 +188,7 @@ const deleteUser = asyncHandler(async (req, res) => {
             throw new Error('Cannot delete your own admin account.');
         }
 
+        
         // TODO: Future enhancement: If deleting a student/teacher/parent, consider also deleting their associated records
         // (Student profile, Grades, Attendance, etc.) or set a 'isActive: false' flag instead of hard delete.
         await user.deleteOne();

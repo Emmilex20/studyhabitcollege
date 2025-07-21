@@ -21,17 +21,20 @@ interface TeacherDashboardData {
 }
 
 interface StudentDashboardData {
-    enrolledCourses: number;
-    overallGPA: number;
+    enrolledCourses: number; 
+    gpa: number;           
+    overallGPA?: number;           
+    letterGrade: string;   
     upcomingDeadlines: { title: string; course: string; dueDate: string }[];
 }
-
 interface ChildData {
     _id: string;
     firstName: string;
     lastName: string;
     studentId: string;
     gradeAverage: number;
+    gpa: number;
+    letterGrade: string;
     attendancePercentage: number;
     avatarUrl?: string;
 }
@@ -208,11 +211,14 @@ const DashboardOverview: React.FC = () => {
                 axios.get(`${API_BASE_URL}/students/me/deadlines`, config),
             ]);
 
-            setStudentData({
-                enrolledCourses: coursesRes.data.count || 0,
-                overallGPA: gpaRes.data.gpa || 0.0,
-                upcomingDeadlines: deadlinesRes.data.deadlines || [],
-            });
+           setStudentData({
+    enrolledCourses: coursesRes.data.count || 0,
+    // Change 'overallGPA' to 'gpa' to match the interface
+    gpa: gpaRes.data.gpa || 0.0,
+    // Add the missing 'letterGrade' property
+    letterGrade: gpaRes.data.letterGrade || 'F', // Default to 'F' or 'N/A' if not available
+    upcomingDeadlines: deadlinesRes.data.deadlines || [],
+});
         } catch (err: any) {
             console.error('Error fetching student data:', err);
             setError(err.response?.data?.message || 'Failed to fetch student data.');
@@ -453,148 +459,157 @@ const DashboardOverview: React.FC = () => {
     );
 
     const renderStudentDashboard = () => (
-        studentData && (
-            <>
-                <motion.div variants={sectionVariants} initial="hidden" animate="visible">
-                    <h2 className="text-3xl font-bold text-blue-900 mb-6">Student Overview 🎓</h2>
-                    <p className="text-gray-700 mb-8">
-                        Welcome, <span className="font-semibold">{userInfo!.firstName}</span>! Here's your academic snapshot.
-                    </p>
+    studentData && (
+        <>
+            <motion.div variants={sectionVariants} initial="hidden" animate="visible">
+                <h2 className="text-3xl font-bold text-blue-900 mb-6">Student Overview 🎓</h2>
+                <p className="text-gray-700 mb-8">
+                    Welcome, <span className="font-semibold">{userInfo!.firstName}</span>! Here's your academic snapshot.
+                </p>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                        <motion.div variants={itemVariants} className="bg-purple-600 text-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
-                            <h3 className="text-xl font-semibold mb-2">Enrolled Courses</h3>
-                            <p className="text-4xl font-extrabold">{studentData.enrolledCourses}</p>
-                            <Link to="/dashboard/student-course" className="text-purple-200 hover:underline text-sm mt-2 block">
-                                View My Courses <i className="fas fa-arrow-right ml-1"></i>
-                            </Link>
-                        </motion.div>
-                        <motion.div variants={itemVariants} className="bg-orange-600 text-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
-                            <h3 className="text-xl font-semibold mb-2">Overall GPA</h3>
-                            <p className="text-4xl font-extrabold">{studentData.overallGPA.toFixed(1)}</p>
-                            <Link to="/dashboard/student-grades" className="text-orange-200 hover:underline text-sm mt-2 block">
-                                View Grades <i className="fas fa-arrow-right ml-1"></i>
-                            </Link>
-                        </motion.div>
-                    </div>
-                </motion.div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    {/*
+                        // Remove this getGradeLetter function from here.
+                        // The backend will now provide the letter grade directly.
+                        const getGradeLetter = (average: number | null) => {
+                            if (average === null) return 'N/A';
+                            if (average >= 90) return 'A+';
+                            if (average >= 80) return 'A-';
+                            if (average >= 70) return 'C+';
+                            return 'F';
+                        };
+                    */}
 
-                <motion.div variants={sectionVariants} initial="hidden" animate="visible" className="mt-10">
-                    <h3 className="text-2xl font-bold text-blue-900 mb-4">Upcoming Deadlines 📅</h3>
-                    <div className="bg-gray-50 p-6 rounded-lg shadow">
-                        <ul className="space-y-3">
-                            {studentData.upcomingDeadlines.length > 0 ? (
-                                studentData.upcomingDeadlines.map((deadline, index) => (
-                                    <motion.li variants={itemVariants} key={index} className="flex justify-between items-center py-2 border-b last:border-b-0 border-gray-200">
-                                        <span>{deadline.course} - {deadline.title}</span>
-                                        <span className="font-semibold text-sm text-red-600">Due: {deadline.dueDate}</span>
-                                    </motion.li>
-                                ))
-                            ) : (
-                                <p className="text-gray-600">No upcoming deadlines! 🎉</p>
-                            )}
-                        </ul>
-                    </div>
-                </motion.div>
-            </>
-        )
-    );
-
-    const renderParentDashboard = () => (
-        parentData && (
-            <>
-                <motion.div variants={sectionVariants} initial="hidden" animate="visible">
-                    <h2 className="text-3xl font-bold text-blue-900 mb-6">Parent Overview 👨‍👩‍👧‍👦</h2>
-                    <p className="text-gray-700 mb-8">
-                        Welcome, <span className="font-semibold">{userInfo!.firstName}</span>! Here's a summary of your children's academic progress.
-                    </p>
-
-                    <h3 className="text-2xl font-bold text-blue-900 mb-4">My Children 👧👦</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                        {parentData.children.length > 0 ? (
-                            parentData.children.map((child) => {
-                                // Safely get initials for avatar
-                                const firstInitial = child.firstName?.[0] || '';
-                                const lastInitial = child.lastName?.[0] || '';
-                                const initials = firstInitial + lastInitial;
-
-                                // Safely get grade average and attendance percentage, ensuring they are numbers
-                                const displayGradeAverage = typeof child.gradeAverage === 'number' ? child.gradeAverage : null;
-                                const displayAttendancePercentage = typeof child.attendancePercentage === 'number' ? child.attendancePercentage : null;
-
-                                // Determine grade letter
-                                const getGradeLetter = (average: number | null) => {
-                                    if (average === null) return 'N/A'; // If grade is null, display N/A
-                                    if (average >= 90) return 'A+';
-                                    if (average >= 80) return 'A-';
-                                    if (average >= 70) return 'C+';
-                                    return 'F';
-                                };
-
-                                return (
-                                    <motion.div variants={itemVariants} key={child._id} className="bg-white p-6 rounded-lg shadow-md border border-blue-200 hover:shadow-xl transition-shadow duration-300">
-                                        <div className="flex items-center mb-4">
-                                            <img
-                                                src={child.avatarUrl || `https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRISxBTQ88B9PvlreCwRY0_wqZK7y4XoG4zIQ&s${initials}`}
-                                                alt={`${child.firstName || 'Unknown'} ${child.lastName || ''} Avatar`}
-                                                className="w-16 h-16 rounded-full object-cover mr-4"
-                                            />
-                                            <div>
-                                                <h4 className="text-xl font-semibold text-blue-900">{child.firstName || 'Unknown'} {child.lastName || ''}</h4>
-                                                <p className="text-gray-600 text-sm">Student ID: {child.studentId || 'N/A'}</p>
-                                            </div>
-                                        </div>
-                                        <p className="text-gray-700 mb-3">
-                                            <span className="font-medium">Current Grade Average:</span>{' '}
-                                            <span className={`font-bold ${displayGradeAverage !== null && displayGradeAverage >= 80 ? 'text-green-600' : displayGradeAverage !== null && displayGradeAverage >= 70 ? 'text-yellow-600' : 'text-red-600'}`}>
-                                                {displayGradeAverage !== null ? `${displayGradeAverage}%` : 'N/A'} ({getGradeLetter(displayGradeAverage)})
-                                            </span>
-                                        </p>
-                                        <p className="text-gray-700 mb-4">
-                                            <span className="font-medium">Attendance:</span>{' '}
-                                            <span className="font-bold text-blue-600">
-                                                {displayAttendancePercentage !== null ? `${displayAttendancePercentage}%` : 'N/A'}
-                                            </span>
-                                        </p>
-                                        {/* Links correctly point to child._id */}
-                                        <Link to={`/dashboard/child/${child._id}/grades`} className="text-blue-600 hover:underline text-sm mr-4">
-                                            View Grades <i className="fas fa-external-link-alt ml-1"></i>
-                                        </Link>
-                                        <Link to={`/dashboard/child/${child._id}/attendance`} className="text-blue-600 hover:underline text-sm">
-                                            View Attendance <i className="fas fa-external-link-alt ml-1"></i>
-                                        </Link>
-                                    </motion.div>
-                                );
-                            })
-                        ) : (
-                            <p className="text-gray-600 col-span-full">No children linked to this account. 😟</p>
-                        )}
-                    </div>
-                </motion.div>
-
-                <motion.div variants={sectionVariants} initial="hidden" animate="visible" className="mt-10">
-                    <h3 className="text-2xl font-bold text-blue-900 mb-4">Important Announcements 📢</h3>
-                    <div className="bg-gray-50 p-6 rounded-lg shadow">
-                        <ul className="space-y-3">
-                            {parentData.importantAnnouncements.length > 0 ? (
-                                parentData.importantAnnouncements.map((announcement, index) => (
-                                    <motion.li variants={itemVariants} key={index} className="py-2 border-b last:border-b-0 border-gray-200">
-                                        <p className="font-semibold text-blue-800">{announcement.title}</p>
-                                        <p className="text-gray-700 text-sm">{announcement.content}</p>
-                                    </motion.li>
-                                ))
-                            ) : (
-                                <p className="text-gray-600">No recent announcements. ℹ️</p>
-                            )}
-                        </ul>
-                        <Link to="/dashboard/announcements" className="text-blue-600 hover:underline text-sm mt-4 block text-right">
-                            View All Announcements <i className="fas fa-long-arrow-alt-right ml-1"></i>
+                    <motion.div variants={itemVariants} className="bg-purple-600 text-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
+                        <h3 className="text-xl font-semibold mb-2">Enrolled Courses</h3>
+                        {/* Assuming enrolledCourses is a number based on previous context, otherwise adjust type */}
+                        <p className="text-4xl font-extrabold">{studentData.enrolledCourses}</p>
+                        <Link to="/dashboard/student-course" className="text-purple-200 hover:underline text-sm mt-2 block">
+                            View My Courses <i className="fas fa-arrow-right ml-1"></i>
                         </Link>
-                    </div>
-                </motion.div>
-            </>
-        )
-    );
+                    </motion.div>
+
+                    <motion.div variants={itemVariants} className="bg-orange-600 text-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
+                        <h3 className="text-xl font-semibold mb-2">Overall GPA</h3>
+                        <p className="text-4xl font-extrabold">
+                            {/* Display numerical GPA and the letter grade from backend */}
+                            {studentData.gpa !== undefined ? studentData.gpa.toFixed(2) : 'N/A'}
+                            {studentData.letterGrade && ` (${studentData.letterGrade})`}
+                        </p>
+                        <Link to="/dashboard/student-grades" className="text-orange-200 hover:underline text-sm mt-2 block">
+                            View Grades <i className="fas fa-arrow-right ml-1"></i>
+                        </Link>
+                    </motion.div>
+                </div>
+            </motion.div>
+
+            <motion.div variants={sectionVariants} initial="hidden" animate="visible" className="mt-10">
+                <h3 className="text-2xl font-bold text-blue-900 mb-4">Upcoming Deadlines 📅</h3>
+                <div className="bg-gray-50 p-6 rounded-lg shadow">
+                    <ul className="space-y-3">
+                        {studentData.upcomingDeadlines && studentData.upcomingDeadlines.length > 0 ? (
+                            studentData.upcomingDeadlines.map((deadline, index) => (
+                                <motion.li variants={itemVariants} key={index} className="flex justify-between items-center py-2 border-b last:border-b-0 border-gray-200">
+                                    <span>{deadline.course} - {deadline.title}</span>
+                                    <span className="font-semibold text-sm text-red-600">Due: {deadline.dueDate}</span>
+                                </motion.li>
+                            ))
+                        ) : (
+                            <p className="text-gray-600">No upcoming deadlines! 🎉</p>
+                        )}
+                    </ul>
+                </div>
+            </motion.div>
+        </>
+    )
+);
+    const renderParentDashboard = () => (
+    parentData && (
+        <>
+            <motion.div variants={sectionVariants} initial="hidden" animate="visible">
+                <h2 className="text-3xl font-bold text-blue-900 mb-6">Parent Overview 👨‍👩‍👧‍👦</h2>
+                <p className="text-gray-700 mb-8">
+                    Welcome, <span className="font-semibold">{userInfo!.firstName}</span>! Here's a summary of your children's academic progress.
+                </p>
+
+                <h3 className="text-2xl font-bold text-blue-900 mb-4">My Children 👧👦</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    {parentData.children.length > 0 ? (
+                        parentData.children.map((child) => {
+                            const firstInitial = child.firstName?.[0] || '';
+                            const lastInitial = child.lastName?.[0] || '';
+                            const initials = firstInitial + lastInitial;
+
+                            // Safely get numerical data
+                            const displayGPA = typeof child.gpa === 'number' ? child.gpa : null;
+                            const displayAttendancePercentage = typeof child.attendancePercentage === 'number' ? child.attendancePercentage : null;
+
+                            // The letter grade comes directly from the backend now
+                            const displayLetterGrade = child.letterGrade || 'N/A'; // Use 'N/A' if not available
+
+                            return (
+                                <motion.div variants={itemVariants} key={child._id} className="bg-white p-6 rounded-lg shadow-md border border-blue-200 hover:shadow-xl transition-shadow duration-300">
+                                    <div className="flex items-center mb-4">
+                                        <img
+                                            src={child.avatarUrl || `https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRISxBTQ88B9PvlreCwRY0_wqZK7y4XoG4zIQ&s${initials}`}
+                                            alt={`${child.firstName || 'Unknown'} ${child.lastName || ''} Avatar`}
+                                            className="w-16 h-16 rounded-full object-cover mr-4"
+                                        />
+                                        <div>
+                                            <h4 className="text-xl font-semibold text-blue-900">{child.firstName || 'Unknown'} {child.lastName || ''}</h4>
+                                            <p className="text-gray-600 text-sm">Student ID: {child.studentId || 'N/A'}</p>
+                                        </div>
+                                    </div>
+                                    <p className="text-gray-700 mb-3">
+                                        <span className="font-medium">Overall GPA:</span>{' '}
+                                        <span className={`font-bold ${displayGPA !== null && displayGPA >= 3.0 ? 'text-green-600' : displayGPA !== null && displayGPA >= 2.0 ? 'text-yellow-600' : 'text-red-600'}`}>
+                                            {displayGPA !== null ? displayGPA.toFixed(2) : 'N/A'} ({displayLetterGrade})
+                                        </span>
+                                    </p>
+                                    <p className="text-gray-700 mb-4">
+                                        <span className="font-medium">Attendance:</span>{' '}
+                                        <span className="font-bold text-blue-600">
+                                            {displayAttendancePercentage !== null ? `${displayAttendancePercentage}%` : 'N/A'}
+                                        </span>
+                                    </p>
+                                    <Link to={`/dashboard/child/${child._id}/grades`} className="text-blue-600 hover:underline text-sm mr-4">
+                                        View Grades <i className="fas fa-external-link-alt ml-1"></i>
+                                    </Link>
+                                    <Link to={`/dashboard/child/${child._id}/attendance`} className="text-blue-600 hover:underline text-sm">
+                                        View Attendance <i className="fas fa-external-link-alt ml-1"></i>
+                                    </Link>
+                                </motion.div>
+                            );
+                        })
+                    ) : (
+                        <p className="text-gray-600 col-span-full">No children linked to this account. 😟</p>
+                    )}
+                </div>
+            </motion.div>
+
+            <motion.div variants={sectionVariants} initial="hidden" animate="visible" className="mt-10">
+                <h3 className="text-2xl font-bold text-blue-900 mb-4">Important Announcements 📢</h3>
+                <div className="bg-gray-50 p-6 rounded-lg shadow">
+                    <ul className="space-y-3">
+                        {parentData.importantAnnouncements && parentData.importantAnnouncements.length > 0 ? (
+                            parentData.importantAnnouncements.map((announcement, index) => (
+                                <motion.li variants={itemVariants} key={index} className="py-2 border-b last:border-b-0 border-gray-200">
+                                    <p className="font-semibold text-blue-800">{announcement.title}</p>
+                                    <p className="text-gray-700 text-sm">{announcement.content}</p>
+                                </motion.li>
+                            ))
+                        ) : (
+                            <p className="text-gray-600">No recent announcements. ℹ️</p>
+                        )}
+                    </ul>
+                    <Link to="/dashboard/announcements" className="text-blue-600 hover:underline text-sm mt-4 block text-right">
+                        View All Announcements <i className="fas fa-long-arrow-alt-right ml-1"></i>
+                    </Link>
+                </div>
+            </motion.div>
+        </>
+    )
+);
 
     const renderDashboardContent = () => {
         switch (userInfo.role) {
