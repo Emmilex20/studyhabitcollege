@@ -10,10 +10,11 @@ interface Course {
   name: string;
   code: string;
   description?: string;
-  yearLevel: string;
-  // ✨ ADDED: academicYear and term properties
-  academicYear?: string;
-  term?: string;
+  // Changed to string[] for multi-select
+  yearLevel: string[];
+  // Changed to string[] for multi-select
+  academicYear?: string; // Academic year can remain single or become multi-select based on need
+  term: string[];
   teacher?: { _id: string; firstName: string; lastName: string };
 }
 
@@ -43,9 +44,11 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
     name: '',
     code: '',
     description: '',
-    yearLevel: '',
-    academicYear: '', // ✨ ADDED: Initialize academicYear
-    term: '',         // ✨ ADDED: Initialize term
+    // Initialize as empty arrays for multi-select
+    yearLevel: [] as string[],
+    academicYear: '',
+    // Initialize as empty arrays for multi-select
+    term: [] as string[],
     teacher: '',
   });
   const [teachers, setTeachers] = useState<TeacherOption[]>([]);
@@ -65,9 +68,11 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
         name: courseToEdit.name,
         code: courseToEdit.code,
         description: courseToEdit.description || '',
-        yearLevel: courseToEdit.yearLevel,
-        academicYear: courseToEdit.academicYear || '', // ✨ ADDED: Populate from courseToEdit
-        term: courseToEdit.term || '',                 // ✨ ADDED: Populate from courseToEdit
+        // Ensure yearLevel is an array, even if it comes as a single string from old data
+        yearLevel: Array.isArray(courseToEdit.yearLevel) ? courseToEdit.yearLevel : [courseToEdit.yearLevel],
+        academicYear: courseToEdit.academicYear || '',
+        // Ensure term is an array
+        term: Array.isArray(courseToEdit.term) ? courseToEdit.term : [courseToEdit.term || ''],
         teacher: courseToEdit.teacher?._id || '',
       });
     } else {
@@ -75,9 +80,9 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
         name: '',
         code: '',
         description: '',
-        yearLevel: '',
+        yearLevel: [], // Reset to empty array
         academicYear: '',
-        term: '',
+        term: [],     // Reset to empty array
         teacher: '',
       });
     }
@@ -109,11 +114,20 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
     }
   }, [isOpen, userInfo?.token]);
 
+  // Modified handleChange to handle both single and multi-selects
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name } = e.target;
+    if (e.target instanceof HTMLSelectElement && e.target.multiple) {
+      // For multi-selects, get all selected options' values
+      const value = Array.from(e.target.selectedOptions, (option) => option.value);
+      setFormData(prev => ({ ...prev, [name]: value }));
+    } else {
+      // For single inputs/selects
+      const { value } = e.target;
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -138,7 +152,7 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
       const payload = {
         ...formData,
         teacher: formData.teacher === '' ? null : formData.teacher, // Handle unassigned teacher
-        // academicYear and term are already in formData, so they are included here
+        // yearLevel and term are already arrays in formData, so they are included here
       };
 
       let response;
@@ -221,26 +235,29 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
                 required
               />
             </div>
+
+            {/* Year Level - Now Multi-select */}
             <div>
               <label htmlFor="yearLevel" className="block text-sm font-medium text-gray-700">
-                Year Level <span className="text-red-500">*</span>
+                Year Level(s) <span className="text-red-500">*</span>
+                <span className="text-xs text-gray-500 ml-1">(Ctrl/Cmd + click to select multiple)</span>
               </label>
               <select
                 id="yearLevel"
                 name="yearLevel"
+                multiple // THIS IS THE KEY CHANGE for multi-select
                 value={formData.yearLevel}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                onChange={handleChange} // The handleChange function is now smart enough
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-32" // Added height for better multi-select UX
                 required
               >
-                <option value="">Select Year Level</option>
                 {yearLevels.map(level => (
                   <option key={level} value={level}>{level}</option>
                 ))}
               </select>
             </div>
 
-            {/* ✨ ADDED: Academic Year Input */}
+            {/* Academic Year Input (remains single-select as per original code's intent) */}
             <div>
               <label htmlFor="academicYear" className="block text-sm font-medium text-gray-700">
                 Academic Year
@@ -259,19 +276,22 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
               </select>
             </div>
 
-            {/* ✨ ADDED: Term Input */}
+            {/* Term - Now Multi-select */}
             <div>
               <label htmlFor="term" className="block text-sm font-medium text-gray-700">
-                Term
+                Term(s) <span className="text-red-500">*</span>
+                <span className="text-xs text-gray-500 ml-1">(Ctrl/Cmd + click to select multiple)</span>
               </label>
               <select
                 id="term"
                 name="term"
+                multiple // THIS IS THE KEY CHANGE for multi-select
                 value={formData.term}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                onChange={handleChange} // The handleChange function is now smart enough
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-24" // Added height for better multi-select UX
+                required
               >
-                <option value="">Select Term</option>
+                <option value="">Select Term(s)</option> {/* Added a default unselected option for clarity */}
                 {terms.map(termOption => (
                   <option key={termOption} value={termOption}>{termOption}</option>
                 ))}

@@ -1,10 +1,10 @@
 // server/controllers/courseController.js
 
-import mongoose from 'mongoose'; // Keep mongoose for ObjectId casting if needed
+import mongoose from 'mongoose';
 import Course from '../models/Course.js';
-import User from '../models/User.js';    // For teacher/user roles
-import Student from '../models/Student.js'; // For populating student details in courses
-import asyncHandler from 'express-async-handler'; // Recommended to wrap async functions for error handling
+import User from '../models/User.js';
+import Student from '../models/Student.js';
+import asyncHandler from 'express-async-handler';
 
 // @desc    Get all courses (filters based on user role)
 // @route   GET /api/courses
@@ -24,7 +24,7 @@ const getCourses = asyncHandler(async (req, res) => {
         if (!studentProfile) {
             return res.status(404).json({ message: 'Student profile not found.' });
         }
-        query._id = { $in: studentProfile.enrolledCourses || [] }; // Use enrolledCourses from Student model
+        query._id = { $in: studentProfile.enrolledCourses || [] };
         console.log(`[getCourses] Student query: ${JSON.stringify(query)}`);
     } else if (userRole === 'parent') {
         const children = await Student.find({ parent: userId }).select('enrolledCourses');
@@ -34,18 +34,17 @@ const getCourses = asyncHandler(async (req, res) => {
     }
     // For 'admin' role, query remains empty, fetching all courses
 
-    // Perform the main Course query with deep population
     const courses = await Course.find(query)
-        .populate('teacher', 'firstName lastName email role') // Populate teacher's user details
+        .populate('teacher', 'firstName lastName email role')
         .populate({
-            path: 'students', // This path refers to the 'students' field in your Course model
-            model: 'Student', // Specify the model to populate (Student model)
+            path: 'students',
+            model: 'Student',
             populate: {
-                path: 'user', // Nested populate: populate the 'user' field within each Student document
-                model: 'User', // Specify the model for the 'user' field (User model)
-                select: 'firstName lastName email' // Select desired fields from the User model
+                path: 'user',
+                model: 'User',
+                select: 'firstName lastName email'
             },
-            select: 'studentId user' // Select desired fields from the Student model itself
+            select: 'studentId user'
         });
 
     console.log(`[getCourses] Found ${courses.length} courses.`);
@@ -75,11 +74,6 @@ const getCourseById = asyncHandler(async (req, res) => {
     }
 
     // Authorization check: Ensure only authorized users can view details
-    // Admin can see any course
-    // Teacher can only see their own courses
-    // Student can only see courses they are enrolled in
-    // Parent can only see courses their children are enrolled in
-
     if (req.user.role === 'admin') {
         // Admin can view any course
     } else if (req.user.role === 'teacher') {
@@ -113,11 +107,17 @@ const getCourseById = asyncHandler(async (req, res) => {
 // @route   POST /api/courses
 // @access  Private/Admin
 const createCourse = asyncHandler(async (req, res) => {
+    // Destructure yearLevel and term as arrays
     const { name, code, description, teacher, yearLevel, academicYear, term } = req.body;
 
-    if (!name || !code || !yearLevel) {
-        return res.status(400).json({ message: 'Please enter all required course fields' });
+    // Validate that yearLevel and term are arrays and not empty if required
+    if (!name || !code || !yearLevel || !Array.isArray(yearLevel) || yearLevel.length === 0) {
+        return res.status(400).json({ message: 'Please enter all required course fields including at least one year level.' });
     }
+    // You might want to add a similar check for `term` if it's strictly required to be an array and not empty
+    // if (!term || !Array.isArray(term) || term.length === 0) {
+    //     return res.status(400).json({ message: 'Please select at least one term.' });
+    // }
 
     const courseExists = await Course.findOne({ $or: [{ name }, { code }] });
     if (courseExists) {
@@ -138,9 +138,9 @@ const createCourse = asyncHandler(async (req, res) => {
         code,
         description,
         teacher: assignedTeacher,
-        yearLevel,
+        yearLevel, // This will now be an array
         academicYear,
-        term,
+        term, // This will now be an array
         students: [], // Initialize with an empty array
     });
 
@@ -152,7 +152,8 @@ const createCourse = asyncHandler(async (req, res) => {
 // @route   PUT /api/courses/:id
 // @access  Private/Admin
 const updateCourse = asyncHandler(async (req, res) => {
-    const { name, code, description, teacher, yearLevel, academicYear, term, students } = req.body; // Added students to destructure
+    // Destructure yearLevel and term as arrays
+    const { name, code, description, teacher, yearLevel, academicYear, term, students } = req.body;
 
     const course = await Course.findById(req.params.id);
     if (!course) {
@@ -162,7 +163,7 @@ const updateCourse = asyncHandler(async (req, res) => {
 
     let assignedTeacher = course.teacher;
     if (teacher !== undefined) {
-        if (!teacher) { // Allow unassigning a teacher
+        if (!teacher) { // Allow unassigning a teacher (if null or empty string is sent)
             assignedTeacher = null;
         } else {
             const existingTeacher = await User.findOne({ _id: teacher, role: 'teacher' });
@@ -178,15 +179,37 @@ const updateCourse = asyncHandler(async (req, res) => {
     course.code = code !== undefined ? code : course.code;
     course.description = description !== undefined ? description : course.description;
     course.teacher = assignedTeacher;
-    course.yearLevel = yearLevel !== undefined ? yearLevel : course.yearLevel;
+
+    // Assign arrays directly
+    // Add validation to ensure they are arrays before assigning, if you're not absolutely sure the frontend sends arrays
+    if (yearLevel !== undefined) {
+        if (!Array.isArray(yearLevel)) {
+            res.status(400);
+            throw new Error('yearLevel must be an array.');
+        }
+        course.yearLevel = yearLevel;
+    }
+
     course.academicYear = academicYear !== undefined ? academicYear : course.academicYear;
-    course.term = term !== undefined ? term : course.term;
+
+    if (term !== undefined) {
+        if (!Array.isArray(term)) {
+            res.status(400);
+            throw new Error('term must be an array.');
+        }
+        course.term = term;
+    }
+
 
     // Handle students array updates: This is crucial for adding/removing students
     if (students !== undefined && Array.isArray(students)) {
         // You might want to add validation here to ensure the student IDs are valid and exist
         course.students = students.map(s => new mongoose.Types.ObjectId(s)); // Ensure ObjectIds
+    } else if (students !== undefined && !Array.isArray(students)) {
+        res.status(400);
+        throw new Error('students must be an array.');
     }
+
 
     const updatedCourse = await course.save();
     res.status(200).json(updatedCourse);

@@ -1,3 +1,5 @@
+// server/models/Course.js
+
 import mongoose from 'mongoose';
 
 const courseSchema = mongoose.Schema(
@@ -20,21 +22,24 @@ const courseSchema = mongoose.Schema(
     teacher: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: false, // Make required:true if a course must always have an assigned teacher
+      required: false, // Keep as false if a course can exist without an assigned teacher
     },
     yearLevel: {
-      type: String,
+      type: [String], // <--- CHANGE HERE: Now an array of Strings
       required: true,
-      // ✨ TEMPORARY FIX: Add your existing school year levels here
+      // You can keep enum for validation if you want to restrict possible values within the array.
+      // All values in the array must be one of these.
       enum: ['Freshman', 'Sophomore', 'Junior', 'Senior', 'Graduate', 'JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3', 'SSS1', 'SSS2', 'SSS3', 'Year 7'],
     },
     academicYear: {
-      type: String,
+      type: String, // Keep as String if it's still a single academic year per course
       required: false,
     },
     term: {
-      type: String,
-      required: false,
+      type: [String], // <--- CHANGE HERE: Now an array of Strings
+      required: false, // Set to true if a term is always required
+      // Add enum if you want to restrict possible values within the array.
+      enum: ['First Term', 'Second Term', 'Third Term'],
     },
     credits: {
       type: Number,
