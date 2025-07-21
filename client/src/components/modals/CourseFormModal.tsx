@@ -5,9 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext'; // Corrected path based on typical structure
 // 🎯 IMPORT Course interface from the centralized types file
-// 🎯 IMPORT Course interface from the centralized types file
 import type { Course } from '../../types'; // ADJUST PATH if your src/types is in a different location relative to this file
- // ADJUST PATH if your src/types is in a different location relative to this file
 
 // Keep these interfaces here if they are only used within this file
 interface TeacherOption {
@@ -105,15 +103,18 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
 
         // Fetch Academic Years
         const academicYearsResponse = await axios.get('https://studyhabitcollege.onrender.com/api/settings/academic-years', config);
-        setDynamicAcademicYears(academicYearsResponse.data);
+        // 🎯 Access the 'academicYears' property from the response data object
+        setDynamicAcademicYears(academicYearsResponse.data.academicYears);
 
         // Fetch Terms
         const termsResponse = await axios.get('https://studyhabitcollege.onrender.com/api/settings/terms', config);
-        setDynamicTerms(termsResponse.data);
+        // 🎯 Access the 'terms' property from the response data object
+        setDynamicTerms(termsResponse.data.terms);
 
         // Fetch Year Levels
         const yearLevelsResponse = await axios.get('https://studyhabitcollege.onrender.com/api/settings/year-levels', config);
-        setDynamicYearLevels(yearLevelsResponse.data);
+        // 🎯 Access the 'yearLevels' property from the response data object
+        setDynamicYearLevels(yearLevelsResponse.data.yearLevels);
 
       } catch (err: any) {
         console.error('Failed to fetch dynamic data:', err);
