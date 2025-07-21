@@ -252,7 +252,8 @@ const ParentChildrenPage: React.FC = () => {
           ) : (
             <div className="mt-8 p-6 bg-white rounded-xl shadow-lg border border-gray-100">
               <Link to="/dashboard/children" className="text-blue-600 hover:underline mb-4 inline-flex items-center text-sm font-medium">
-                  <i className="fas fa-arrow-left mr-2"></i> Back to Children List
+                <i className="fas fa-arrow-left mr-2"></i>{' '}
+                {children.length === 1 ? 'Back to Child List' : 'Back to Children List'}
               </Link>
               <h3 className="text-2xl font-bold text-gray-800 mb-5 flex items-center">
                 <i className="fas fa-chart-line mr-3 text-green-600"></i>
