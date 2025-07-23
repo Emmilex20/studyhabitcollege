@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // src/components/modals/CourseFormModal.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react'; // Added useMemo for potentially cleaner derived state
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-import type { Course } from '../../types'; // Adjust path if your src/types is in a different location relative to this file
+import type { Course } from '../../types';
 
 interface TeacherOption {
   _id: string;
@@ -47,12 +47,14 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // --- Initial Form Data Setup ---
   useEffect(() => {
     if (courseToEdit) {
       setFormData({
         name: courseToEdit.name,
         code: courseToEdit.code,
         description: courseToEdit.description || '',
+        // Ensure these are always arrays, even if backend sends null/undefined
         yearLevel: courseToEdit.yearLevel || [],
         academicYear: courseToEdit.academicYear || '',
         term: courseToEdit.term || [],
@@ -70,12 +72,14 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
       });
     }
     setError(null);
-  }, [courseToEdit, isOpen]);
+  }, [courseToEdit, isOpen]); // Re-run when modal opens or courseToEdit changes
 
+  // --- Fetch Dynamic Data ---
   useEffect(() => {
     const fetchData = async () => {
       if (!userInfo?.token) {
         setError('User not authenticated. Please log in.');
+        setLoadingDynamicData(false); // Ensure loading is off if no token
         return;
       }
 
@@ -89,24 +93,26 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
       };
 
       try {
-        const teachersResponse = await axios.get('https://studyhabitcollege.onrender.com/api/users?role=teacher', config);
-        setTeachers(teachersResponse.data);
+        // Teachers
+        const teachersResponse = await axios.get<TeacherOption[]>('https://studyhabitcollege.onrender.com/api/users?role=teacher', config);
+        setTeachers(teachersResponse.data || []); // Ensure it's always an array
 
-        const academicYearsResponse = await axios.get('https://studyhabitcollege.onrender.com/api/settings/academic-years', config);
-        // ⭐ FIX APPLIED HERE: Directly use response.data as it's the array
-        setDynamicAcademicYears(academicYearsResponse.data);
+        // Academic Years
+        const academicYearsResponse = await axios.get<string[]>('https://studyhabitcollege.onrender.com/api/settings/academic-years', config);
+        setDynamicAcademicYears(academicYearsResponse.data || []); // Ensure it's always an array
 
-        const termsResponse = await axios.get('https://studyhabitcollege.onrender.com/api/settings/terms', config);
-        // ⭐ FIX APPLIED HERE: Directly use response.data as it's the array
-        setDynamicTerms(termsResponse.data);
+        // Terms
+        const termsResponse = await axios.get<string[]>('https://studyhabitcollege.onrender.com/api/settings/terms', config);
+        setDynamicTerms(termsResponse.data || []); // Ensure it's always an array
 
-        const yearLevelsResponse = await axios.get('https://studyhabitcollege.onrender.com/api/settings/year-levels', config);
-        // ⭐ FIX APPLIED HERE: Directly use response.data as it's the array
-        setDynamicYearLevels(yearLevelsResponse.data);
+        // Year Levels
+        const yearLevelsResponse = await axios.get<string[]>('https://studyhabitcollege.onrender.com/api/settings/year-levels', config);
+        setDynamicYearLevels(yearLevelsResponse.data || []); // Ensure it's always an array
 
       } catch (err: any) {
         console.error('Failed to fetch dynamic data:', err);
-        setError(err.response?.data?.message || 'Failed to load options (academic years, terms, year levels, or teachers). Please try again.');
+        setError(err.response?.data?.message || 'Failed to load options. Please try again.');
+        // Crucially, reset to empty arrays on ANY fetch error
         setTeachers([]);
         setDynamicAcademicYears([]);
         setDynamicTerms([]);
@@ -121,6 +127,7 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
     }
   }, [isOpen, userInfo?.token]);
 
+  // --- Handle Form Changes ---
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -134,6 +141,7 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
     }
   };
 
+  // --- Handle Form Submission ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -178,6 +186,21 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
       setIsSubmitting(false);
     }
   };
+
+  // --- Computed Property for Submit Button Disable Logic ---
+  const isSubmitDisabled = useMemo(() => {
+    // These should *always* be arrays due to useState initialization and fetch logic
+    // but the defensive || [] guards against any unforeseen 'undefined' state
+    const areRequiredFieldsEmpty =
+      !formData.name ||
+      !formData.code ||
+      (formData.yearLevel || []).length === 0 || // Defensive check
+      !formData.academicYear ||
+      (formData.term || []).length === 0; // Defensive check
+
+    return isSubmitting || loadingDynamicData || areRequiredFieldsEmpty;
+  }, [isSubmitting, loadingDynamicData, formData.name, formData.code, formData.yearLevel, formData.academicYear, formData.term]);
+
 
   if (!isOpen) return null;
 
@@ -262,8 +285,8 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
                 disabled={loadingDynamicData}
               >
                 {loadingDynamicData && <option value="" disabled>Loading year levels...</option>}
-                {!loadingDynamicData && dynamicYearLevels?.length === 0 && <option value="" disabled>No year levels available</option>}
-                {dynamicYearLevels?.map(level => (
+                {!loadingDynamicData && dynamicYearLevels.length === 0 && <option value="" disabled>No year levels available</option>}
+                {dynamicYearLevels.map(level => (
                   <option key={level} value={level}>{level}</option>
                 ))}
               </select>
@@ -284,8 +307,8 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
               >
                 {loadingDynamicData && <option value="" disabled>Loading academic years...</option>}
                 <option value="">Select Academic Year</option>
-                {!loadingDynamicData && dynamicAcademicYears?.length === 0 && <option value="" disabled>No academic years available</option>}
-                {dynamicAcademicYears?.map(year => (
+                {!loadingDynamicData && dynamicAcademicYears.length === 0 && <option value="" disabled>No academic years available</option>}
+                {dynamicAcademicYears.map(year => (
                   <option key={year} value={year}>{year}</option>
                 ))}
               </select>
@@ -308,8 +331,8 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
                 disabled={loadingDynamicData}
               >
                 {loadingDynamicData && <option value="" disabled>Loading terms...</option>}
-                {!loadingDynamicData && dynamicTerms?.length === 0 && <option value="" disabled>No terms available</option>}
-                {dynamicTerms?.map(termOption => (
+                {!loadingDynamicData && dynamicTerms.length === 0 && <option value="" disabled>No terms available</option>}
+                {dynamicTerms.map(termOption => (
                   <option key={termOption} value={termOption}>{termOption}</option>
                 ))}
               </select>
@@ -342,8 +365,8 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
               >
                 {loadingDynamicData && <option value="" disabled>Loading teachers...</option>}
                 <option value="">Select Teacher (Optional)</option>
-                {!loadingDynamicData && teachers?.length === 0 && <option value="" disabled>No teachers available</option>}
-                {teachers?.map(teacher => (
+                {!loadingDynamicData && teachers.length === 0 && <option value="" disabled>No teachers available</option>}
+                {teachers.map(teacher => (
                   <option key={teacher._id} value={teacher._id}>
                     {teacher.firstName} {teacher.lastName} ({teacher.email})
                   </option>
@@ -363,7 +386,7 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
               <button
                 type="submit"
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75"
-                disabled={isSubmitting || loadingDynamicData || (dynamicYearLevels?.length === 0 || formData.yearLevel?.length === 0 || formData.term?.length === 0)}
+                disabled={isSubmitDisabled}
               >
                 {isSubmitting ? (
                   <>
