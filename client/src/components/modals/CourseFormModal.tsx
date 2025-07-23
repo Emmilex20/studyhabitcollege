@@ -3,11 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
-import { useAuth } from '../../context/AuthContext'; // Corrected path based on typical structure
-// 🎯 IMPORT Course interface from the centralized types file
-import type { Course } from '../../types'; // ADJUST PATH if your src/types is in a different location relative to this file
+import { useAuth } from '../../context/AuthContext';
+import type { Course } from '../../types'; // Adjust path if your src/types is in a different location relative to this file
 
-// Keep these interfaces here if they are only used within this file
 interface TeacherOption {
   _id: string;
   firstName: string;
@@ -19,7 +17,7 @@ interface TeacherOption {
 interface CourseFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  courseToEdit?: Course | null; // This type is correct for the prop
+  courseToEdit?: Course | null;
   onSave: (course: Course) => void;
 }
 
@@ -36,36 +34,31 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
     description: '',
     yearLevel: [] as string[],
     academicYear: '',
-    term: [] as string[], // Initialize as empty array
+    term: [] as string[],
     teacher: '',
   });
 
   const [teachers, setTeachers] = useState<TeacherOption[]>([]);
-  // State for dynamic data fetched from backend
   const [dynamicAcademicYears, setDynamicAcademicYears] = useState<string[]>([]);
   const [dynamicTerms, setDynamicTerms] = useState<string[]>([]);
   const [dynamicYearLevels, setDynamicYearLevels] = useState<string[]>([]);
 
-  const [loadingDynamicData, setLoadingDynamicData] = useState(true); // Combined loading for all dynamic data
+  const [loadingDynamicData, setLoadingDynamicData] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Effect to populate form when editing an existing course or resetting for a new one
   useEffect(() => {
     if (courseToEdit) {
       setFormData({
         name: courseToEdit.name,
         code: courseToEdit.code,
         description: courseToEdit.description || '',
-        // Ensure yearLevel is an array. Use `|| []` to handle potential undefined
         yearLevel: courseToEdit.yearLevel || [],
         academicYear: courseToEdit.academicYear || '',
-        // Ensure term is an array. Use `|| []` to handle potential undefined
-        term: courseToEdit.term || [], // 🎯 Correctly handle `undefined` from `courseToEdit.term`
+        term: courseToEdit.term || [],
         teacher: courseToEdit.teacher?._id || '',
       });
     } else {
-      // Reset form for new course creation
       setFormData({
         name: '',
         code: '',
@@ -76,10 +69,9 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
         teacher: '',
       });
     }
-    setError(null); // Clear any previous errors
+    setError(null);
   }, [courseToEdit, isOpen]);
 
-  // Effect to fetch dynamic data (teachers, academic years, terms, year levels)
   useEffect(() => {
     const fetchData = async () => {
       if (!userInfo?.token) {
@@ -88,7 +80,7 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
       }
 
       setLoadingDynamicData(true);
-      setError(null); // Clear previous errors before fetching
+      setError(null);
 
       const config = {
         headers: {
@@ -97,29 +89,24 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
       };
 
       try {
-        // Fetch Teachers
         const teachersResponse = await axios.get('https://studyhabitcollege.onrender.com/api/users?role=teacher', config);
         setTeachers(teachersResponse.data);
 
-        // Fetch Academic Years
         const academicYearsResponse = await axios.get('https://studyhabitcollege.onrender.com/api/settings/academic-years', config);
-        // 🎯 Access the 'academicYears' property from the response data object
-        setDynamicAcademicYears(academicYearsResponse.data.academicYears);
+        // ⭐ FIX APPLIED HERE: Directly use response.data as it's the array
+        setDynamicAcademicYears(academicYearsResponse.data);
 
-        // Fetch Terms
         const termsResponse = await axios.get('https://studyhabitcollege.onrender.com/api/settings/terms', config);
-        // 🎯 Access the 'terms' property from the response data object
-        setDynamicTerms(termsResponse.data.terms);
+        // ⭐ FIX APPLIED HERE: Directly use response.data as it's the array
+        setDynamicTerms(termsResponse.data);
 
-        // Fetch Year Levels
         const yearLevelsResponse = await axios.get('https://studyhabitcollege.onrender.com/api/settings/year-levels', config);
-        // 🎯 Access the 'yearLevels' property from the response data object
-        setDynamicYearLevels(yearLevelsResponse.data.yearLevels);
+        // ⭐ FIX APPLIED HERE: Directly use response.data as it's the array
+        setDynamicYearLevels(yearLevelsResponse.data);
 
       } catch (err: any) {
         console.error('Failed to fetch dynamic data:', err);
         setError(err.response?.data?.message || 'Failed to load options (academic years, terms, year levels, or teachers). Please try again.');
-        // Optionally, reset dynamic data if fetch fails
         setTeachers([]);
         setDynamicAcademicYears([]);
         setDynamicTerms([]);
@@ -132,19 +119,16 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
     if (isOpen) {
       fetchData();
     }
-  }, [isOpen, userInfo?.token]); // Re-run when modal opens or token changes
+  }, [isOpen, userInfo?.token]);
 
-  // Handles changes for all input types, including multi-selects
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name } = e.target;
     if (e.target instanceof HTMLSelectElement && e.target.multiple) {
-      // For multi-selects, get all selected options' values
       const value = Array.from(e.target.selectedOptions, (option) => option.value);
       setFormData(prev => ({ ...prev, [name]: value }));
     } else {
-      // For single inputs/selects
       const { value } = e.target;
       setFormData(prev => ({ ...prev, [name]: value }));
     }
@@ -171,24 +155,22 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
     try {
       const payload = {
         ...formData,
-        teacher: formData.teacher === '' ? null : formData.teacher, // Handle unassigned teacher
+        teacher: formData.teacher === '' ? null : formData.teacher,
       };
 
       let response;
       if (courseToEdit) {
-        // PUT request for updating
         response = await axios.put(
           `https://studyhabitcollege.onrender.com/api/courses/${courseToEdit._id}`,
           payload,
           config
         );
       } else {
-        // POST request for creating
         response = await axios.post('https://studyhabitcollege.onrender.com/api/courses', payload, config);
       }
 
-      onSave(response.data); // Notify parent component of successful save
-      onClose(); // Close the modal
+      onSave(response.data);
+      onClose();
     } catch (err: any) {
       console.error('Course form submission error:', err);
       setError(err.response?.data?.message || 'Failed to save course. Please check your input.');
@@ -197,7 +179,6 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
     }
   };
 
-  // Only render the modal if it's open
   if (!isOpen) return null;
 
   return (
@@ -207,21 +188,20 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center p-4 z-50"
-        onClick={onClose} // Close modal when clicking outside
+        onClick={onClose}
       >
         <motion.div
           initial={{ y: -50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 50, opacity: 0 }}
           className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto"
-          onClick={e => e.stopPropagation()} // Prevent closing when clicking inside modal content
+          onClick={e => e.stopPropagation()}
         >
           <h2 className="text-2xl font-bold text-blue-800 mb-6 border-b pb-3 flex items-center">
             <i className="fas fa-book mr-3 text-indigo-600"></i>
             {courseToEdit ? 'Edit Course' : 'Create New Course'}
           </h2>
 
-          {/* Error and Loading Message Display */}
           {(error || loadingDynamicData) && (
             <div className={`
               ${error ? 'bg-red-100 border-red-400 text-red-700' : 'bg-blue-100 border-blue-400 text-blue-700'}
@@ -282,9 +262,7 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
                 disabled={loadingDynamicData}
               >
                 {loadingDynamicData && <option value="" disabled>Loading year levels...</option>}
-                {/* 🎯 Updated line: Check length with optional chaining */}
                 {!loadingDynamicData && dynamicYearLevels?.length === 0 && <option value="" disabled>No year levels available</option>}
-                {/* Ensure map also uses optional chaining */}
                 {dynamicYearLevels?.map(level => (
                   <option key={level} value={level}>{level}</option>
                 ))}
@@ -305,10 +283,8 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
                 disabled={loadingDynamicData}
               >
                 {loadingDynamicData && <option value="" disabled>Loading academic years...</option>}
-                <option value="">Select Academic Year</option> {/* Keep for single select, allows no selection */}
-                {/* 🎯 Updated line: Check length with optional chaining */}
+                <option value="">Select Academic Year</option>
                 {!loadingDynamicData && dynamicAcademicYears?.length === 0 && <option value="" disabled>No academic years available</option>}
-                {/* Ensure map also uses optional chaining */}
                 {dynamicAcademicYears?.map(year => (
                   <option key={year} value={year}>{year}</option>
                 ))}
@@ -332,9 +308,7 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
                 disabled={loadingDynamicData}
               >
                 {loadingDynamicData && <option value="" disabled>Loading terms...</option>}
-                {/* 🎯 Updated line: Check length with optional chaining */}
                 {!loadingDynamicData && dynamicTerms?.length === 0 && <option value="" disabled>No terms available</option>}
-                {/* Ensure map also uses optional chaining */}
                 {dynamicTerms?.map(termOption => (
                   <option key={termOption} value={termOption}>{termOption}</option>
                 ))}
@@ -364,13 +338,11 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
                 value={formData.teacher}
                 onChange={handleChange}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                disabled={loadingDynamicData} // Disable if any dynamic data is loading
+                disabled={loadingDynamicData}
               >
                 {loadingDynamicData && <option value="" disabled>Loading teachers...</option>}
                 <option value="">Select Teacher (Optional)</option>
-                {/* 🎯 Updated line: Check length with optional chaining */}
                 {!loadingDynamicData && teachers?.length === 0 && <option value="" disabled>No teachers available</option>}
-                {/* Ensure map also uses optional chaining */}
                 {teachers?.map(teacher => (
                   <option key={teacher._id} value={teacher._id}>
                     {teacher.firstName} {teacher.lastName} ({teacher.email})
@@ -384,14 +356,13 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
                 type="button"
                 onClick={onClose}
                 className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400"
-                disabled={isSubmitting} // Disable cancel button during submission
+                disabled={isSubmitting}
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75"
-                // Made these conditions more robust by ensuring the arrays are not undefined first
                 disabled={isSubmitting || loadingDynamicData || (dynamicYearLevels?.length === 0 || formData.yearLevel?.length === 0 || formData.term?.length === 0)}
               >
                 {isSubmitting ? (
