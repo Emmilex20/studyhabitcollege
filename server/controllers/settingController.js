@@ -76,10 +76,38 @@ const updateSetting = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Get all settings (academic years, terms, year levels) from a single document
+// @route   GET /api/settings
+// @access  Private (add protect middleware if authentication is required)
+const getAllSettings = asyncHandler(async (req, res) => {
+  // ⭐ IMPORTANT: This assumes you have ONE document in your 'settings' collection
+  // that holds all these arrays as its direct properties.
+  // If you have multiple documents in 'settings', you'll need a specific query,
+  // e.g., Setting.findOne({ name: 'global_app_settings' }) or by a known _id.
+  const settingsDocument = await Setting.findOne({}); // Finds the first document in the collection
+
+  if (settingsDocument) {
+    res.status(200).json({
+      academicYears: settingsDocument.academicYears || [],
+      terms: settingsDocument.terms || [],
+      yearLevels: settingsDocument.yearLevels || [],
+    });
+  } else {
+    // If no settings document is found, return empty arrays
+    console.warn('Global settings document not found in DB. Returning empty arrays for settings.');
+    res.status(200).json({
+      academicYears: [],
+      terms: [],
+      yearLevels: [],
+    });
+  }
+});
+
 
 export {
   getAcademicYears,
   getTerms,
   getYearLevels,
-  updateSetting, // Export the update function for admin use
+  updateSetting,
+  getAllSettings,
 };
