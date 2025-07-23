@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // src/components/modals/CourseFormModal.tsx
-import React, { useState, useEffect, useMemo } from 'react'; // Added useMemo for potentially cleaner derived state
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
@@ -54,7 +54,6 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
         name: courseToEdit.name,
         code: courseToEdit.code,
         description: courseToEdit.description || '',
-        // Ensure these are always arrays, even if backend sends null/undefined
         yearLevel: courseToEdit.yearLevel || [],
         academicYear: courseToEdit.academicYear || '',
         term: courseToEdit.term || [],
@@ -72,14 +71,14 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
       });
     }
     setError(null);
-  }, [courseToEdit, isOpen]); // Re-run when modal opens or courseToEdit changes
+  }, [courseToEdit, isOpen]);
 
   // --- Fetch Dynamic Data ---
   useEffect(() => {
     const fetchData = async () => {
       if (!userInfo?.token) {
         setError('User not authenticated. Please log in.');
-        setLoadingDynamicData(false); // Ensure loading is off if no token
+        setLoadingDynamicData(false);
         return;
       }
 
@@ -93,26 +92,42 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
       };
 
       try {
-        // Teachers
+        // Fetch Teachers (assuming this is still a direct array response from /api/users)
         const teachersResponse = await axios.get<TeacherOption[]>('https://studyhabitcollege.onrender.com/api/users?role=teacher', config);
-        setTeachers(teachersResponse.data || []); // Ensure it's always an array
+        setTeachers(teachersResponse.data || []);
 
-        // Academic Years
-        const academicYearsResponse = await axios.get<string[]>('https://studyhabitcollege.onrender.com/api/settings/academic-years', config);
-        setDynamicAcademicYears(academicYearsResponse.data || []); // Ensure it's always an array
+        // Fetch ALL settings at once
+        // This assumes there's an endpoint that returns the full settings document
+        // If not, you'll need to hit each endpoint, but then the backend should return the array directly.
+        // Given your MongoDB structure, it's likely you hit ONE endpoint (e.g., /api/settings)
+        // that returns the entire document. If so, modify the URL below.
+        // For now, I'm assuming your existing setup is still hitting the specific endpoints
+        // but they are somehow returning the WHOLE document. Let's adjust based on that.
+        // If your /api/settings/academic-years etc. *only* return the array, then the previous fix was correct.
+        // But your MongoDB data shows one document with all three arrays.
 
-        // Terms
-        const termsResponse = await axios.get<string[]>('https://studyhabitcollege.onrender.com/api/settings/terms', config);
-        setDynamicTerms(termsResponse.data || []); // Ensure it's always an array
+        // The most robust way, given your MongoDB screenshot, is to fetch all settings
+        // from a single endpoint that returns the object:
+        const settingsResponse = await axios.get<{
+          _id: any; // Or define a proper type for _id
+          academicYears: string[];
+          terms: string[];
+          yearLevels: string[];
+        }>('https://studyhabitcollege.onrender.com/api/settings', config); // Assuming this new endpoint exists or your existing ones return this full object
+        // If your current endpoints still return the full object, use this:
+        // const academicYearsResponse = await axios.get('...', config);
+        // setDynamicAcademicYears(academicYearsResponse.data.academicYears || []);
 
-        // Year Levels
-        const yearLevelsResponse = await axios.get<string[]>('https://studyhabitcollege.onrender.com/api/settings/year-levels', config);
-        setDynamicYearLevels(yearLevelsResponse.data || []); // Ensure it's always an array
+
+        // ⭐⭐⭐ THE CRITICAL FIXES BASED ON YOUR MONGODB DATA ⭐⭐⭐
+        // We now expect 'data' to be the entire object from MongoDB
+        setDynamicAcademicYears(settingsResponse.data.academicYears || []);
+        setDynamicTerms(settingsResponse.data.terms || []);
+        setDynamicYearLevels(settingsResponse.data.yearLevels || []);
 
       } catch (err: any) {
         console.error('Failed to fetch dynamic data:', err);
         setError(err.response?.data?.message || 'Failed to load options. Please try again.');
-        // Crucially, reset to empty arrays on ANY fetch error
         setTeachers([]);
         setDynamicAcademicYears([]);
         setDynamicTerms([]);
@@ -189,14 +204,13 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({
 
   // --- Computed Property for Submit Button Disable Logic ---
   const isSubmitDisabled = useMemo(() => {
-    // These should *always* be arrays due to useState initialization and fetch logic
-    // but the defensive || [] guards against any unforeseen 'undefined' state
     const areRequiredFieldsEmpty =
       !formData.name ||
       !formData.code ||
-      (formData.yearLevel || []).length === 0 || // Defensive check
+      // Now we can safely use .length because the state is guaranteed to be an array
+      formData.yearLevel.length === 0 ||
       !formData.academicYear ||
-      (formData.term || []).length === 0; // Defensive check
+      formData.term.length === 0;
 
     return isSubmitting || loadingDynamicData || areRequiredFieldsEmpty;
   }, [isSubmitting, loadingDynamicData, formData.name, formData.code, formData.yearLevel, formData.academicYear, formData.term]);
