@@ -2,19 +2,33 @@ import mongoose from 'mongoose';
 
 const settingSchema = mongoose.Schema(
   {
-    key: { // This will store the name of the setting, e.g., 'academicYears', 'terms', 'yearLevels'
-      type: String,
-      required: true,
-      unique: true,
-      trim: true,
+    // These fields directly map to your existing MongoDB document structure
+    academicYears: {
+      type: [String], // Array of strings
+      default: [],    // Default to an empty array if not present
     },
-    values: { // This will store the array of strings for each setting
-      type: [String],
-      required: true,
+    terms: {
+      type: [String], // Array of strings
+      default: [],
+    },
+    yearLevels: {
+      type: [String], // Array of strings
+      default: [],
+    },
+    // Add a 'type' or 'name' field for the global settings document
+    // This makes it easier to query specifically for THIS document
+    // rather than relying on findOne({}) which just picks the first one.
+    // If you add this, you'll need to update your DB document once
+    // to include a "type": "global_settings" field.
+    type: {
+      type: String,
+      default: 'global_settings',
+      unique: true, // Ensures only one document of this type exists
+      required: true, // Make it required for the global settings doc
     },
   },
   {
-    timestamps: true, // Optional: useful for tracking when settings were last updated
+    timestamps: true, // Keep optional timestamps
   }
 );
 
